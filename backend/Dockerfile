@@ -12,6 +12,9 @@ RUN npm install
 # Copy application code
 COPY . .
 
+# Generate Prisma Client
+RUN npm run prisma:generate
+
 # Create uploads directory
 RUN mkdir -p uploads
 
