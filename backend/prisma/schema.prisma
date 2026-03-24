@@ -1,0 +1,381 @@
+// Prisma Schema for Income Tax Return Filing Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ════════════════════════════════════════════════════════════════════
+// USERS TABLE - Core user authentication & profile
+// ════════════════════════════════════════════════════════════════════
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String?
+  name          String
+  pan           String   @unique // Permanent Account Number
+  phone         String?
+  dateOfBirth   DateTime?
+  gender        String? // M, F, Others
+  address       String?
+  city          String?
+  state         String?
+  pincode       String?
+  role          String   @default("user") // user, ca, admin
+  status        String   @default("active") // active, inactive, suspended
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  taxFilings     TaxFiling[]
+  incomes        Income[]
+  deductions     Deduction[]
+  documents      Document[]
+  payments       Payment[]
+  caAssignments  CAAssignment[]
+  assignedAsCA   CAAssignment[] @relation("CAUser")
+  otp            OTP?
+
+  @@index([pan])
+  @@index([email])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// OTP TABLE - Email OTP verification
+// ════════════════════════════════════════════════════════════════════
+model OTP {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  code      String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// TAX FILINGS TABLE - Main tax return filing records
+// ════════════════════════════════════════════════════════════════════
+model TaxFiling {
+  id                String   @id @default(cuid())
+  userId            String
+  assessmentYear    Int      // e.g., 2023, 2024
+  filingYear        Int      // Financial year
+  itrType           String   @default("ITR1") // ITR1, ITR2, ITR3, etc.
+  regime            String   @default("old") // old, new
+  status            String   @default("draft") // draft, submitted, filed, refunded
+  
+  // Tax calculations
+  grossSalary       Float    @default(0)
+  businessIncome    Float    @default(0)
+  capitalGains      Float    @default(0)
+  otherIncome       Float    @default(0)
+  totalIncome       Float    @default(0)
+  
+  totalDeductions   Float    @default(0)
+  taxableIncome     Float    @default(0)
+  incomeTax         Float    @default(0)
+  surcharge         Float    @default(0)
+  cess              Float    @default(0)
+  totalTax          Float    @default(0)
+  
+  rebate            Float    @default(0)
+  totalTaxPayable   Float    @default(0)
+  taxPaid           Float    @default(0)
+  refund            Float    @default(0)
+  
+  // Additional info
+  caRequired        Boolean  @default(false)
+  caId              String?
+  remarks           String?
+  submittedAt       DateTime?
+  filedAt           DateTime?
+  refundedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caAssignment      CAAssignment?
+  incomes           Income[]
+  deductions        Deduction[]
+  documents         Document[]
+  payments          Payment[]
+
+  @@index([userId])
+  @@index([assessmentYear])
+  @@index([status])
+  @@unique([userId, assessmentYear])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// INCOME TABLE - Various income sources
+// ════════════════════════════════════════════════════════════════════
+model Income {
+  id                String   @id @default(cuid())
+  userId            String
+  taxFilingId       String
+  
+  // Salary Income
+  salaryIncome      Float    @default(0)
+  basicPay          Float    @default(0)
+  ta                Float    @default(0) // Travel Allowance
+  da                Float    @default(0) // Dearness Allowance
+  hra               Float    @default(0) // House Rent Allowance
+  medicalAllowance  Float    @default(0)
+  otherAllowances   Float    @default(0)
+  
+  // House Property Income
+  propertyType      String? // self-occupied, let-out, etc.
+  grossRentalIncome Float    @default(0)
+  municipalTaxes    Float    @default(0)
+  interestOnLoan    Float    @default(0)
+  repairs           Float    @default(0)
+  
+  // Business Income
+  businessIncome    Float    @default(0)
+  businessExpenses  Float    @default(0)
+  
+  // Capital Gains
+  capitalGains      Float    @default(0)
+  gainType          String? // short-term, long-term
+  
+  // Other Income
+  otherIncome       Float    @default(0)
+  otherIncomeSource String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taxFiling         TaxFiling @relation(fields: [taxFilingId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([taxFilingId])
+  @@unique([userId, taxFilingId])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// DEDUCTIONS TABLE - Tax deductions under various sections
+// ════════════════════════════════════════════════════════════════════
+model Deduction {
+  id                  String   @id @default(cuid())
+  userId              String
+  taxFilingId         String
+  
+  // Section 80C - General Savings
+  section80C          Float    @default(0)
+  providentFund       Float    @default(0)
+  lifeInsurancePremium Float   @default(0)
+  nsc                 Float    @default(0) // National Savings Certificate
+  tuitionFees         Float    @default(0)
+  fixedDeposit        Float    @default(0)
+  
+  // Section 80D - Medical Insurance
+  section80D          Float    @default(0)
+  medicalInsurance    Float    @default(0)
+  parentalMedInsurance Float   @default(0)
+  seniorCitizenInsurance Float  @default(0)
+  
+  // Section 80CCD - Pension
+  section80CCD        Float    @default(0)
+  pensionContribution Float    @default(0)
+  nps                 Float    @default(0)
+  
+  // Section 80E - Education Loan
+  section80E          Float    @default(0)
+  educationLoanInterest Float   @default(0)
+  
+  // Section 80G - Donations
+  section80G          Float    @default(0)
+  donations           Float    @default(0)
+  
+  // Section 24 - HRA
+  section24HRA        Float    @default(0)
+  rentPaid            Float    @default(0)
+  salary              Float    @default(0)
+  
+  // Other deductions
+  standardDeduction   Float    @default(0) // New regime
+  
+  totalDeductions     Float    @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taxFiling           TaxFiling @relation(fields: [taxFilingId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([taxFilingId])
+  @@unique([userId, taxFilingId])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// DOCUMENTS TABLE - Uploaded documents (Form-16, etc.)
+// ════════════════════════════════════════════════════════════════════
+model Document {
+  id            String   @id @default(cuid())
+  userId        String
+  taxFilingId   String
+  
+  fileName      String
+  fileUrl       String   // S3 URL
+  fileType      String   // pdf, image, etc.
+  docType       String   // form16, form26, salary-slip, etc.
+  
+  // Extracted metadata from Form-16
+  panFromDoc    String?
+  nameFromDoc   String?
+  financialYear String?
+  
+  fileSize      Int?
+  uploadedAt    DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taxFiling     TaxFiling @relation(fields: [taxFilingId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([taxFilingId])
+  @@index([docType])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// PAYMENTS TABLE - Payment records
+// ════════════════════════════════════════════════════════════════════
+model Payment {
+  id              String   @id @default(cuid())
+  userId          String
+  taxFilingId     String?
+  
+  amount          Float
+  currency        String   @default("INR")
+  paymentMethod   String   // razorpay, bank-transfer, etc.
+  razorpayOrderId String?
+  razorpayPaymentId String?
+  
+  status          String   @default("pending") // pending, completed, failed, refunded
+  paymentType     String   @default("premium") // premium, filing, upgrade
+  description     String?
+  
+  paidAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taxFiling       TaxFiling? @relation(fields: [taxFilingId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([taxFilingId])
+  @@index([status])
+  @@index([razorpayOrderId])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// CA ASSIGNMENT TABLE - CA assisted filing
+// ════════════════════════════════════════════════════════════════════
+model CAAssignment {
+  id            String   @id @default(cuid())
+  userId        String
+  caId          String
+  taxFilingId   String?  @unique
+  
+  status        String   @default("requested") // requested, assigned, in-progress, completed, rejected
+  assignedAt    DateTime?
+  completedAt   DateTime?
+  notes         String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ca            User     @relation("CAUser", fields: [caId], references: [id], onDelete: Cascade)
+  taxFiling     TaxFiling? @relation(fields: [taxFilingId], references: [id])
+
+  @@index([userId])
+  @@index([caId])
+  @@index([status])
+}
+
+
+// ────────────────────────────────────────────────────────────────────
+// AUDIT LOG TABLE (For tracking changes)
+// ────────────────────────────────────────────────────────────────────
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  resource  String // user, report, system
+  details   String?   // JSON stored as text for SQLite
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SERVICES TABLE - Tax services catalog
+// ════════════════════════════════════════════════════════════════════
+model Service {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String?
+  price       Float
+  features    String   // JSON array stored as text for SQLite
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  orders      Order[]
+
+  @@index([slug])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// ORDERS TABLE - Service orders/purchases
+// ════════════════════════════════════════════════════════════════════
+model Order {
+  id          String   @id @default(cuid())
+  serviceId   String
+  customerId  String
+  amount      Float
+  status      String   @default("pending") // pending, completed, cancelled
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId])
+  @@index([customerId])
+  @@index([status])
+}
+
+// ────────────────────────────────────────────────────────────────────
+// JOB QUEUE TABLE (For background jobs)
+// ────────────────────────────────────────────────────────────────────
+model Job {
+  id        String   @id @default(cuid())
+  type      String // generate-pdf, send-email, process-report
+  payload   String   // JSON stored as text for SQLite
+  status    String   @default("pending") // pending, processing, completed, failed
+  error     String?
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  completedAt DateTime?
+}
