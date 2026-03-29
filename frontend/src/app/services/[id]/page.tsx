@@ -1,4 +1,5 @@
 import React from 'react';
+import { notFound } from 'next/navigation';
 
 export default async function ServiceDetail({ params }: { params: { id: string } }) {
   const { id } = params;

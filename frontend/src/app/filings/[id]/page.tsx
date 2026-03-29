@@ -1,40 +1,27 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { notFound } from 'next/navigation';
 import api from '@/lib/api';
 
-export default function FilingDetail({ params }: { params: { id: string } }) {
+export default async function FilingDetail({ params }: { params: { id: string } }) {
   const { id } = params;
-  const router = useRouter();
-  const [filing, setFiling] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  
+  // Fetch filing data server-side
+  let filing = null;
+  try {
+    const res = await api.get(`/api/filings/${id}`);
+    filing = res.data || null;
+  } catch (err) {
+    console.error('Failed to load filing', err);
+    notFound();
+  }
 
-  useEffect(() => {
-    fetchFiling();
-  }, [id]);
-
-  const fetchFiling = async () => {
-    try {
-      const res = await api.get(`/api/filings/${id}`);
-      setFiling(res.data || null);
-    } catch (err) {
-      console.error('Failed to load filing', err);
-      setFiling(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div className="p-6">Loading...</div>;
-
-  if (!filing) return <div className="p-6">Filing not found</div>;
+  if (!filing) {
+    notFound();
+  }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-white rounded shadow">
+    <div className="max-w-4xl p-6 mx-auto bg-white rounded shadow">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Filing: {filing.financialYear}</h2>
-        <button onClick={() => router.back()} className="text-indigo-600">Back</button>
       </div>
 
       <div className="space-y-2 text-sm text-gray-700">
