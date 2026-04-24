@@ -1,0 +1,210 @@
+// This is the schema for the Prisma ORM
+// Database: MySQL
+// Updated: April 8, 2026
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// =========================================
+// USER - User accounts
+// =========================================
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String    // Hashed with bcrypt
+  name      String?
+  phone     String?
+  avatar    String?   // Profile picture URL
+  role      String    @default("user") // user, admin
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  orders    Order[]
+  documents Document[]
+  subscription Subscription?
+}
+
+// =========================================
+// SERVICE - Tax/accounting services
+// =========================================
+model Service {
+  id              Int       @id @default(autoincrement())
+  name            String?   @unique
+  slug            String    @unique
+  description     String?   @db.LongText
+  shortDescription String?
+  price           Float?
+  discountPrice   Float?
+  duration        String?    // e.g., "2-3 business days"
+  turnaroundDays  Int?      // In days
+  requirements    String?   @db.LongText
+  icon            String?   // Icon name or URL
+  features        Json?     // JSON array of features
+  color           String?   // Tailwind color class
+  category        String?   // Service category
+  active          Boolean   @default(true)
+  featured        Boolean   @default(false)
+  position        Int       @default(999) // For ordering
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  orders          Order[]
+}
+
+// =========================================
+// ORDER - Customer orders
+// =========================================
+model Order {
+  id              Int       @id @default(autoincrement())
+  orderNo         String    @unique // ORD-20240408-XXXXX
+  userId          Int
+  serviceId       Int
+  amount          Float
+  discountAmount  Float?    @default(0)
+  finalAmount     Float     // After discount
+  status          String    @default("pending") // pending, processing, completed, failed, cancelled
+  paymentStatus   String    @default("unpaid") // unpaid, paid, failed
+  
+  // Payment details
+  paymentId       String?   // Razorpay payment ID
+  paymentMethod   String?   // razorpay, bank, card, etc
+  paymentDate     DateTime?
+  
+  // Document details
+  uploadedFiles   Int?      @default(0) // Number of files uploaded
+  notes           String?   @db.LongText
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  completedAt     DateTime?
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service         Service   @relation(fields: [serviceId], references: [id])
+  documents       Document[]
+}
+
+// =========================================
+// DOCUMENT - Files uploaded for orders
+// =========================================
+model Document {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  orderId         Int?
+  filename        String
+  originalName    String?   // Original filename
+  fileUrl         String    // S3 URL or local path
+  fileSize        Int?      // In bytes
+  mimeType        String?   // application/pdf, etc
+  documentType    String?   // invoice, receipt, etc
+  uploadedBy      String    // admin or user email
+  notes           String?
+  uploadedAt      DateTime  @default(now())
+  deletedAt       DateTime?
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order           Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+}
+
+// =========================================
+// SUBSCRIPTION - Service subscriptions
+// =========================================
+model Subscription {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @unique
+  planName        String    // monthly, annual, lifetime
+  amount          Float
+  startDate       DateTime  @default(now())
+  endDate         DateTime?
+  autoRenew       Boolean   @default(true)
+  status          String    @default("active") // active, cancelled, expired
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// =========================================
+// CONTACT - Contact form submissions
+// =========================================
+model Contact {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String    @db.LongText
+  status    String    @default("unread") // unread, read, replied
+  replied   Boolean   @default(false)
+  repliedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([email])
+}
+
+// =========================================
+// REFERRAL - Referral program
+// =========================================
+model Referral {
+  id              Int       @id @default(autoincrement())
+  referrerEmail   String
+  refereeEmail    String
+  referralCode    String    @unique
+  status          String    @default("pending") // pending, activated, completed
+  commissionAmount Float?
+  activatedAt     DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([referrerEmail, refereeEmail])
+  @@index([referralCode])
+}
+
+// =========================================
+// ADMIN LOG - Admin activity tracking
+// =========================================
+model AdminLog {
+  id        Int       @id @default(autoincrement())
+  adminEmail String
+  action    String    // create, update, delete, etc
+  entityType String   // user, order, service, etc
+  entityId  Int?
+  changes   Json?     // JSON of what changed
+  ipAddress String?
+  userAgent String?   @db.LongText
+  createdAt DateTime  @default(now())
+
+  @@index([adminEmail])
+  @@index([createdAt])
+}
+
+// =========================================
+// EMAIL LOG - Email sending tracking
+// =========================================
+model EmailLog {
+  id        Int       @id @default(autoincrement())
+  to        String
+  subject   String
+  type      String    // order_confirmation, payment_receipt, etc
+  status    String    @default("sent") // sent, failed, bounced
+  errorMsg  String?
+  sentAt    DateTime  @default(now())
+  createdAt DateTime  @default(now())
+
+  @@index([to])
+  @@index([sentAt])
+}

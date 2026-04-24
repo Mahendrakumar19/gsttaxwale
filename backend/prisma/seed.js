@@ -115,6 +115,36 @@ async function main() {
   try {
     console.log('Starting database seed...');
     
+    // Try to create admin user (skip if already exists)
+    try {
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      
+      const adminUser = await prisma.user.upsert({
+        where: { email: 'admin@gsttaxwale.com' },
+        update: {},
+        create: {
+          email: 'admin@gsttaxwale.com',
+          password: hashedPassword,
+          name: 'Admin User',
+          pan: 'AAAAA0000A',
+          phone: '+919999999999',
+          dateOfBirth: new Date('1985-01-01'),
+          gender: 'M',
+          address: 'Admin Office',
+          city: 'New Delhi',
+          state: 'Delhi',
+          pincode: '110001',
+          role: 'admin',
+          status: 'active',
+          emailVerified: true,
+        },
+      });
+      
+      console.log('✓ Admin user created/verified:', adminUser.email);
+    } catch (adminErr) {
+      console.log('✓ Admin user already exists, skipping...');
+    }
+    
     // Try to create test user (skip if already exists)
     try {
       const hashedPassword = await bcrypt.hash('password123', 10);
@@ -175,7 +205,11 @@ async function main() {
     console.log(`✓ Total users in database: ${userCount}`);
     console.log(`✓ Total services in database: ${serviceCount}`);
     console.log('');
-    console.log('📧 Demo Credentials:');
+    console.log('📧 Admin Credentials:');
+    console.log('   Email: admin@gsttaxwale.com');
+    console.log('   Password: admin123');
+    console.log('');
+    console.log('📧 Demo User Credentials:');
     console.log('   Email: user@gsttaxwale.com');
     console.log('   Password: password123');
     console.log('');

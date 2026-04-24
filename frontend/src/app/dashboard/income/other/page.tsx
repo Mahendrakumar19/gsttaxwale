@@ -14,7 +14,7 @@ export default function OtherIncomePage() {
     setLoading(true);
     setMessage('');
     try {
-      await api.post('/api/income', { type: 'other', source, amount: Number(amount) });
+      await api.post('/income', { type: 'other', source, amount: Number(amount) });
       setMessage('Income added');
       setSource('');
       setAmount('');

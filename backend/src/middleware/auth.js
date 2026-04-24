@@ -1,10 +1,11 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/index');
+const db = require('../utils/db');
 
 // ────────────────────────────────────────────────────────────────────
 // AUTHENTICATE JWT TOKEN
 // ────────────────────────────────────────────────────────────────────
-function authenticate(req, res, next) {
+async function authenticate(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
     
@@ -20,6 +21,20 @@ function authenticate(req, res, next) {
     try {
       const decoded = jwt.verify(token, config.jwt.secret);
       req.userId = decoded.userId;
+      
+      // Fetch user role from database
+      try {
+        const user = await db.findOne('User', { id: decoded.userId });
+        
+        if (user) {
+          req.userRole = user.role;
+          req.userEmail = user.email;
+        }
+      } catch (dbErr) {
+        console.error('Error fetching user role:', dbErr);
+        // Continue anyway - role will be undefined and adminOnly will catch it
+      }
+      
       next();
     } catch (error) {
       return res.status(401).json({

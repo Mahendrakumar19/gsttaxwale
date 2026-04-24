@@ -11,7 +11,7 @@ export default function DownloadsPage(){
 
   const fetchFiles = async () => {
     try{
-      const res = await api.get('/api/downloads');
+      const res = await api.get('/downloads');
       setFiles(res.data || []);
     }catch(err){
       console.error(err);

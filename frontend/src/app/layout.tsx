@@ -1,9 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import SiteHeader from '../components/SiteHeader';
-import SiteFooter from '../components/SiteFooter';
-import WhatsAppWidget from '../components/WhatsAppWidget';
-import ChatbotWidget from '../components/ChatbotWidget';
+import RootLayoutClient from './layout-client';
 
 export const metadata: Metadata = {
   title: 'GST Tax Wale - GST & Income Tax Services',
@@ -16,13 +13,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen flex flex-col">
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
-        <WhatsAppWidget />
-        <ChatbotWidget />
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <body className="flex flex-col min-h-screen bg-white text-gray-900 transition-colors duration-300">
+        <RootLayoutClient>{children}</RootLayoutClient>
       </body>
     </html>
   );

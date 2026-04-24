@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { adminAuth } from '../../../lib/adminAuth';
+import { adminAuth } from '@/lib/adminAuth';
 
 export default function AdminOrders() {
   const router = useRouter();
@@ -63,20 +63,20 @@ export default function AdminOrders() {
       case 'pending':
         return <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/30 text-yellow-200">⏳ Pending</span>;
       default:
-        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-500/30 text-slate-200">{status?.toUpperCase()}</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{status?.toUpperCase()}</span>;
     }
   };
 
   if (loading && orders.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-slate-300 text-lg">Loading…</div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-gray-600 text-lg">Loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-white text-gray-900">
       {/* Top Navigation */}
       <nav className="glassmorphic sticky top-0 z-50 border-b border-slate-600/30 shadow-lg">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -85,7 +85,7 @@ export default function AdminOrders() {
             <span>Back to Dashboard</span>
           </Link>
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-slate-100">Customer Orders</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Customer Orders</h1>
             <div className={`text-xs px-3 py-1 rounded-full font-medium flex items-center gap-2 ${refreshing ? 'bg-blue-500/30 text-blue-200 animate-pulse' : 'bg-green-500/30 text-green-200'}`}>
               <span className={`w-2 h-2 rounded-full ${refreshing ? 'bg-blue-400' : 'bg-green-400'}`}></span>
               {refreshing ? 'Syncing…' : 'Live'}
@@ -105,29 +105,29 @@ export default function AdminOrders() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="glassmorphic-dark rounded-xl border border-slate-500/20 overflow-hidden">
+        <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-600/30">
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-slate-200">Order ID</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-slate-200">Service</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-slate-200">Amount</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-slate-200">Status</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-slate-200">Customer</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-slate-200">Date</th>
-                  <th className="text-right px-6 py-4 text-sm font-semibold text-slate-200">Actions</th>
+                <tr className="border-b border-gray-200 bg-white">
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Order ID</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Service</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Amount</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Status</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Customer</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Date</th>
+                  <th className="text-right px-6 py-4 text-sm font-semibold text-gray-900">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((o) => (
-                  <tr key={o.id} className="border-b border-slate-600/20 hover:bg-slate-800/30 transition">
-                    <td className="px-6 py-4 text-sm font-mono text-slate-300">{o.id.substring(0, 8)}…</td>
-                    <td className="px-6 py-4 text-sm text-slate-300">{o.serviceId || '—'}</td>
-                    <td className="px-6 py-4 font-semibold text-green-400">₹{o.amount?.toLocaleString()}</td>
+                  <tr key={o.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                    <td className="px-6 py-4 text-sm font-mono text-gray-900">{o.id.substring(0, 8)}…</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{o.serviceId || '—'}</td>
+                    <td className="px-6 py-4 font-semibold text-green-600">₹{o.amount?.toLocaleString()}</td>
                     <td className="px-6 py-4">{getStatusBadge(o.status)}</td>
-                    <td className="px-6 py-4 text-sm text-slate-300">{o.customer?.name || o.customer?.email || 'Guest'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-400">{new Date(o.createdAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{o.customer?.name || o.customer?.email || 'Guest'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{new Date(o.createdAt).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-right space-x-2">
                       {o.status !== 'paid' && (
                         <button
@@ -152,7 +152,7 @@ export default function AdminOrders() {
             </table>
           </div>
           {orders.length === 0 && (
-            <div className="text-center py-12 text-slate-400">📊 No orders yet. Orders will appear here once customers make purchases.</div>
+            <div className="text-center py-12 text-gray-900">📊 No orders yet. Orders will appear here once customers make purchases.</div>
           )}
         </div>
       </div>

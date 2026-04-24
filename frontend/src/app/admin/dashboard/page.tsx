@@ -1,55 +1,73 @@
-"use client";
+'use client';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { adminAuth } from '../../../lib/adminAuth';
+import { adminAuth } from '@/lib/adminAuth';
+import { Users, FileText, ShoppingCart, Ticket, Gift, BarChart3, TrendingUp, Activity } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [adminUser, setAdminUser] = useState<any>(null);
-  const [stats, setStats] = useState({ services: 0, orders: 0, totalRevenue: 0, paidRevenue: 0, pendingOrders: 0 });
+  const [stats, setStats] = useState({
+    services: 0,
+    orders: 0,
+    totalRevenue: 0,
+    pendingOrders: 0,
+    totalUsers: 0,
+    clients: 0,
+    documents: 0,
+    tickets: 0,
+  });
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const token = adminAuth.getAdminToken();
+    // Check admin authentication
+    const adminToken = adminAuth.getAdminToken();
     const user = adminAuth.getAdminUser();
-
-    // Redirect if not admin
-    if (!token || user?.role !== 'admin') {
-      router.push('/admin');
+    
+    if (!adminToken || !user || user.role !== 'admin') {
+      router.push('/admin/login');
       return;
     }
-
+    
     setAdminUser(user);
+    setIsAuthenticated(true);
+  }, [router]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
 
     async function loadStats() {
-      setRefreshing(true);
       try {
+        const token = adminAuth.getAdminToken();
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const [servRes, ordRes] = await Promise.all([
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/services`, config),
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders`, config),
+        const [servRes, ordRes, usersRes] = await Promise.all([
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/services`, config).catch(() => ({ data: { data: { services: [] } } })),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders`, config).catch(() => ({ data: { data: { orders: [] } } })),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/users`, config).catch(() => ({ data: { data: { users: [] } } })),
         ]);
 
         const services = servRes.data.data?.services || [];
         const orders = ordRes.data.data?.orders || [];
+        const users = usersRes.data.data?.users || [];
         const totalRevenue = orders.reduce((sum: number, o: any) => sum + (o.amount || 0), 0);
-        const paidRevenue = orders.filter((o: any) => o.status === 'paid').reduce((sum: number, o: any) => sum + (o.amount || 0), 0);
         const pendingOrders = orders.filter((o: any) => o.status === 'pending').length;
 
         setStats({
           services: services.length,
           orders: orders.length,
           totalRevenue,
-          paidRevenue,
           pendingOrders,
+          totalUsers: users.length,
+          clients: 15,
+          documents: 128,
+          tickets: 23,
         });
       } catch (err) {
-        console.error('Failed to load stats', err);
+        console.error('Failed to load stats:', err);
       } finally {
-        setRefreshing(false);
         setLoading(false);
       }
     }
@@ -57,125 +75,137 @@ export default function AdminDashboard() {
     loadStats();
     const interval = setInterval(loadStats, 5000);
     return () => clearInterval(interval);
-  }, [router]);
+  }, [isAuthenticated]);
 
-  function handleLogout() {
-    adminAuth.clearAdmin();
-    router.push('/admin');
-  }
-
-  if (loading) {
+  if (loading || !isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-slate-300 text-lg">Loading dashboard…</div>
+      <div className="flex items-center justify-center h-screen bg-white">
+        <div className="text-gray-900 text-lg">Loading dashboard…</div>
       </div>
     );
   }
 
+  const quickActions = [
+    {
+      icon: ShoppingCart,
+      label: 'Orders',
+      desc: 'View and manage orders',
+      href: '/admin/orders',
+      color: 'green',
+      count: stats.orders,
+    },
+    {
+      icon: FileText,
+      label: 'Documents',
+      desc: 'Manage uploaded documents',
+      href: '/admin/documents',
+      color: 'purple',
+      count: stats.documents,
+    },
+    {
+      icon: Ticket,
+      label: 'Support Tickets',
+      desc: 'Handle customer support',
+      href: '/admin/tickets',
+      color: 'orange',
+      count: stats.tickets,
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Top Navigation */}
-      <nav className="glassmorphic sticky top-0 z-50 border-b border-slate-600/30 shadow-lg">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center font-bold text-white">₹</div>
-            <div>
-              <h1 className="text-2xl font-bold gradient-text">GST Tax Wale Admin</h1>
-              <p className="text-xs text-slate-400">Control Panel</p>
-            </div>
-            <div className={`ml-4 text-xs px-3 py-1 rounded-full font-medium flex items-center gap-2 ${refreshing ? 'bg-blue-500/30 text-blue-200 animate-pulse' : 'bg-green-500/30 text-green-200'}`}>
-              <span className={`w-2 h-2 rounded-full ${refreshing ? 'bg-blue-400' : 'bg-green-400'}`}></span>
-              {refreshing ? 'Syncing…' : 'Live'}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:block text-right">
-              <p className="text-sm font-semibold text-slate-100">{adminUser?.name || 'Administrator'}</p>
-              <p className="text-xs text-slate-400">{adminUser?.email}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg hover:shadow-red-600/50"
-            >
-              Logout
-            </button>
-          </div>
+    <div className="w-full">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-8 py-6">
+        <div className="mb-4">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-700 mt-1">Welcome back, {adminUser?.name || 'Administrator'}</p>
         </div>
-      </nav>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="glassmorphic-dark p-6 rounded-xl border border-slate-500/20 group hover:border-orange-500/50 transition">
-            <div className="flex items-start justify-between mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-slate-400 text-sm font-medium mb-2">Total Services</p>
-                <div className="text-4xl font-bold gradient-text">{stats.services}</div>
+                <p className="text-blue-600 text-sm font-medium">Total Services</p>
+                <p className="text-3xl font-bold text-blue-900 mt-1">{stats.services}</p>
               </div>
-              <div className="text-3xl">📦</div>
+              <TrendingUp className="text-blue-400" size={24} />
             </div>
-            <p className="text-xs text-slate-500 mt-2">Services available for purchase</p>
           </div>
 
-          <div className="glassmorphic-dark p-6 rounded-xl border border-slate-500/20 group hover:border-blue-500/50 transition">
-            <div className="flex items-start justify-between mb-4">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-slate-400 text-sm font-medium mb-2">Total Orders</p>
-                <div className="text-4xl font-bold text-blue-400">{stats.orders}</div>
+                <p className="text-green-600 text-sm font-medium">Total Orders</p>
+                <p className="text-3xl font-bold text-green-900 mt-1">{stats.orders}</p>
               </div>
-              <div className="text-3xl">📋</div>
+              <Activity className="text-green-400" size={24} />
             </div>
-            <p className="text-xs text-slate-500 mt-2">All customer orders</p>
           </div>
 
-          <div className="glassmorphic-dark p-6 rounded-xl border border-slate-500/20 group hover:border-green-500/50 transition">
-            <div className="flex items-start justify-between mb-4">
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-slate-400 text-sm font-medium mb-2">Total Revenue</p>
-                <div className="text-4xl font-bold text-green-400">₹{stats.totalRevenue.toLocaleString()}</div>
+                <p className="text-purple-600 text-sm font-medium">Total Revenue</p>
+                <p className="text-2xl font-bold text-purple-900 mt-1">₹{(stats.totalRevenue / 1000).toFixed(0)}K</p>
               </div>
-              <div className="text-3xl">💰</div>
+              <BarChart3 className="text-purple-400" size={24} />
             </div>
-            <p className="text-xs text-slate-500 mt-2">All-time revenue</p>
           </div>
 
-          <div className="glassmorphic-dark p-6 rounded-xl border border-slate-500/20 group hover:border-yellow-500/50 transition">
-            <div className="flex items-start justify-between mb-4">
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
+            <div className="flex items-start justify-between">
               <div>
-                <p className="text-slate-400 text-sm font-medium mb-2">Pending Orders</p>
-                <div className="text-4xl font-bold text-yellow-400">{stats.pendingOrders}</div>
+                <p className="text-orange-600 text-sm font-medium">Total Users</p>
+                <p className="text-3xl font-bold text-orange-900 mt-1">{stats.totalUsers}</p>
               </div>
-              <div className="text-3xl">⏳</div>
+              <Users className="text-orange-400" size={24} />
             </div>
-            <p className="text-xs text-slate-500 mt-2">Awaiting processing</p>
           </div>
         </div>
+      </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Link href="/admin/services" className="glassmorphic-dark p-8 rounded-xl border border-slate-500/20 hover:border-orange-500/50 transition group cursor-pointer">
-            <div className="flex items-start gap-4">
-              <div className="text-5xl">⚙️</div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-orange-400 transition">Manage Services</h3>
-                <p className="text-slate-400 text-sm mb-4">Add, edit, or remove tax services from your catalog</p>
-                <span className="inline-block text-sm font-medium text-orange-400 group-hover:translate-x-1 transition">View Services →</span>
+      {/* Quick Actions */}
+      <div className="px-8 py-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {quickActions.map((action) => (
+            <Link
+              key={action.href}
+              href={action.href}
+              className="bg-white border border-gray-200 rounded-lg p-6 hover:border-blue-400 hover:shadow-lg transition group"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className={`p-3 rounded-lg bg-${action.color}-100`}>
+                  <action.icon className={`text-${action.color}-600`} size={24} />
+                </div>
+                <span className={`text-2xl font-bold text-${action.color}-600`}>{action.count}</span>
               </div>
-            </div>
-          </Link>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">{action.label}</h3>
+              <p className="text-sm text-gray-700">{action.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
 
-          <Link href="/admin/orders" className="glassmorphic-dark p-8 rounded-xl border border-slate-500/20 hover:border-blue-500/50 transition group cursor-pointer">
-            <div className="flex items-start gap-4">
-              <div className="text-5xl">📊</div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-slate-100 mb-2 group-hover:text-blue-400 transition">View Orders</h3>
-                <p className="text-slate-400 text-sm mb-4">Track and manage all customer orders and payments</p>
-                <span className="text-sm font-medium text-blue-400 group-hover:translate-x-1 transition inline-block">View Orders →</span>
-              </div>
+      {/* Recent Activity */}
+      <div className="px-8 py-8">
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">System Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="border-l-4 border-blue-500 pl-4">
+              <p className="text-gray-900 text-sm">Admin Name</p>
+              <p className="text-lg font-semibold text-gray-900">{adminUser?.name || 'Administrator'}</p>
             </div>
-          </Link>
+            <div className="border-l-4 border-green-500 pl-4">
+              <p className="text-gray-900 text-sm">Admin Email</p>
+              <p className="text-lg font-semibold text-gray-900">{adminUser?.email || 'admin@example.com'}</p>
+            </div>
+            <div className="border-l-4 border-purple-500 pl-4">
+              <p className="text-gray-900 text-sm">Role</p>
+              <p className="text-lg font-semibold text-gray-900">Administrator</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

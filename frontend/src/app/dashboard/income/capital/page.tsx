@@ -14,7 +14,7 @@ export default function CapitalIncomePage() {
     setLoading(true);
     setMessage('');
     try {
-      await api.post('/api/income', { type: 'capital', source: description, amount: Number(amount) });
+      await api.post('/income', { type: 'capital', source: description, amount: Number(amount) });
       setMessage('Capital gains added');
       setDescription('');
       setAmount('');

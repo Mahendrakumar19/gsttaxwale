@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Eye } from 'lucide-react';
+import { TrendingUp, TrendingDown, Briefcase, PieChart, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '@/lib/api';
 
 interface Filing {
@@ -11,15 +11,25 @@ interface Filing {
   createdAt: string;
 }
 
+interface DashboardStats {
+  totalIncome: number;
+  totalDeductions: number;
+  taxAmount: number;
+  refund: number;
+}
+
 export default function DashboardBody() {
   const [filings, setFilings] = useState<Filing[]>([]);
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     totalIncome: 0,
     totalDeductions: 0,
     taxAmount: 0,
     refund: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [calculatedTax, setCalculatedTax] = useState(0);
+  const [incomeInput, setIncomeInput] = useState('');
+  const [deductionsInput, setDeductionsInput] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
@@ -28,28 +38,46 @@ export default function DashboardBody() {
   const fetchDashboardData = async () => {
     try {
       const response = await api.get('/api/dashboard/overview');
-      setStats(response.data.stats || stats);
-      setFilings(response.data.recentFilings || []);
+      if (response.data?.stats) {
+        setStats(response.data.stats);
+      }
+      if (response.data?.recentFilings) {
+        setFilings(response.data.recentFilings);
+      }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
-      // Use default values if API call fails
-      setStats({
-        totalIncome: 500000,
-        totalDeductions: 150000,
-        taxAmount: 45000,
-        refund: 5000,
-      });
-      setFilings([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCalculateTax = () => {
+    const income = parseFloat(incomeInput) || 0;
+    const deductions = parseFloat(deductionsInput) || 0;
+    const taxableIncome = income - deductions;
+    
+    // Simple tax calculation (can be improved with actual slab logic)
+    let tax = 0;
+    if (taxableIncome > 1000000) {
+      tax = (taxableIncome - 1000000) * 0.30 + 112500;
+    } else if (taxableIncome > 500000) {
+      tax = (taxableIncome - 500000) * 0.20 + 12500;
+    } else if (taxableIncome > 250000) {
+      tax = (taxableIncome - 250000) * 0.05;
+    }
+    
+    setCalculatedTax(tax);
+  };
+
+  if (loading) {
+    return <div className="p-6">Loading...</div>;
+  }
+
   return (
-    <div className="p-6 mx-auto max-w-7xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-950 min-h-screen">
+    <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h2 className="mb-2 text-4xl font-bold text-white">Dashboard</h2>
-        <p className="text-amber-300/80">Manage your income tax filings & earn referral bonuses</p>
+        <h2 className="mb-2 text-4xl font-bold text-gray-900">Dashboard</h2>
+        <p className="text-gray-600 mb-8">Manage your income tax filings & earn referral bonuses</p>
       </div>
 
       {/* Stats Grid */}
@@ -58,7 +86,7 @@ export default function DashboardBody() {
           label="Total Income"
           value={`₹${stats.totalIncome.toLocaleString()}`}
           color="bg-gradient-to-br from-amber-900/40 to-amber-800/20 border-amber-500/30"
-          textColor="text-amber-400"
+          textColor="text-blue-600"
           icon="💰"
         />
         <StatCard
@@ -89,8 +117,8 @@ export default function DashboardBody() {
         {/* Tax Calculator Widget */}
         <div className="bg-gradient-to-br from-amber-900/30 to-amber-800/10 border border-amber-500/30 rounded-lg shadow-lg backdrop-blur">
           <div className="p-6 border-b border-amber-500/20">
-            <h3 className="text-2xl font-bold text-amber-300">📊 Tax Calculator</h3>
-            <p className="text-sm text-amber-200/70 mt-1">Estimate your tax liability</p>
+            <h3 className="text-2xl font-bold text-gray-900">📊 Tax Calculator</h3>
+            <p className="text-sm text-gray-600 mt-1">Estimate your tax liability</p>
           </div>
           <div className="p-6">
             <div className="space-y-4">
@@ -100,6 +128,8 @@ export default function DashboardBody() {
                 </label>
                 <input
                   type="number"
+                  value={incomeInput}
+                  onChange={(e) => setIncomeInput(e.target.value)}
                   placeholder="Enter your income"
                   className="w-full px-4 py-2 bg-slate-800/50 border border-amber-500/30 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
                 />
@@ -110,15 +140,17 @@ export default function DashboardBody() {
                 </label>
                 <input
                   type="number"
+                  value={deductionsInput}
+                  onChange={(e) => setDeductionsInput(e.target.value)}
                   placeholder="Enter total deductions"
                   className="w-full px-4 py-2 bg-slate-800/50 border border-amber-500/30 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
                 />
               </div>
-              <button className="w-full px-4 py-2 bg-gradient-to-r from-amber-600 to-yellow-500 text-white rounded-lg hover:from-amber-700 hover:to-yellow-600 hover:shadow-lg hover:shadow-amber-600/40 transition font-semibold">
+              <button onClick={handleCalculateTax} className="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 hover:shadow-lg hover:shadow-blue-600/40 transition font-semibold">
                 Calculate Tax
               </button>
               <div className="pt-4 border-t border-amber-500/20">
-                <p className="text-sm text-amber-200/70">Estimated Tax: <span className="text-lg font-bold text-amber-400">₹0</span></p>
+                <p className="text-sm text-gray-600">Estimated Tax: <span className="text-lg font-bold text-blue-600">₹{calculatedTax.toLocaleString()}</span></p>
               </div>
             </div>
           </div>
@@ -134,10 +166,10 @@ export default function DashboardBody() {
             <div className="space-y-3">
               <div className="flex items-start justify-between p-3 bg-amber-900/40 border border-amber-500/30 rounded-lg">
                 <div>
-                  <p className="font-semibold text-amber-300">Income Tax Filing</p>
-                  <p className="text-sm text-amber-200/70">FY 2024-25</p>
+                  <p className="font-semibold text-gray-900">Income Tax Filing</p>
+                  <p className="text-sm text-gray-600">FY 2024-25</p>
                 </div>
-                <span className="text-sm font-bold text-amber-400">31 July 2025</span>
+                <span className="text-sm font-bold text-blue-600">31 July 2025</span>
               </div>
               <div className="flex items-start justify-between p-3 bg-blue-900/40 border border-blue-500/30 rounded-lg">
                 <div>
@@ -161,10 +193,10 @@ export default function DashboardBody() {
       {/* CTA Section */}
       <div className="flex items-center justify-between p-6 mb-8 bg-gradient-to-r from-amber-600 to-yellow-500 rounded-lg shadow-lg">
         <div>
-          <h3 className="mb-2 text-2xl font-bold text-white">Ready to file your ITR?</h3>
-          <p className="text-amber-50">Start a new income tax return filing for the financial year</p>
+          <h3 className="mb-2 text-2xl font-bold text-gray-900">Ready to file your ITR?</h3>
+          <p className="text-gray-700">Start a new income tax return filing for the financial year</p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-3 font-semibold text-amber-600 bg-white rounded-lg hover:bg-amber-50 hover:shadow-lg transition">
+        <button className="flex items-center gap-2 px-6 py-3 font-semibold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 hover:shadow-lg transition">
           <span>+</span>
           Create New Filing
         </button>
@@ -173,12 +205,12 @@ export default function DashboardBody() {
       {/* Recent Filings */}
       <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-600/30 rounded-lg shadow-lg backdrop-blur">
         <div className="p-6 border-b border-slate-600/30">
-          <h3 className="text-2xl font-bold text-white">Recent Filings</h3>
+          <h3 className="text-2xl font-bold text-gray-900">Recent Filings</h3>
         </div>
         {loading ? (
-          <div className="p-6 text-center text-slate-400">Loading...</div>
+          <div className="p-6 text-center text-gray-500">Loading...</div>
         ) : filings.length === 0 ? (
-          <div className="p-6 text-center text-slate-400">
+          <div className="p-6 text-center text-gray-600">
             No filings yet. Create your first one to get started!
           </div>
         ) : (
@@ -202,7 +234,7 @@ export default function DashboardBody() {
             <tbody>
               {filings.map((filing) => (
                 <tr key={filing.id} className="border-b border-slate-600/20 hover:bg-slate-800/30 transition">
-                  <td className="px-6 py-4 text-sm text-white">
+                  <td className="px-6 py-4 text-sm text-gray-900">
                     {filing.financialYear}
                   </td>
                   <td className="px-6 py-4 text-sm">
@@ -212,18 +244,18 @@ export default function DashboardBody() {
                           ? 'bg-green-900/50 text-green-400 border border-green-500/30'
                           : filing.status === 'approved'
                           ? 'bg-blue-900/50 text-blue-400 border border-blue-500/30'
-                          : 'bg-amber-900/50 text-amber-400 border border-amber-500/30'
+                          : 'bg-blue-50 text-blue-600 border border-blue-200'
                       }`}
                     >
                       {filing.status.charAt(0).toUpperCase() +
                         filing.status.slice(1)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-300">
+                  <td className="px-6 py-4 text-sm text-gray-600">
                     {new Date(filing.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    <button className="text-amber-400 hover:text-amber-300 transition font-medium">
+                    <button className="text-blue-600 hover:text-blue-700 transition font-medium">
                       View
                     </button>
                   </td>

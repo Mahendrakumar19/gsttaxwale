@@ -14,7 +14,7 @@ export default function BusinessIncomePage() {
     setLoading(true);
     setMessage('');
     try {
-      await api.post('/api/income', { type: 'business', source, amount: Number(amount) });
+      await api.post('/income', { type: 'business', source, amount: Number(amount) });
       setMessage('Business income added');
       setSource('');
       setAmount('');

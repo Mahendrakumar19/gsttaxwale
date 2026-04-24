@@ -14,7 +14,7 @@ export default function DeductionsPage(){
     setLoading(true);
     setMessage('');
     try{
-      await api.post('/api/deductions', { section, amount: Number(amount) });
+      await api.post('/deductions', { section, amount: Number(amount) });
       setMessage('Deduction saved');
       setAmount('');
     }catch(err){
@@ -42,7 +42,7 @@ export default function DeductionsPage(){
           <input value={amount} onChange={(e)=>setAmount(e.target.value)} className="mt-1 w-full border px-3 py-2 rounded" />
         </div>
         <div>
-          <button disabled={loading} className="bg-indigo-600 text-white px-4 py-2 rounded">{loading? 'Saving...':'Save'}</button>
+          <button disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded">{loading? 'Saving...':'Save'}</button>
         </div>
         {message && <div className="text-sm text-gray-600">{message}</div>}
       </form>

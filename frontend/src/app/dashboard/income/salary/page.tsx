@@ -14,7 +14,7 @@ export default function SalaryIncomePage() {
     setLoading(true);
     setMessage('');
     try {
-      await api.post('/api/income', {
+      await api.post('/income', {
         type: 'salary',
         source: employer,
         amount: Number(amount),

@@ -1,0 +1,12 @@
+node_modules
+frontend/node_modules
+backend/node_modules
+*.log
+.git
+.next
+dist
+build
+public_html
+env.local
+/.env
+/.env.*

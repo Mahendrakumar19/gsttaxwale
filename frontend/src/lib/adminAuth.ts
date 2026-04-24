@@ -1,21 +1,21 @@
-// Admin-specific auth helpers (separate from user auth)
+// Admin-specific auth helpers (separate from user auth) using sessionStorage for temporary sessions
 export const adminAuth = {
   setAdminToken: (token: string) => {
-    if (typeof window !== 'undefined') localStorage.setItem('adminToken', token);
+    if (typeof window !== 'undefined') sessionStorage.setItem('adminToken', token);
   },
   
   getAdminToken: () => {
-    if (typeof window !== 'undefined') return localStorage.getItem('adminToken');
+    if (typeof window !== 'undefined') return sessionStorage.getItem('adminToken');
     return null;
   },
   
   setAdminUser: (user: any) => {
-    if (typeof window !== 'undefined') localStorage.setItem('adminUser', JSON.stringify(user));
+    if (typeof window !== 'undefined') sessionStorage.setItem('adminUser', JSON.stringify(user));
   },
   
   getAdminUser: () => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('adminUser');
+      const stored = sessionStorage.getItem('adminUser');
       return stored ? JSON.parse(stored) : null;
     }
     return null;
@@ -23,8 +23,8 @@ export const adminAuth = {
   
   clearAdmin: () => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('adminUser');
+      sessionStorage.removeItem('adminToken');
+      sessionStorage.removeItem('adminUser');
     }
   },
 };

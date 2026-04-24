@@ -14,7 +14,7 @@ export default function CalculatorPage(){
     setLoading(true);
     setResult(null);
     try{
-      const res = await api.post('/api/tax/calc', { income: Number(income), deductions: Number(deductions) });
+      const res = await api.post('/tax/calc', { income: Number(income), deductions: Number(deductions) });
       setResult(res.data);
     }catch(err){
       console.error(err);
@@ -35,7 +35,7 @@ export default function CalculatorPage(){
           <input value={deductions} onChange={(e)=>setDeductions(e.target.value)} className="mt-1 w-full border px-3 py-2 rounded" />
         </div>
         <div>
-          <button disabled={loading} className="bg-indigo-600 text-white px-4 py-2 rounded">{loading? 'Calculating...':'Calculate'}</button>
+          <button disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded">{loading? 'Calculating...':'Calculate'}</button>
         </div>
         {result && (
           <div className="mt-4 bg-gray-50 p-4 rounded">

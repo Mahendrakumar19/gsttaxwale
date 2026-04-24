@@ -1,0 +1,2 @@
+// Dynamic export setting - prevents static prerendering for context-dependent pages
+export const dynamic = 'force-dynamic';

@@ -15,11 +15,75 @@ html {
 }
 
 body {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-  background-attachment: fixed;
-  color: #e2e8f0;
+  background: #ffffff;
+  color: #1f2937;
   font-family: 'Sora', sans-serif;
+  line-height: 1.6;
   min-height: 100vh;
+}
+
+:root.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Responsive Container Utilities */
+.container-safe {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-safe {
+    max-width: 640px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-safe {
+    max-width: 768px;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-safe {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-safe {
+    max-width: 1280px;
+  }
+}
+
+/* Text Utilities */
+.text-sm {
+  line-height: 1.5;
+}
+
+.text-lg {
+  line-height: 1.625;
+}
+
+.text-xl {
+  line-height: 1.75;
+}
+
+.text-2xl {
+  line-height: 1.875;
+}
+
+/* Better heading line heights */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.01em;
 }
 
 /* Glassmorphism Styles */

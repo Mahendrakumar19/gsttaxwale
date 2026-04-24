@@ -14,7 +14,7 @@ export default function FilingsPage() {
 
   const fetchFilings = async () => {
     try {
-      const res = await api.get('/api/filings');
+      const res = await api.get('/filings');
       setFilings(res.data || []);
     } catch (err) {
       console.error('Failed to load filings', err);
