@@ -18,23 +18,23 @@ interface ImageSliderProps {
 // Default showcase images - using reliable placeholder service
 const DEFAULT_IMAGES = [
   {
-    src: 'https://via.placeholder.com/600x400?text=Tax+Services',
+    src: 'https://placehold.co/600x400/1e293b/white?text=Tax+Services',
     alt: 'Professional tax services',
   },
   {
-    src: 'https://via.placeholder.com/600x400?text=Compliance',
+    src: 'https://placehold.co/600x400/1e293b/white?text=Compliance',
     alt: 'Compliance management',
   },
   {
-    src: 'https://via.placeholder.com/600x400?text=Business+Growth',
+    src: 'https://placehold.co/600x400/1e293b/white?text=Business+Growth',
     alt: 'Business growth solutions',
   },
   {
-    src: 'https://via.placeholder.com/600x400?text=Financial+Planning',
+    src: 'https://placehold.co/600x400/1e293b/white?text=Financial+Planning',
     alt: 'Financial planning',
   },
   {
-    src: 'https://via.placeholder.com/600x400?text=Expert+Consultation',
+    src: 'https://placehold.co/600x400/1e293b/white?text=Expert+Consultation',
     alt: 'Expert consultation',
   },
 ];
@@ -87,6 +87,7 @@ export default function ImageSlider({
             className={`absolute inset-0 transition-opacity duration-500 ${
               index === currentIndex ? 'opacity-100' : 'opacity-0'
             }`}
+            style={{ position: 'absolute' }}
           >
             <Image
               src={image.src}

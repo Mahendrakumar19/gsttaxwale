@@ -59,7 +59,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-white">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg border border-gray-200">
+      <div className="w-full max-w-md p-8 bg-white border border-gray-200 rounded-lg shadow-lg">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-orange-600">GST Tax Wale</h1>
           <p className="mt-2 text-gray-900">GST & Income Tax Filing Services</p>
@@ -109,8 +109,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-center space-y-3">
-          <a href="/auth/forgot-password" className="block font-semibold text-blue-600 hover:text-blue-700 text-sm">
+        <div className="mt-6 space-y-3 text-center">
+          <a href="/auth/forgot-password" className="block text-sm font-semibold text-blue-600 hover:text-blue-700">
             Forgot your password?
           </a>
           <p className="text-xs text-gray-500">
