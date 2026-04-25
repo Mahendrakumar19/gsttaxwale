@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Users, Search, Trash2, Eye, Edit, Plus, Download } from 'lucide-react';
+import api from '@/lib/api';
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function AdminUsersPage() {
         }
 
         setAdminUser(user);
-        fetchUsers(token);
+        fetchUsers();
       } catch (err) {
         console.error('Auth check failed:', err);
       }
@@ -40,30 +41,15 @@ export default function AdminUsersPage() {
     checkAdmin();
   }, [router]);
 
-  const fetchUsers = async (token: string) => {
+  const fetchUsers = async () => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const res = await fetch(`${baseUrl}/api/admin/users`, {
-        method: 'GET',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-      });
+      const res = await api.get('/api/admin/users');
 
-      if (res.ok) {
-        const response = await res.json();
-        // Handle the nested response structure from backend: { success, message, data: { users: [...] } }
-        const usersList = response.data?.users || response.users || [];
+      if (res.data.success) {
+        const usersList = res.data.data?.users || res.data.users || [];
         setUsers(usersList);
         setFilteredUsers(usersList);
         console.log('Users fetched successfully:', usersList.length);
-      } else {
-        console.error('Failed to fetch users, status:', res.status);
-        const error = await res.json().catch(() => ({}));
-        console.error('Error response:', error);
-        setUsers([]);
-        setFilteredUsers([]);
       }
     } catch (err) {
       console.error('Failed to fetch users:', err);
@@ -89,15 +75,11 @@ export default function AdminUsersPage() {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.delete(`/api/admin/users/${userId}`);
 
-      if (res.ok) {
+      if (res.data.success) {
         alert('User deleted successfully');
-        fetchUsers(token!);
+        fetchUsers();
       } else {
         alert('Failed to delete user');
       }
@@ -109,25 +91,18 @@ export default function AdminUsersPage() {
   const handleExportUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const res = await fetch(`${baseUrl}/api/admin/export/users`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get('/api/admin/export/users', {
+        responseType: 'blob'
       });
 
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `customers_${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } else {
-        alert('Failed to export users');
-      }
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `customers_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Export error:', err);
       alert('An error occurred during export');
@@ -136,26 +111,18 @@ export default function AdminUsersPage() {
 
   const handleExportUsersExcel = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-      const res = await fetch(`${baseUrl}/api/admin/export/users-excel`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.get('/api/admin/export/users-excel', {
+        responseType: 'blob'
       });
 
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `customers_${new Date().toISOString().split('T')[0]}.xlsx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } else {
-        alert('Failed to export users to Excel');
-      }
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `customers_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Excel export error:', err);
       alert('An error occurred during Excel export');
@@ -253,8 +220,14 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-4 text-gray-900 text-sm">{user.email}</td>
                     <td className="px-6 py-4 text-gray-900">{user.phone || 'N/A'}</td>
                     <td className="px-6 py-4">
-                      <span className="px-3 py-1 bg-green-900/30 text-green-300 text-sm font-bold rounded-full">
-                        Active
+                      <span className={`px-3 py-1 text-sm font-bold rounded-full ${
+                        user.status === 'active' 
+                          ? 'bg-green-100 text-green-800' 
+                          : user.status === 'suspended'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Active'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-gray-900 text-sm">

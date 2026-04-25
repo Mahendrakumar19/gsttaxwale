@@ -50,22 +50,38 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:3001",
   "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
   "https://gsttaxwale.com",
   "https://www.gsttaxwale.com",
+  "http://gsttaxwale.com",
+  "http://www.gsttaxwale.com",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is allowed
+    const isAllowed = ALLOWED_ORIGINS.some(allowed => {
+      if (allowed.includes('*')) {
+        const regex = new RegExp('^' + allowed.replace(/\*/g, '.*') + '$');
+        return regex.test(origin);
+      }
+      return allowed === origin;
+    });
+
+    if (isAllowed || !IS_PRODUCTION) {
       callback(null, true);
     } else {
+      console.warn(`⚠️  CORS REJECTED: ${origin}`);
       callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
 };
 
 app.use(cors(corsOptions));
@@ -102,26 +118,7 @@ app.use((req, res, next) => {
 nextApp.prepare().then(() => {
   console.log("✅ Next.js frontend prepared");
 
-  // 1. Next.js Internal Routes (PRIORITY)
-  // We use .all() with a wildcard to ensure the prefix is NOT stripped.
-  app.all("/_next*", (req, res) => {
-    // Force CSS MIME type for dev mode styles to fix "plain text" issue
-    if (req.path.endsWith('.css')) {
-      res.setHeader('Content-Type', 'text/css');
-    }
-    return nextHandler(req, res);
-  });
-
-  // 2. Health Checks
-  app.get("/health", (req, res) => {
-    res.json({ status: "OK", service: "unified-server", environment: NODE_ENV });
-  });
-
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "OK", api: "active" });
-  });
-
-  // 3. Static Files
+  // 1. Static Files (Move up to ensure they are caught before wildcard routes)
   if (fs.existsSync(path.join(BACKEND_DIR, "uploads"))) {
     app.use("/uploads", express.static(path.join(BACKEND_DIR, "uploads")));
   }
@@ -139,6 +136,20 @@ nextApp.prepare().then(() => {
   if (fs.existsSync(path.join(FRONTEND_DIR, "public"))) {
     app.use(express.static(path.join(FRONTEND_DIR, "public")));
   }
+
+  // 2. Health Checks
+  app.get("/health", (req, res) => {
+    res.json({ status: "OK", service: "unified-server", environment: NODE_ENV });
+  });
+
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "OK", api: "active" });
+  });
+
+  // 3. Next.js Internal Routes (For non-static /_next paths)
+  app.all("/_next*", (req, res) => {
+    return nextHandler(req, res);
+  });
 
   // 4. Backend API Routes
   try {

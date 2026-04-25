@@ -55,10 +55,10 @@ async function create(table, data) {
   const placeholders = keys.map(() => '?').join(',');
   
   const sql = `INSERT INTO ${table} (${keys.join(',')}) VALUES (${placeholders})`;
-  await query(sql, values);
+  const result = await query(sql, values);
   
   // Return the created record with auto-generated id
-  return { id: null, ...data };
+  return { id: result.insertId, ...data };
 }
 
 // Update record
