@@ -18,13 +18,24 @@ model User {
   password      String?
   name          String
   pan           String?  @unique // Permanent Account Number
+  aadhaar       String?  @unique // Aadhaar Number
   phone         String?
   dateOfBirth   DateTime?
   gender        String? // M, F, Others
-  address       String?
+  firstName     String?
+  middleName    String?
+  lastName      String?
+  fatherName    String?
+  doorNo        String?
+  buildingName  String?
+  street        String?
+  area          String?
+  address       String? // Combined or legacy
   city          String?
   state         String?
   pincode       String?
+  country       String?  @default("India")
+  bankDetails   Json?    // Array of bank objects [{accountNo, ifsc, type, bankName}]
   role          String   @default("user") // user, ca, admin
   status        String   @default("active") // active, inactive, suspended
   emailVerified Boolean  @default(false)
@@ -537,8 +548,11 @@ model Document {
   uploadedBy       Int   // Admin ID who uploaded
   status           String   @default("active") // active, inactive, archived
   expiresAt        DateTime? // Optional expiration date
-  category         String?   // gst, itr, aadhaar, pan, form16
-  year             Int?      // Financial year
+  category         String?   // gst, itr, aadhaar, pan, form16, invoice, gstr1, gstr2, gstr3b, bank_statement, other
+  year             Int?      // Financial year (legacy)
+  fiscalYear       String?   // Fiscal year in format FY2023-24
+  customerName     String?   // Customer name for admin uploads
+  customerPan      String?   // Customer PAN for admin uploads
   isAdminUploaded  Boolean   @default(false)
   uploadMetadata   Json?     // JSON metadata
   
@@ -554,6 +568,8 @@ model Document {
   @@index([downloadUrl])
   @@index([category])
   @@index([year])
+  @@index([fiscalYear])
+  @@index([customerPan])
 }
 
 // ════════════════════════════════════════════════════════════════════

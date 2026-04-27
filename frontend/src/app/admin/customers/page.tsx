@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { Search, Plus, Edit, Trash2, X, User, Phone, Mail, Hash, Tag, Download } from 'lucide-react';
 import { adminAuth } from '@/lib/adminAuth';
+import * as XLSX from 'xlsx';
 
 interface Customer {
   id: string;
@@ -18,12 +19,14 @@ interface Customer {
   status: 'active' | 'inactive';
   referenceNumber: string;
   referralCode: string;
+  pan: string;
+  dateOfBirth: string | null;
 }
 
 function generateReferralCode(name: string, phone: string): string {
-  const namePart = name.replace(/\s+/g, '').toLowerCase().slice(0, 3);
-  const phonePart = phone.replace(/\D/g, '').slice(-3);
-  return `gtw${namePart}${phonePart}`;
+  const namePrefix = name.substring(0, 3).toUpperCase();
+  const phonePrefix = phone ? phone.slice(-3) : '000';
+  return `GTW${namePrefix}${phonePrefix}`;
 }
 
 function generateReferenceNumber(): string {
@@ -41,7 +44,7 @@ export default function CustomersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
-  const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', password: '' });
+  const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', password: '', pan: '', dateOfBirth: '' });
   const [previewCode, setPreviewCode] = useState('');
   const [previewRef, setPreviewRef] = useState('');
   const itemsPerPage = 10;
@@ -78,7 +81,7 @@ export default function CustomersPage() {
       setCustomers(
         users.map((user: any) => ({
           id: user.id,
-          name: (user.firstName || '') + ' ' + (user.lastName || user.name || ''),
+          name: ((user.firstName || '') + ' ' + (user.lastName || user.name || '')).trim(),
           email: user.email,
           phone: user.phone || 'N/A',
           city: user.city || 'N/A',
@@ -86,9 +89,11 @@ export default function CustomersPage() {
           joinDate: user.createdAt || new Date().toISOString(),
           totalOrders: user.totalOrders || 0,
           totalSpent: user.totalSpent || 0,
-          status: user.isActive !== false ? 'active' : 'inactive',
+          status: user.status === 'inactive' ? 'inactive' : 'active',
           referenceNumber: user.reference_number || '—',
           referralCode: user.referral_code || '—',
+          pan: user.pan || '—',
+          dateOfBirth: user.dateOfBirth || null,
         }))
       );
     } catch (err) {
@@ -118,7 +123,7 @@ export default function CustomersPage() {
       try {
         const token = adminAuth.getAdminToken();
         await axios.delete(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/users/${id}`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/users/${id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setCustomers(customers.filter((c) => c.id !== id));
@@ -143,6 +148,8 @@ export default function CustomersPage() {
         name: newUser.name,
         email: newUser.email,
         phone: newUser.phone,
+        pan: newUser.pan,
+        dateOfBirth: newUser.dateOfBirth,
         password: newUser.password || newUser.phone, // Default password = phone number
         referral_code: referralCode,
         reference_number: referenceNumber,
@@ -151,13 +158,13 @@ export default function CustomersPage() {
       };
 
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/users`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/users`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setShowCreateModal(false);
-      setNewUser({ name: '', email: '', phone: '', password: '' });
+      setNewUser({ name: '', email: '', phone: '', password: '', pan: '', dateOfBirth: '' });
       fetchCustomers();
     } catch (err: any) {
       setCreateError(err.response?.data?.message || 'Failed to create user. Please try again.');
@@ -167,40 +174,57 @@ export default function CustomersPage() {
   };
 
   const exportToExcel = () => {
-    if (customers.length === 0) return;
+    if (customers.length === 0) {
+      alert('No customers to export');
+      return;
+    }
 
-    // Define CSV headers
-    const headers = ['Name', 'Email', 'Phone', 'Reference Number', 'Referral Code', 'Join Date', 'Total Orders', 'Total Spent', 'Status'];
-    
-    // Map customer data to CSV rows
-    const rows = customers.map(c => [
-      c.name,
-      c.email,
-      c.phone,
-      c.referenceNumber,
-      c.referralCode,
-      new Date(c.joinDate).toLocaleDateString(),
-      c.totalOrders,
-      c.totalSpent,
-      c.status
-    ]);
+    // Prepare data for Excel
+    const exportData = customers.map(c => ({
+      'Name': c.name,
+      'Email': c.email,
+      'Phone': c.phone,
+      'PAN': c.pan,
+      'DOB': c.dateOfBirth ? new Date(c.dateOfBirth).toLocaleDateString('en-IN') : '—',
+      'Reference Number': c.referenceNumber,
+      'Referral Code': c.referralCode,
+      'Join Date': new Date(c.joinDate).toLocaleDateString('en-IN'),
+      'Total Orders': c.totalOrders,
+      'Total Spent': c.totalSpent,
+      'City': c.city,
+      'State': c.state,
+      'Status': c.status
+    }));
 
-    // Create CSV content
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
+    // Create workbook and worksheet
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers');
 
-    // Create a download link and trigger it
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `customers_export_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Set column widths
+    const columnWidths = [
+      { wch: 20 }, // Name
+      { wch: 25 }, // Email
+      { wch: 12 }, // Phone
+      { wch: 12 }, // PAN
+      { wch: 12 }, // DOB
+      { wch: 18 }, // Reference Number
+      { wch: 15 }, // Referral Code
+      { wch: 12 }, // Join Date
+      { wch: 12 }, // Total Orders
+      { wch: 12 }, // Total Spent
+      { wch: 15 }, // City
+      { wch: 15 }, // State
+      { wch: 10 }  // Status
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `GST_Tax_Wale_Customers_${timestamp}.xlsx`;
+
+    // Write file
+    XLSX.writeFile(workbook, filename);
   };
 
   return (
@@ -220,12 +244,12 @@ export default function CustomersPage() {
               <Download size={20} />
               Export to Excel
             </button>
-            <button
-              onClick={() => { setShowCreateModal(true); setCreateError(''); }}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            <button 
+              onClick={() => router.push('/admin/customers/create')}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
-              <Plus size={20} />
-              Add Customer
+              <Plus size={18} />
+              <span>Add Customer</span>
             </button>
           </div>
         </div>
@@ -283,6 +307,8 @@ export default function CustomersPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email / Phone</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ref. Number</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">PAN Number</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">DOB</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Referral Code</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Orders</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
@@ -292,7 +318,7 @@ export default function CustomersPage() {
             <tbody>
               {paginatedCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                     No customers found
                   </td>
                 </tr>
@@ -323,6 +349,18 @@ export default function CustomersPage() {
                       <div className="flex items-center gap-1">
                         <Hash size={12} className="text-gray-400" />
                         <span className="text-sm font-mono text-gray-700">{customer.referenceNumber}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-mono text-gray-700 font-bold">{customer.pan}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm text-gray-700">
+                          {customer.dateOfBirth ? new Date(customer.dateOfBirth).toLocaleDateString('en-IN') : '—'}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-4">
@@ -432,8 +470,8 @@ export default function CustomersPage() {
 
       {/* Create User Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4 py-6">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Create New Customer</h2>
@@ -475,6 +513,29 @@ export default function CustomersPage() {
                   placeholder="e.g. 9876543210"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">PAN Number *</label>
+                <input
+                  type="text"
+                  value={newUser.pan}
+                  onChange={(e) => setNewUser({ ...newUser, pan: e.target.value.toUpperCase() })}
+                  placeholder="e.g. ABCDE1234F"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  required
+                  maxLength={10}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                <input
+                  type="date"
+                  value={newUser.dateOfBirth}
+                  onChange={(e) => setNewUser({ ...newUser, dateOfBirth: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 />
               </div>
 

@@ -171,8 +171,8 @@ export default function About() {
           <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
             Join thousands of businesses and individuals who trust GST Tax Wale for their tax compliance needs.
           </p>
-          <Link href="/auth/signup" className="inline-block bg-gradient-to-r from-amber-500 to-amber-400 text-white font-bold px-10 py-4 rounded-lg hover:from-amber-400 hover:to-amber-300 transition text-lg">
-            Get Started Today
+          <Link href="/contact" className="inline-block bg-gradient-to-r from-amber-500 to-amber-400 text-white font-bold px-10 py-4 rounded-lg hover:from-amber-400 hover:to-amber-300 transition text-lg">
+            Contact for Account
           </Link>
         </div>
       </section>

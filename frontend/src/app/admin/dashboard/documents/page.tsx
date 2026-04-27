@@ -40,7 +40,7 @@ export default function DocumentsPage() {
         headers: { Authorization: `Bearer ${token}` },
       };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/documents`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/documents`,
         config
       );
       setDocuments(res.data.data || []);
@@ -57,7 +57,7 @@ export default function DocumentsPage() {
         headers: { Authorization: `Bearer ${token}` },
       };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/customers`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/customers`,
         config
       );
       setUsers(res.data.data || []);
@@ -90,7 +90,7 @@ export default function DocumentsPage() {
       };
 
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/documents/upload`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/documents/upload`,
         formData,
         config
       );
@@ -117,7 +117,7 @@ export default function DocumentsPage() {
       };
 
       await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/documents/${docId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/documents/${docId}`,
         config
       );
 

@@ -28,7 +28,7 @@ export default function ConsultationsPage() {
     try {
       const config = { headers: { Authorization: `Bearer ${authToken}` } };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/consultations`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/consultations`,
         config
       );
       setConsultations(res.data.data?.consultations || []);
@@ -43,7 +43,7 @@ export default function ConsultationsPage() {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/consultations/${consultationId}/document`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/consultations/${consultationId}/document`,
         config
       );
       

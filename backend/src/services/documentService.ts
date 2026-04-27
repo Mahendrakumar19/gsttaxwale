@@ -1,9 +1,7 @@
 // Document Management Service - Handles document uploads, organization, admin uploads
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma';
 import * as fs from 'fs';
 import * as path from 'path';
-
-const prisma = new PrismaClient();
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
 const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xlsx'];

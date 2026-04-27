@@ -32,14 +32,32 @@ async function getUsers(req, res) {
     const formattedUsers = users.map(user => ({
       id: user.id,
       name: user.name,
+      firstName: user.firstName,
+      middleName: user.middleName,
+      lastName: user.lastName,
       email: user.email,
       phone: user.phone,
+      pan: user.pan,
+      aadhaar: user.aadhaar,
+      dateOfBirth: user.dateOfBirth,
+      fatherName: user.fatherName,
+      doorNo: user.doorNo,
+      buildingName: user.buildingName,
+      street: user.street,
+      area: user.area,
+      city: user.city,
+      state: user.state,
+      pincode: user.pincode,
+      country: user.country,
+      bankDetails: typeof user.bankDetails === 'string' ? JSON.parse(user.bankDetails) : user.bankDetails,
       role: user.role,
       status: user.status || 'active',
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       reference_number: user.reference_number,
-      referral_code: user.referral_code
+      referral_code: user.referral_code,
+      totalOrders: user.totalOrders || 0,
+      totalSpent: user.totalSpent || 0
     }));
 
     res.status(200).json(successResponse({ users: formattedUsers }, 'Users fetched successfully'));
@@ -166,11 +184,16 @@ async function getServices(req, res) {
 // ────────────────────────────────────────────────────────────────────
 async function createUser(req, res) {
   try {
-    const { name, email, phone, referral_code } = req.body;
+    const { 
+      name, email, phone, pan, aadhaar, dateOfBirth, 
+      firstName, middleName, lastName, fatherName,
+      doorNo, buildingName, street, area, city, state, pincode, country,
+      bankDetails, referral_code 
+    } = req.body;
 
     // Validate required fields
-    if (!name || !email || !phone) {
-      return res.status(400).json(errorResponse('Name, email, and phone are required'));
+    if (!name || !email || !phone || !pan) {
+      return res.status(400).json(errorResponse('Name, email, phone, and PAN are required'));
     }
 
     // Check if email already exists
@@ -191,6 +214,25 @@ async function createUser(req, res) {
       return res.status(409).json(errorResponse('Phone number already registered'));
     }
 
+    // Check if PAN already exists
+    const existingPan = await prisma.user.findFirst({
+      where: { pan },
+    });
+
+    if (existingPan) {
+      return res.status(409).json(errorResponse('PAN number already registered'));
+    }
+
+    // Check if Aadhaar already exists
+    if (aadhaar) {
+      const existingAadhaar = await prisma.user.findFirst({
+        where: { aadhaar },
+      });
+      if (existingAadhaar) {
+        return res.status(409).json(errorResponse('Aadhaar number already registered'));
+      }
+    }
+
     // Generate reference number and referral code
     const reference_number = generateReferenceNumber();
     const generated_referral_code = generateReferralCode(name, phone);
@@ -199,12 +241,27 @@ async function createUser(req, res) {
     const tempPassword = Math.random().toString(36).substring(2, 10).toUpperCase();
     const hashedPassword = await authService.hashPassword(tempPassword);
 
-    // Create user
     // Create user via raw DB helper to bypass Prisma type issues
     const newUser = await db.create('User', {
       name,
+      firstName,
+      middleName,
+      lastName,
       email,
       phone,
+      pan,
+      aadhaar,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+      fatherName,
+      doorNo,
+      buildingName,
+      street,
+      area,
+      city,
+      state,
+      pincode,
+      country: country || 'India',
+      bankDetails: bankDetails ? JSON.stringify(bankDetails) : null,
       password: hashedPassword,
       role: 'user',
       status: 'active',
@@ -215,8 +272,8 @@ async function createUser(req, res) {
       points_wallet: 0,
     });
 
-    // TODO: Send credentials via email
-    // await authService.sendUserCreatedEmail(email, tempPassword, reference_number);
+    // Send credentials via email
+    await authService.sendUserCreatedEmail(email, tempPassword, reference_number);
 
     res.status(201).json(
       successResponse(

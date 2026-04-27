@@ -33,7 +33,7 @@ export default function ClientsPage() {
       setLoading(true);
       const token = adminAuth.getAdminToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/gst-clients`, config);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/gst-clients`, config);
       setClients(response.data.data?.clients || []);
     } catch (err) {
       console.error('Failed to fetch GST clients:', err);

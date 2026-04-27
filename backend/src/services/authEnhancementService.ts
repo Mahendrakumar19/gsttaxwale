@@ -1,10 +1,10 @@
 // Auth Enhancement Service - Password reset, strength validation
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
-const prisma = new PrismaClient();
+
 
 // Email configuration
 const transporter = nodemailer.createTransport({

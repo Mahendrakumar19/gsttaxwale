@@ -32,11 +32,11 @@ export default function ReferralsPage() {
 
       const [refRes, statsRes] = await Promise.all([
         axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/referrals`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/referrals`,
           config
         ),
         axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/referrals-stats`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/referrals-stats`,
           config
         ),
       ]);

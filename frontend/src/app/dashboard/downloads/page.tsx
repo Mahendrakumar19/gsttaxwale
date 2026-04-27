@@ -35,7 +35,7 @@ export default function YourDocumentsPage() {
         headers: { Authorization: `Bearer ${token}` },
       };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/documents/my-documents`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/documents/my-documents`,
         config
       );
       setDocuments(res.data.data || []);
@@ -59,7 +59,7 @@ export default function YourDocumentsPage() {
       };
 
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${downloadUrl}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}${downloadUrl}`,
         config as any
       );
 

@@ -1,7 +1,5 @@
 // Plan Service - Manages plans and pricing
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../utils/prisma';
 
 const DEFAULT_PLANS = [
   {

@@ -33,7 +33,7 @@ export default function AdminCustomerDetails() {
       const token = adminAuth.getAdminToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/customers/${customerId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/customers/${customerId}`,
         config
       );
       setCustomer(res.data.data?.customer);

@@ -1,7 +1,5 @@
 // Wallet Service - Handles wallet operations and balance management
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../utils/prisma';
 
 /**
  * Create wallet for user on signup

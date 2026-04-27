@@ -37,7 +37,7 @@ export default function AdminReferralDetails() {
       const token = adminAuth.getAdminToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/referrals/${referralId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/referrals/${referralId}`,
         config
       );
       const data = res.data.data?.referral;
@@ -61,7 +61,7 @@ export default function AdminReferralDetails() {
       const token = adminAuth.getAdminToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/referrals/${referralId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/referrals/${referralId}`,
         formData,
         config
       );

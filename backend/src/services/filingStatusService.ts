@@ -1,7 +1,5 @@
 // Filing Status Service - Manages filing status and deadlines
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../utils/prisma';
 
 // Deadline mappings
 const FILING_DEADLINES = {

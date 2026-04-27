@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../utils/prisma');
 
 // Get all customers (admin only)
 async function getAllCustomers(req, res) {
@@ -34,7 +33,7 @@ async function getCustomerDetails(req, res) {
   const { id } = req.params;
 
   const customer = await prisma.user.findUnique({
-    where: { id },
+    where: { id: parseInt(id) },
     include: {
       taxFilings: {
         select: { id: true, assessmentYear: true, status: true, totalTax: true, createdAt: true }

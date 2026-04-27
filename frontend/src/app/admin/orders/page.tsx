@@ -29,7 +29,7 @@ export default function AdminOrders() {
       const token = adminAuth.getAdminToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders`,
         config
       );
       setOrders(res.data.data?.orders || []);
@@ -46,7 +46,7 @@ export default function AdminOrders() {
       const token = adminAuth.getAdminToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
       await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/orders/${orderId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/orders/${orderId}`,
         { status: newStatus },
         config
       );

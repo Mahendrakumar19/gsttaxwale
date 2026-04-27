@@ -46,69 +46,19 @@ export default function HomePage() {
       <section className="px-4 py-16 bg-gray-50 border-t border-blue-100">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            {/* News Section - Left Side */}
-            <div className="lg:col-span-2">
+            {/* News Section - Full Width */}
+            <div className="lg:col-span-3">
               <div className="mb-8">
                 <h2 className="mb-2 text-3xl font-bold text-gray-900 md:text-4xl">GST News & Updates</h2>
                 <p className="text-gray-600">Latest news, announcements, and policy updates from GST authorities</p>
               </div>
-              <NewsSection limit={5} />
-            </div>
-
-            {/* Due Dates Section - Right Side */}
-            <div className="lg:col-span-1">
-              <div className="mb-8">
-                <h2 className="mb-2 text-3xl font-bold text-gray-900 md:text-4xl">Upcoming Deadlines</h2>
-                <p className="text-gray-600">Important filing dates and compliance deadlines</p>
-              </div>
-              <div className="sticky top-20 space-y-4">
-                {/* Quick Stats */}
-                <div className="p-4 bg-blue-50 border-l-4 border-blue-600 rounded">
-                  <p className="text-xs font-semibold text-blue-600 mb-1">NEXT FILING</p>
-                  <p className="text-lg font-bold text-gray-900">GSTR-1</p>
-                  <p className="text-xs text-gray-600 mt-1">Due on April 11</p>
-                </div>
-                
-                {/* Small Due Dates List */}
-                <div className="space-y-2">
-                  {[
-                    { type: 'GSTR-3B', date: 'Apr 20', days: 'Due Soon' },
-                    { type: 'GSTR-2A', date: 'Apr 25', days: '22 days' },
-                    { type: 'GSTR-9', date: 'Jun 30', days: '89 days' }
-                  ].map((item, idx) => (
-                    <div key={idx} className="p-3 border border-gray-200 rounded hover:border-blue-400 transition">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-semibold text-sm text-gray-900">{item.type}</p>
-                          <p className="text-xs text-gray-600">{item.date}</p>
-                        </div>
-                        <span className="text-xs font-medium text-blue-600">{item.days}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <Link href="/dashboard" className="block w-full px-4 py-2 text-center text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
-                  View Full Calendar
-                </Link>
-              </div>
+              <NewsSection limit={6} />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Complete Due Dates Grid */}
-      <section className="px-4 py-16 bg-white border-t border-blue-100">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-12 text-center">
-            <h2 className="mb-3 text-3xl font-bold text-gray-900 md:text-4xl">All Upcoming Deadlines</h2>
-            <p className="max-w-2xl mx-auto text-sm text-gray-600 md:text-base">
-              Keep track of all GST and tax filing deadlines. Set reminders to avoid penalties.
-            </p>
-          </div>
-          <DueDatesSection limit={6} />
-        </div>
-      </section>
+
 
       {/* How It Works Section */}
       <section className="px-4 py-16 border-t border-blue-100 bg-blue-50/40">

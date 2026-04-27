@@ -28,7 +28,7 @@ export default function SiteHeader() {
         // Fetch user role from /api/auth/me for regular users
         try {
           const res = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/me`,
+            `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/auth/me`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           if (res.data?.data?.user?.role === 'admin') {

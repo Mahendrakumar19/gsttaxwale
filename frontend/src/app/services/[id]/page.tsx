@@ -21,7 +21,7 @@ export default function ServiceDetail({ params }: { params: { id: string } }) {
     try {
       setError('');
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/services/${id}`
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/services/${id}`
       );
       setService(res.data.data?.service || null);
       if (!res.data.data?.service) {
@@ -45,7 +45,7 @@ export default function ServiceDetail({ params }: { params: { id: string } }) {
     try {
       // Create order first
       const orderRes = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders`,
         {
           serviceId: service.id,
           amount: service.price,
@@ -74,7 +74,7 @@ export default function ServiceDetail({ params }: { params: { id: string } }) {
             try {
               // Verify and complete payment
               await axios.post(
-                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders/verify`,
+                `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders/verify`,
                 {
                   orderId: order.id,
                   razorpayPaymentId: response.razorpay_payment_id,

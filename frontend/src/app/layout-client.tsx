@@ -7,7 +7,6 @@ import AdminHeader from '../components/AdminHeader';
 import SiteFooter from '../components/SiteFooter';
 import StickyReferralButton from '../components/StickyReferralButton';
 import WhatsAppWidget from '../components/WhatsAppWidget';
-import ChatbotWidget from '../components/ChatbotWidget';
 
 export default function RootLayoutClient({
   children,
@@ -45,7 +44,6 @@ export default function RootLayoutClient({
         <SiteFooter />
         <StickyReferralButton />
         <WhatsAppWidget isAdminPanel={false} />
-        <ChatbotWidget isAdminPanel={false} />
       </>
     );
   }
@@ -57,7 +55,6 @@ export default function RootLayoutClient({
       {!isAdmin && !isDashboard && <SiteFooter />}
       {!isAdmin && !isDashboard && <StickyReferralButton />}
       <WhatsAppWidget isAdminPanel={isAdmin || false} />
-      <ChatbotWidget isAdminPanel={isAdmin || false} />
     </>
   );
 }

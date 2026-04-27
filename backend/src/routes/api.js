@@ -167,8 +167,8 @@ router.delete('/admin/services/:id', authenticate, adminOnly, asyncHandler(servi
 // ────────────────────────────────────────────────────────────────────
 // ORDERS / CHECKOUT (Razorpay Integration)
 // ────────────────────────────────────────────────────────────────────
-// Guest checkout - no authentication required
-router.post('/orders', asyncHandler(orderController.createOrder));
+// No guest checkout - account required
+router.post('/orders', authenticate, asyncHandler(orderController.createOrder));
 router.get('/orders', authenticate, asyncHandler(orderController.listOrders));
 router.get('/orders/:id', authenticate, asyncHandler(orderController.getOrder));
 router.post('/orders/verify', asyncHandler(orderController.verifyPayment));
@@ -178,7 +178,7 @@ router.post('/orders/verify', asyncHandler(orderController.verifyPayment));
 // DOCUMENT MANAGEMENT ROUTES
 // ────────────────────────────────────────────────────────────────────
 // Admin uploads documents for users
-router.post('/documents/upload', authenticate, adminOnly, upload.single('file'), asyncHandler(documentController.uploadDocument));
+router.post('/admin/documents/upload', authenticate, adminOnly, upload.single('file'), asyncHandler(documentController.uploadDocument));
 
 // Get documents for specific user
 router.get('/documents/user/:userId', authenticate, asyncHandler(documentController.getUserDocuments));
@@ -191,6 +191,9 @@ router.get('/documents/download/:filename', authenticate, asyncHandler(documentC
 
 // Admin - view all documents
 router.get('/admin/documents', authenticate, adminOnly, asyncHandler(documentController.getAllDocuments));
+
+// Admin - archive document
+router.patch('/admin/documents/:documentId/archive', authenticate, adminOnly, asyncHandler(documentController.archiveDocument));
 
 // Admin - delete document
 router.delete('/admin/documents/:documentId', authenticate, adminOnly, asyncHandler(documentController.deleteDocument));

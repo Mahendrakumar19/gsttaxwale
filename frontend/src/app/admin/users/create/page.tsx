@@ -13,6 +13,8 @@ export default function CreateUserPage() {
     name: '',
     email: '',
     phone: '',
+    pan: '',
+    dateOfBirth: '',
     referral_code: '',
   });
   const [loading, setLoading] = useState(false);
@@ -64,8 +66,8 @@ export default function CreateUserPage() {
 
     try {
       // Validate required fields
-      if (!formData.name || !formData.email || !formData.phone) {
-        setError('Name, email, and phone are required');
+      if (!formData.name || !formData.email || !formData.phone || !formData.pan) {
+        setError('Name, email, phone, and PAN are required');
         setLoading(false);
         return;
       }
@@ -75,6 +77,8 @@ export default function CreateUserPage() {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
+        pan: formData.pan,
+        dateOfBirth: formData.dateOfBirth,
         referral_code: formData.referral_code || undefined,
       });
 
@@ -85,6 +89,8 @@ export default function CreateUserPage() {
           name: '',
           email: '',
           phone: '',
+          pan: '',
+          dateOfBirth: '',
           referral_code: '',
         });
       }
@@ -181,6 +187,35 @@ export default function CreateUserPage() {
 
               <div>
                 <label className="block mb-2 text-sm font-medium text-gray-700">
+                  PAN Number *
+                </label>
+                <input
+                  type="text"
+                  name="pan"
+                  value={formData.pan}
+                  onChange={(e) => setFormData({ ...formData, pan: e.target.value.toUpperCase() })}
+                  placeholder="Enter PAN number"
+                  className="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  required
+                  maxLength={10}
+                />
+              </div>
+
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  name="dateOfBirth"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                  className="w-full px-4 py-2 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700">
                   Referral Code (Optional)
                 </label>
                 <input
@@ -255,6 +290,39 @@ export default function CreateUserPage() {
                     </button>
                   </div>
                 </div>
+
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1">PAN Number</p>
+                  <div className="flex items-center justify-between gap-2 bg-gray-50 p-2 rounded">
+                    <p className="text-gray-900 font-mono text-sm">{createdUser.user.pan}</p>
+                    <button
+                      onClick={() => copyToClipboard(createdUser.user.pan, 'pan')}
+                      className="text-blue-600 hover:text-blue-700 transition"
+                      title="Copy"
+                    >
+                      {copiedField === 'pan' ? (
+                        <Check size={16} className="text-green-600" />
+                      ) : (
+                        <Copy size={16} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {createdUser.user.dateOfBirth && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Date of Birth</p>
+                    <div className="bg-gray-50 p-2 rounded">
+                      <p className="text-gray-900 font-medium">
+                        {new Date(createdUser.user.dateOfBirth).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <p className="text-xs font-medium text-gray-500 mb-1">Temporary Password</p>

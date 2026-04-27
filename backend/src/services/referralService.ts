@@ -1,8 +1,8 @@
 // Referral Service - Manages referral codes and tracking
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma';
 import { v4 as uuidv4 } from 'uuid';
 
-const prisma = new PrismaClient();
+
 
 /**
  * Generate unique referral code for user
@@ -32,7 +32,7 @@ export async function generateReferralCode(userId: string) {
       }
     }
 
-    const link = `${process.env.FRONTEND_URL}/signup?ref=${code}`;
+    const link = `${process.env.FRONTEND_URL}/?ref=${code}`;
 
     const referralCode = await prisma.referralCode.create({
       data: {

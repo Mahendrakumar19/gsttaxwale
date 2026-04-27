@@ -1,9 +1,7 @@
 // Payment Service - Handles payment operations and Razorpay integration
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 const razorpayInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,

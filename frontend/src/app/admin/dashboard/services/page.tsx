@@ -31,7 +31,7 @@ export default function ServicesPage() {
         headers: { Authorization: `Bearer ${token}` },
       };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/services`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/services`,
         config
       );
       setServices(res.data.data?.services || []);
@@ -51,7 +51,7 @@ export default function ServicesPage() {
       };
 
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/services`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/services`,
         formData,
         config
       );

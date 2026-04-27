@@ -1,30 +1,24 @@
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../utils/prisma');
 const path = require('path');
 const fs = require('fs');
 
-const prisma = new PrismaClient();
+
 
 // ════════════════════════════════════════════════════════════════════
-// Upload Document (Admin)
+// Upload Document (Admin) - New format with Fiscal Year & Category
 // ════════════════════════════════════════════════════════════════════
 exports.uploadDocument = async (req, res) => {
   try {
-    const { userId, title, description, type } = req.body;
+    const { customerId, customerName, customerPan, fiscalYear, category } = req.body;
     const file = req.file;
 
     if (!file) {
       return res.status(400).json({ error: 'No file provided' });
     }
 
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' });
-    }
-
-    // Verify file is PDF
-    if (file.mimetype !== 'application/pdf') {
-      // Delete uploaded file if not PDF
-      fs.unlinkSync(file.path);
-      return res.status(400).json({ error: 'Only PDF files are allowed' });
+    if (!customerId || !customerName || !customerPan) {
+      if (file) fs.unlinkSync(file.path);
+      return res.status(400).json({ error: 'Customer ID, name, and PAN are required' });
     }
 
     // Check file size (50MB max)
@@ -33,29 +27,37 @@ exports.uploadDocument = async (req, res) => {
       return res.status(400).json({ error: 'File size must be less than 50MB' });
     }
 
-    // Create unique filename
-    const uniqueFilename = `${Date.now()}_${file.originalname}`;
+    // Create organized directory structure: uploads/[customerId]/[fiscalYear]/[category]
     const uploadDir = path.join(__dirname, '../../uploads');
+    const customerDir = path.join(uploadDir, customerId);
+    const yearDir = path.join(customerDir, fiscalYear || 'general');
+    const categoryDir = path.join(yearDir, category || 'other');
     
-    // Create uploads directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    // Create directories if they don't exist
+    if (!fs.existsSync(categoryDir)) {
+      fs.mkdirSync(categoryDir, { recursive: true });
     }
 
-    const finalPath = path.join(uploadDir, uniqueFilename);
+    // Create unique filename
+    const uniqueFilename = `${Date.now()}_${file.originalname}`;
+    const finalPath = path.join(categoryDir, uniqueFilename);
     fs.renameSync(file.path, finalPath);
 
     // Save document info to database
     const document = await prisma.document.create({
       data: {
-        userId,
-        title: title || file.originalname,
-        description: description || '',
-        type: type || 'consultation',
+        userId: customerId,
+        title: file.originalname,
+        description: `${category} - ${fiscalYear}`,
+        type: category || 'other',
+        category: category || 'other',
+        fiscalYear: fiscalYear || null,
+        customerName: customerName,
+        customerPan: customerPan,
         fileName: file.originalname,
         fileSize: file.size,
-        filePath: uniqueFilename,
-        fileType: 'application/pdf',
+        filePath: path.relative(uploadDir, finalPath), // Store relative path
+        fileType: file.mimetype,
         downloadUrl: `/api/documents/download/${uniqueFilename}`,
         uploadedBy: req.user?.id || 'admin',
         status: 'active',
@@ -65,7 +67,18 @@ exports.uploadDocument = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Document uploaded successfully',
-      data: document,
+      data: {
+        id: document.id,
+        fileName: document.fileName,
+        customerId: document.userId,
+        customerName: document.customerName,
+        customerPan: document.customerPan,
+        fiscalYear: document.fiscalYear,
+        category: document.category,
+        status: document.status,
+        uploadedAt: document.createdAt,
+        fileSize: document.fileSize,
+      },
     });
   } catch (err) {
     console.error('Error uploading document:', err);
@@ -175,35 +188,56 @@ exports.getUserDocuments = async (req, res) => {
 // ════════════════════════════════════════════════════════════════════
 exports.getAllDocuments = async (req, res) => {
   try {
-    const { type, status, search } = req.query;
+    const { category, status, search, fiscalYear } = req.query;
     const where = {};
 
-    if (type) where.type = type;
+    if (category) where.category = category;
     if (status) where.status = status;
+    if (fiscalYear) where.fiscalYear = fiscalYear;
+    
     if (search) {
       where.OR = [
-        { title: { contains: search } },
-        { description: { contains: search } },
+        { title: { contains: search, mode: 'insensitive' } },
+        { customerName: { contains: search, mode: 'insensitive' } },
+        { customerPan: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
       ];
     }
 
     const documents = await prisma.document.findMany({
       where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
+      select: {
+        id: true,
+        fileName: true,
+        userId: true,
+        customerName: true,
+        customerPan: true,
+        category: true,
+        fiscalYear: true,
+        status: true,
+        fileSize: true,
+        createdAt: true,
+        updatedAt: true,
       },
       orderBy: { createdAt: 'desc' },
     });
 
     res.json({
       success: true,
-      data: documents,
+      data: {
+        documents: documents.map(doc => ({
+          id: doc.id,
+          fileName: doc.fileName,
+          customerId: doc.userId,
+          customerName: doc.customerName,
+          customerPan: doc.customerPan,
+          category: doc.category,
+          fiscalYear: doc.fiscalYear,
+          status: doc.status,
+          fileSize: doc.fileSize,
+          uploadedAt: doc.createdAt,
+        })),
+      },
       total: documents.length,
     });
   } catch (err) {
@@ -275,6 +309,35 @@ exports.updateDocumentStatus = async (req, res) => {
   } catch (err) {
     console.error('Error updating document:', err);
     res.status(500).json({ error: 'Failed to update document' });
+  }
+};
+
+// ════════════════════════════════════════════════════════════════════
+// Archive Document (Admin)
+// ════════════════════════════════════════════════════════════════════
+exports.archiveDocument = async (req, res) => {
+  try {
+    const { documentId } = req.params;
+
+    const document = await prisma.document.update({
+      where: { id: documentId },
+      data: { status: 'archived' },
+      select: {
+        id: true,
+        fileName: true,
+        status: true,
+        updatedAt: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: 'Document archived successfully',
+      data: document,
+    });
+  } catch (err) {
+    console.error('Error archiving document:', err);
+    res.status(500).json({ error: 'Failed to archive document' });
   }
 };
 

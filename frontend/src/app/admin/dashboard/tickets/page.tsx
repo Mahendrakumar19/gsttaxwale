@@ -30,7 +30,7 @@ export default function TicketsPage() {
         headers: { Authorization: `Bearer ${token}` },
       };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/tickets`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/tickets`,
         config
       );
       setTickets(res.data.data || []);

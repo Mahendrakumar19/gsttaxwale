@@ -2,6 +2,7 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import * as paymentService from '../services/paymentService';
+import prisma from '../utils/prisma';
 
 const router = Router();
 
@@ -99,8 +100,7 @@ async function handlePaymentFailed(event: any) {
     console.log('Failure reason:', payment.error_description);
 
     // Update order status to failed
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
+
 
     await prisma.order.update({
       where: { id: orderId },

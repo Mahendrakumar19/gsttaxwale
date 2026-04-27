@@ -22,7 +22,7 @@ function ReferralVerification() {
     try {
       const token = adminAuth.getAdminToken();
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/users?search=${encodeURIComponent(query)}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/users?search=${encodeURIComponent(query)}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const users = res.data.data?.users || res.data.users || [];
@@ -136,7 +136,7 @@ export default function AdminReferrals() {
       const token = adminAuth.getAdminToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/referrals`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/referrals`,
         config
       );
       setReferrals(res.data.data?.referrals || []);
@@ -153,7 +153,7 @@ export default function AdminReferrals() {
       const token = adminAuth.getAdminToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/admin/referrals-stats`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/referrals-stats`,
         config
       );
       setStats(res.data.data);

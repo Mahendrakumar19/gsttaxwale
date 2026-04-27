@@ -51,7 +51,7 @@ export default function CheckoutContent() {
         if (token) {
           try {
             const userRes = await axios.get(
-              `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/me`,
+              `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/users/me`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             if (mounted && userRes.data?.data?.user) {
@@ -65,7 +65,7 @@ export default function CheckoutContent() {
 
         // Get service details
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/services/${serviceId}`
+          `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/services/${serviceId}`
         );
         if (mounted) setService(res.data.data.service);
       } catch (err) {
@@ -96,7 +96,7 @@ export default function CheckoutContent() {
       };
       
       const createRes = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders`,
         payload,
         { headers: localStorage.getItem('authToken') ? { Authorization: `Bearer ${localStorage.getItem('authToken')}` } : {} }
       );
@@ -128,7 +128,7 @@ export default function CheckoutContent() {
           try {
             // Verify payment on backend
             const verifyRes = await axios.post(
-              `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/orders/verify`,
+              `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders/verify`,
               {
                 orderId: orderId,
                 paymentId: response.razorpay_payment_id,

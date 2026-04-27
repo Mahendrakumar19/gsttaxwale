@@ -15,7 +15,7 @@ export default function ContactForm() {
     setSubmitting(true);
     try {
       // try backend endpoint if exists, otherwise just simulate
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/contact`, { name, email, message });
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/contact`, { name, email, message });
       setSent(true);
       setName(''); setEmail(''); setMessage('');
     } catch (err) {

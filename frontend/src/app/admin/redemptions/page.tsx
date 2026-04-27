@@ -59,7 +59,7 @@ export default function AdminRedemptionsPage() {
 
   const fetchRedemptionRequests = async (token: string) => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com';
       const res = await fetch(`${baseUrl}/api/admin/redeem-requests`, {
         method: 'GET',
         headers: {
@@ -91,7 +91,7 @@ export default function AdminRedemptionsPage() {
     try {
       setProcessingId(requestId);
       const token = localStorage.getItem('token');
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com';
       
       const res = await fetch(`${baseUrl}/api/admin/redeem-requests/${requestId}/approve`, {
         method: 'POST',
@@ -127,7 +127,7 @@ export default function AdminRedemptionsPage() {
     try {
       setProcessingId(requestId);
       const token = localStorage.getItem('token');
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com';
       
       const res = await fetch(`${baseUrl}/api/admin/redeem-requests/${requestId}/approve`, {
         method: 'POST',

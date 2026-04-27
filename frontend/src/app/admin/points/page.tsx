@@ -66,7 +66,7 @@ export default function AdminPointsPage() {
 
   const fetchUsers = async (token: string) => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com';
       const res = await fetch(`${baseUrl}/api/admin/users`, {
         method: 'GET',
         headers: {
@@ -93,7 +93,7 @@ export default function AdminPointsPage() {
 
   const fetchPointsHistory = async (userId: string, token: string) => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com';
       const res = await fetch(`${baseUrl}/api/admin/points-history/${userId}`, {
         method: 'GET',
         headers: {
@@ -140,7 +140,7 @@ export default function AdminPointsPage() {
     try {
       setSubmitting(true);
       const token = localStorage.getItem('token');
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com';
 
       const res = await fetch(`${baseUrl}/api/admin/points/${selectedUser.id}`, {
         method: 'PUT',

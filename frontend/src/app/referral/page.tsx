@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
@@ -35,7 +35,7 @@ export default function ReferralPage() {
     try {
       const config = { headers: { Authorization: `Bearer ${authToken}` } };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/referrals`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/referrals`,
         config
       );
       setReferrals(res.data.data?.referrals || []);
@@ -56,7 +56,7 @@ export default function ReferralPage() {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/referrals`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/referrals`,
         { refereeEmail },
         config
       );
@@ -77,7 +77,7 @@ export default function ReferralPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/signup?ref=${user?.id}`;
+  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/?ref=${user?.id}`;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pt-24 pb-12">
@@ -173,7 +173,7 @@ export default function ReferralPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
               { step: '1', title: 'Share Link', desc: 'Share your referral link or email' },
-              { step: '2', title: 'Friend Signs Up', desc: 'They create an account using your link' },
+              { step: '2', title: 'Friend Contacts Us', desc: 'They contact admin to create an account' },
               { step: '3', title: 'They Make Purchase', desc: 'They purchase any of our services' },
               { step: '4', title: 'You Earn', desc: '10% commission deposited to your account' }
             ].map((item, i) => (

@@ -37,7 +37,7 @@ export default function AdminTicketDetails() {
       const token = adminAuth.getAdminToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/tickets/${ticketId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/tickets/${ticketId}`,
         config
       );
       const data = res.data.data?.ticket;
@@ -61,7 +61,7 @@ export default function AdminTicketDetails() {
       const token = adminAuth.getAdminToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/tickets/${ticketId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/tickets/${ticketId}`,
         formData,
         config
       );

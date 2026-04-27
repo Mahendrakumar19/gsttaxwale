@@ -46,14 +46,72 @@ async function sendOTPEmail(email, otp) {
     const mailOptions = {
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: email,
-      subject: 'Your OTP',
+      subject: `Your OTP for ${process.env.NEXT_PUBLIC_APP_NAME || 'GST Tax Wale'}`,
       text: `Your OTP is ${otp}. It expires in ${OTP_EXPIRY_MINUTES} minutes.`,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; color: #333;">
+          <h2>Login Verification</h2>
+          <p>Your One-Time Password (OTP) is:</p>
+          <div style="font-size: 32px; font-weight: bold; color: #2563eb; letter-spacing: 5px; margin: 20px 0;">${otp}</div>
+          <p>This code will expire in ${OTP_EXPIRY_MINUTES} minutes.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+        </div>
+      `,
     };
 
     await transporter.sendMail(mailOptions);
     return true;
   } catch (err) {
     console.error('sendOTPEmail error', err);
+    return false;
+  }
+}
+
+async function sendUserCreatedEmail(email, password, referenceNumber) {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587', 10),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to: email,
+      subject: `Welcome to ${process.env.NEXT_PUBLIC_APP_NAME || 'GST Tax Wale'} - Your Account Details`,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">
+          <h2 style="color: #2563eb;">Welcome to GST Tax Wale!</h2>
+          <p>An administrator has created an account for you. Here are your login credentials:</p>
+          
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+            <p style="margin: 5px 0;"><strong>Temporary Password:</strong> <span style="font-family: monospace; font-weight: bold; font-size: 1.1em;">${password}</span></p>
+            <p style="margin: 5px 0;"><strong>Reference Number:</strong> ${referenceNumber}</p>
+          </div>
+          
+          <p>You can log in at: <a href="https://gsttaxwale.com/auth/login" style="color: #2563eb; font-weight: bold;">gsttaxwale.com/auth/login</a></p>
+          
+          <p style="color: #6b7280; font-size: 0.9em; margin-top: 20px;">
+            <strong>Security Tip:</strong> Please change your password immediately after your first login.
+          </p>
+          
+          <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+          <p style="font-size: 0.8em; color: #9ca3af; text-align: center;">
+            &copy; ${new Date().getFullYear()} GST Tax Wale. All rights reserved.
+          </p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (err) {
+    console.error('sendUserCreatedEmail error', err);
     return false;
   }
 }
@@ -138,4 +196,5 @@ module.exports = {
   register,
   login,
   getUser,
+  sendUserCreatedEmail,
 };
