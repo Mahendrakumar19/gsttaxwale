@@ -47,9 +47,8 @@ export default function UniversalNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo/Home */}
-          <Link href="/" className="flex items-center gap-2 text-2xl font-bold hover:opacity-80 transition">
-            <Home size={24} className="text-blue-600" />
-            <span className="text-transparent bg-gradient-to-r from-amber-400 to-yellow-400 bg-clip-text">GST Tax Wale</span>
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition">
+            <img src="/gsttaxwale_logo.svg" alt="GST Tax Wale" className="h-8 w-auto" />
           </Link>
 
           {/* Desktop Menu */}

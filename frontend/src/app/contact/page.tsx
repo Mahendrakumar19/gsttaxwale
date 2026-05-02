@@ -64,7 +64,7 @@ export default function ContactPage() {
             <div className="glassmorphic-dark rounded-xl p-6 flex-1 border border-slate-500/20">
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Email</h3>
               <p className="text-gray-600 mb-4">Send details and our team will get back within 24 hours.</p>
-              <a href="mailto:support@gsttaxwale.com" className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-lg">support@gsttaxwale.com</a>
+              <a href="mailto:help@gsttaxwale.com" className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-lg">help@gsttaxwale.com</a>
             </div>
           </div>
 

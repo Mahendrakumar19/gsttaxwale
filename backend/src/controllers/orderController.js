@@ -3,11 +3,17 @@ const { successResponse, errorResponse } = require('../utils/helpers');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
 
-// Initialize Razorpay
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_live_3xTyUrGlyCxrLB',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || '5FjsZMf9b0x2KnY7pQwR4vL8aUjT1mN6',
-});
+// Initialize Razorpay with proper error handling
+let razorpay;
+try {
+  razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_live_3xTyUrGlyCxrLB',
+    key_secret: process.env.RAZORPAY_KEY_SECRET || '5FjsZMf9b0x2KnY7pQwR4vL8aUjT1mN6',
+  });
+  console.log('✅ Razorpay initialized successfully');
+} catch (err) {
+  console.error('❌ Failed to initialize Razorpay:', err.message);
+}
 
 // In-memory orders store (TODO: migrate to database)
 let orders = [];
@@ -18,6 +24,12 @@ let orders = [];
  */
 async function createOrder(req, res) {
   try {
+    // Check if Razorpay is initialized
+    if (!razorpay) {
+      console.error('❌ Razorpay not initialized');
+      return res.status(500).json(errorResponse('Payment gateway not available. Please try again later.'));
+    }
+
     const { 
       serviceId, 
       amount, 
@@ -26,6 +38,8 @@ async function createOrder(req, res) {
       customerName = 'Guest',
       customer = {} 
     } = req.body;
+    
+    console.log('📦 Order creation request:', { serviceId, amount, customerEmail, customerName });
     
     if (!serviceId || !amount) {
       return res.status(400).json(errorResponse('Service ID and amount are required'));
@@ -38,6 +52,8 @@ async function createOrder(req, res) {
     }
 
     try {
+      console.log(`🔄 Creating Razorpay order for amount: ${amountInPaise} paise`);
+      
       // Create Razorpay order
       const razorpayOrder = await razorpay.orders.create({
         amount: amountInPaise,
@@ -50,6 +66,11 @@ async function createOrder(req, res) {
           customerEmail,
         },
       });
+
+      if (!razorpayOrder || !razorpayOrder.id) {
+        console.error('❌ Razorpay order creation failed:', razorpayOrder);
+        throw new Error('Invalid response from Razorpay - no order ID returned');
+      }
 
       // Store order locally (should be in DB)
       const order = {

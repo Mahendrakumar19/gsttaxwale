@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import axios from 'axios';
+import fetchClient from '@/lib/fetchClient';
 
 export default function ContactForm() {
   const [name, setName] = useState('');
@@ -15,7 +15,7 @@ export default function ContactForm() {
     setSubmitting(true);
     try {
       // try backend endpoint if exists, otherwise just simulate
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/contact`, { name, email, message });
+      await fetchClient.post('/api/contact', { name, email, message });
       setSent(true);
       setName(''); setEmail(''); setMessage('');
     } catch (err) {

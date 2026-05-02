@@ -61,11 +61,9 @@ export default function AdminLoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-xl border border-purple-200">
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full mb-4">
-            <span className="text-2xl font-bold text-white">⚙️</span>
-          </div>
+          <img src="/gsttaxwale_logo.svg" alt="GST Tax Wale" className="h-20 w-auto mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-purple-900">Admin Login</h1>
-          <p className="mt-2 text-gray-600">GST Tax Wale Administration Panel</p>
+          <p className="mt-2 text-gray-600">Administration Panel</p>
         </div>
 
         <form onSubmit={handleAdminLogin} className="space-y-6">

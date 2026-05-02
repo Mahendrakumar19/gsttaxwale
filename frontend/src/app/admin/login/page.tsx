@@ -59,11 +59,8 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md">
         {/* Header Badge */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl shadow-lg mb-4">
-            <Shield className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">GST Tax Wale</h1>
-          <p className="text-sm text-purple-700 font-medium mt-1">Admin Control Panel</p>
+          <img src="/gsttaxwale_logo.svg" alt="GST Tax Wale" className="h-16 w-auto mx-auto mb-4 shadow-lg" />
+          <p className="text-sm text-purple-700 font-medium">Admin Control Panel</p>
         </div>
 
         {/* Login Card */}

@@ -26,8 +26,7 @@ export default function AdminHeader() {
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center font-bold text-white">₹</div>
-            <span className="text-xl font-bold text-blue-900">GST Tax Wale</span>
+            <img src="/gsttaxwale_logo.svg" alt="GST Tax Wale" className="h-10 w-auto" />
           </Link>
         </div>
       </header>
@@ -40,8 +39,7 @@ export default function AdminHeader() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition flex-shrink-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center font-bold text-white">₹</div>
-            <span className="text-lg font-bold text-blue-900 hidden sm:block">GST Tax Wale</span>
+            <img src="/gsttaxwale_logo.svg" alt="GST Tax Wale" className="h-8 w-auto" />
           </Link>
 
           {/* Admin Navigation - Simplified */}

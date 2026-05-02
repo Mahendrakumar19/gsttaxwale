@@ -98,8 +98,7 @@ export default function ProfessionalNavbar() {
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl hover:opacity-80 transition">
-            <span className="text-blue-600">GST</span>
-            <span className="text-gray-800">Tax Wale</span>
+            <img src="/gsttaxwale_logo.svg" alt="GST Tax Wale" className="h-10 w-auto" />
           </Link>
 
           {/* Desktop Menu */}

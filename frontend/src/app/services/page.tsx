@@ -48,12 +48,8 @@ export default function ServicesPage() {
   }, []);
 
   function buyHrefFor(service: any) {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) {
-      const returnUrl = `/checkout?serviceId=${service.id}`;
-      return `/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`;
-    }
-    return `/checkout?serviceId=${service.id}`;
+    // Link to service detail page, not directly to checkout
+    return `/services/${service.id}`;
   }
 
   return (

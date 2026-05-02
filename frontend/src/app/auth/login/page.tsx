@@ -1,12 +1,16 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { adminAuth } from '@/lib/adminAuth';
+import { useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl') || '/dashboard';
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,7 +52,8 @@ export default function LoginPage() {
         adminAuth.setAdminUser(user);
         router.push('/admin/dashboard');
       } else {
-        router.push('/dashboard');
+        // Redirect to returnUrl if provided, otherwise dashboard
+        router.push(returnUrl);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
@@ -61,8 +66,8 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-white">
       <div className="w-full max-w-md p-8 bg-white border border-gray-200 rounded-lg shadow-lg">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-orange-600">GST Tax Wale</h1>
-          <p className="mt-2 text-gray-900">GST & Income Tax Filing Services</p>
+          <img src="/gsttaxwale_logo.svg" alt="GST Tax Wale" className="w-auto h-20 mx-auto mb-4" />
+          <p className="font-medium text-gray-900">GST & Income Tax Filing Services</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -120,5 +125,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

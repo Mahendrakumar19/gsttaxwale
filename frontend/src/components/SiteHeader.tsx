@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import fetchClient from '@/lib/fetchClient';
 import { useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 
@@ -27,11 +27,8 @@ export default function SiteHeader() {
       } else {
         // Fetch user role from /api/auth/me for regular users
         try {
-          const res = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/auth/me`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (res.data?.data?.user?.role === 'admin') {
+          const res = await fetchClient.get('/api/auth/me');
+          if (res.data?.user?.role === 'admin') {
             setIsAdmin(true);
           }
         } catch (err) {
@@ -78,8 +75,7 @@ export default function SiteHeader() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center font-bold text-white">₹</div>
-              <span className="text-xl font-bold text-blue-900 hidden sm:block">GST Tax Wale</span>
+              <img src="/gsttaxwale_logo.svg" alt="GST Tax Wale" className="h-10 w-auto" />
             </Link>
           </div>
         </div>
@@ -93,8 +89,7 @@ export default function SiteHeader() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition flex-shrink-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center font-bold text-white">₹</div>
-            <span className="text-lg font-bold text-blue-900 hidden sm:block">GST Tax Wale</span>
+            <img src="/gsttaxwale_logo.svg" alt="GST Tax Wale" className="h-8 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}

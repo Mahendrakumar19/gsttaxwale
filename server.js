@@ -15,8 +15,8 @@ require("dotenv").config({ path: path.join(__dirname, "backend/.env") });
 // Fallback values for critical env vars
 if (!process.env.PORT) process.env.PORT = "3000";
 if (!process.env.NODE_ENV) {
-  const lifecycle = process.env.npm_lifecycle_event || "";
-  process.env.NODE_ENV = lifecycle === "dev" ? "development" : "production";
+  // For Hostinger: npm run dev should set NODE_ENV to development
+  process.env.NODE_ENV = "development";
 }
 if (!process.env.HOST) process.env.HOST = "0.0.0.0";
 if (!process.env.JWT_SECRET) process.env.JWT_SECRET = "ec434a51ba4be676ac157fa92b92aaf2b32569386b3176b2";
@@ -24,8 +24,9 @@ if (!process.env.DB_HOST) process.env.DB_HOST = "194.59.164.75";
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
-const NODE_ENV = process.env.NODE_ENV || "production";
+const NODE_ENV = process.env.NODE_ENV || "development";
 const IS_PRODUCTION = NODE_ENV === "production";
+const IS_DEVELOPMENT = NODE_ENV === "development";
 
 const FRONTEND_DIR = path.join(__dirname, "frontend");
 const BACKEND_DIR = path.join(__dirname, "backend");
@@ -116,13 +117,14 @@ app.use((req, res, next) => {
 // START SERVER AFTER NEXT.JS PREPARE
 // ─────────────────────────────────────────────────────────────────────────
 nextApp.prepare().then(() => {
-  console.log("✅ Next.js frontend prepared");
+  console.log("✅ Next.js frontend prepared (Mode: " + NODE_ENV.toUpperCase() + ")");
 
   // 1. Static Files (Move up to ensure they are caught before wildcard routes)
   if (fs.existsSync(path.join(BACKEND_DIR, "uploads"))) {
     app.use("/uploads", express.static(path.join(BACKEND_DIR, "uploads")));
   }
   
+  // Only serve static files from .next in production
   if (IS_PRODUCTION) {
     const NEXT_STATIC_DIR = path.join(NEXT_BUILD_DIR, "static");
     if (fs.existsSync(NEXT_STATIC_DIR)) {
@@ -133,6 +135,7 @@ nextApp.prepare().then(() => {
     }
   }
 
+  // Public folder
   if (fs.existsSync(path.join(FRONTEND_DIR, "public"))) {
     app.use(express.static(path.join(FRONTEND_DIR, "public")));
   }
@@ -146,21 +149,16 @@ nextApp.prepare().then(() => {
     res.json({ status: "OK", api: "active" });
   });
 
-  // 3. Next.js Internal Routes (For non-static /_next paths)
-  app.all("/_next*", (req, res) => {
-    return nextHandler(req, res);
-  });
-
-  // 4. Backend API Routes
+  // 3. Backend API Routes (Must be before Next.js catch-all)
   try {
     const apiRoutes = require("./backend/src/routes/api");
     app.use("/api", apiRoutes);
     console.log("✅ Backend API routes mounted");
   } catch (error) {
-    console.warn("⚠️  Backend routes not available");
+    console.warn("⚠️  Backend routes not available:", error.message);
   }
 
-  // 5. Catch-all for Next.js
+  // 4. Next.js Handler (Catch everything else - handles /_next in dev and all pages)
   app.all("*", (req, res) => {
     return nextHandler(req, res);
   });
@@ -175,16 +173,20 @@ nextApp.prepare().then(() => {
     });
   });
 
-  server.listen(PORT, HOST, () => {
-    console.log(`
+  // Single server instance - only listen once
+  if (!server.listening) {
+    server.listen(PORT, HOST, () => {
+      console.log(`
 ╔════════════════════════════════════════════════════════════╗
 ║  🎯 TAX PLATFORM SERVER STARTED                           ║
 ╠════════════════════════════════════════════════════════════╣
 ║  🌐 URL: http://localhost:${PORT}                          ║
-║  ⚙️  Mode: ${NODE_ENV.toUpperCase()}                          ║
+║  ⚙️  Mode: ${NODE_ENV.toUpperCase()}                       ║
+║  📦 Type: ${IS_DEVELOPMENT ? 'Development (npm run dev)' : 'Production (npm start)'}   ║
 ╚════════════════════════════════════════════════════════════╝
-    `);
-  });
+      `);
+    });
+  }
 }).catch((error) => {
   console.error("\n❌ [FATAL] Failed to start Next.js:", error);
   process.exit(1);

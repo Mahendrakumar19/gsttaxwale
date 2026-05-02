@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import axios from 'axios';
+import fetchClient from '../../lib/fetchClient';
 import { toast } from 'sonner';
 
 declare global {
@@ -46,17 +46,14 @@ export default function CheckoutContent() {
     
     async function load() {
       try {
-        // Get user info from token
-        const token = localStorage.getItem('authToken');
+        // Get user info from token - check both sessionStorage and localStorage
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token') || localStorage.getItem('authToken');
         if (token) {
           try {
-            const userRes = await axios.get(
-              `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/users/me`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            );
-            if (mounted && userRes.data?.data?.user) {
-              setUserEmail(userRes.data.data.user.email || '');
-              setUserName(userRes.data.data.user.firstName || userRes.data.data.user.name || '');
+            const userRes = await fetchClient.get('/api/auth/me');
+            if (mounted && userRes.data?.user) {
+              setUserEmail(userRes.data.user.email || '');
+              setUserName(userRes.data.user.firstName || userRes.data.user.name || '');
             }
           } catch (err) {
             console.warn('Could not fetch user info:', err);
@@ -64,10 +61,8 @@ export default function CheckoutContent() {
         }
 
         // Get service details
-        const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/services/${serviceId}`
-        );
-        if (mounted) setService(res.data.data.service);
+        const res = await fetchClient.get(`/api/services/${serviceId}`);
+        if (mounted && res.data?.service) setService(res.data.service);
       } catch (err) {
         console.error('Load failed:', err);
         toast.error('Failed to load service details');
@@ -84,6 +79,14 @@ export default function CheckoutContent() {
       if (!service) return toast.error('Service not found');
       if (!window.Razorpay) return toast.error('Payment gateway not loaded');
       
+      // Check if user is authenticated
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token') || localStorage.getItem('authToken');
+      if (!token) {
+        toast.error('Please login to continue');
+        router.push(`/auth/login?returnUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+        return;
+      }
+      
       setProcessing(true);
       
       // Create order on backend
@@ -95,22 +98,20 @@ export default function CheckoutContent() {
         customerName: userName || 'Guest Customer'
       };
       
-      const createRes = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders`,
-        payload,
-        { headers: localStorage.getItem('authToken') ? { Authorization: `Bearer ${localStorage.getItem('authToken')}` } : {} }
-      );
+      const createRes = await fetchClient.post('/api/orders', payload);
       
-      if (!createRes.data?.data?.orderId) {
-        throw new Error('Invalid order response from server');
+      if (!createRes.data?.orderId) {
+        console.error('❌ Backend order creation failed:', createRes);
+        throw new Error(createRes.data?.message || 'Invalid order response from server');
       }
 
-      const orderId = createRes.data.data.orderId;
-      const amount = createRes.data.data.amount;
+      const orderId = createRes.data.orderId;
+      const amount = createRes.data.amount;
+      const razorpayKey = createRes.data.key; // Get key from server response
 
       // Initialize Razorpay
       const razorpayOptions = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: razorpayKey || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: amount, // Amount in paise
         currency: 'INR',
         name: process.env.NEXT_PUBLIC_RAZORPAY_MERCHANT_NAME || 'GST Tax Wale',
@@ -127,15 +128,11 @@ export default function CheckoutContent() {
         handler: async function (response: any) {
           try {
             // Verify payment on backend
-            const verifyRes = await axios.post(
-              `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders/verify`,
-              {
-                orderId: orderId,
-                paymentId: response.razorpay_payment_id,
-                signature: response.razorpay_signature
-              },
-              { headers: localStorage.getItem('authToken') ? { Authorization: `Bearer ${localStorage.getItem('authToken')}` } : {} }
-            );
+            const verifyRes = await fetchClient.post('/api/orders/verify', {
+              orderId: orderId,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature
+            });
 
             if (verifyRes.data?.success) {
               toast.success('Payment successful! Redirecting...');
@@ -162,7 +159,19 @@ export default function CheckoutContent() {
       rzp.open();
     } catch (err: any) {
       console.error('Order creation failed:', err);
-      toast.error(err.response?.data?.message || 'Payment initiation failed. Please try again.');
+      
+      // Extract error message from various formats
+      let errorMessage = 'Payment initiation failed. Please try again.';
+      
+      if (err?.message) {
+        errorMessage = err.message;
+      } else if (err?.response?.message) {
+        errorMessage = err.response.message;
+      } else if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setProcessing(false);
     }

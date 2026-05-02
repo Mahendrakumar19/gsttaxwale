@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 export default function AdminSettings() {
   const [settings, setSettings] = useState({
     siteName: 'GST Tax Wale',
-    supportEmail: 'support@gsttaxwale.com',
+    supportEmail: 'help@gsttaxwale.com',
   });
 
   const handleSave = () => {

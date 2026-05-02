@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "build": "npx prisma generate && cd frontend && npm run build && cd ..",
+    "build": "npm install && npx prisma generate && cd frontend && npm install && npm run build && cd .. && cd backend && npm install && cd ..",
     "setup-db": "node backend/scripts/setup_db.js",
     "test-login": "node backend/scripts/test_login.js",
     "lint": "next lint",

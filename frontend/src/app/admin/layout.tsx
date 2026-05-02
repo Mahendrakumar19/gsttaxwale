@@ -92,8 +92,7 @@ export default function RootAdminLayout({
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
             <Link href="/admin/dashboard" className="flex items-center gap-2">
-              <div className="text-2xl font-bold text-blue-600">₹</div>
-              <span className="text-lg font-bold text-gray-900 hidden sm:inline">GST Admin</span>
+              <img src="/gsttaxwale_logo.svg" alt="GST Admin" className="h-10 w-auto" />
             </Link>
             <div className="hidden sm:flex items-center gap-6 ml-8">
               <Link href="/" className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition font-medium">
