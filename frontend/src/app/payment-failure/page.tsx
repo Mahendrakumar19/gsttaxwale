@@ -136,7 +136,7 @@ function PaymentFailureContent() {
           <p className="text-gray-600 mb-4">Our support team is here to help you resolve this issue.</p>
           <div className="space-y-2 text-sm text-gray-700">
             <p>📧 <strong>Email:</strong> help@gsttaxwale.com</p>
-            <p>📞 <strong>Phone:</strong> +91-XXXXXXXXXX</p>
+            <p>📞 <strong>Phone:</strong> +91-7739-301-568</p>
             <p>💬 <strong>Live Chat:</strong> Available 9 AM - 6 PM IST</p>
           </div>
         </div>

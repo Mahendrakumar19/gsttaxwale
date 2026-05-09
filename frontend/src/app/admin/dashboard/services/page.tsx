@@ -13,7 +13,13 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ name: '', description: '', price: 0 });
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: 0,
+    discountedPrice: 0,
+  });
+
 
   useEffect(() => {
     const token = adminAuth.getAdminToken();
@@ -57,9 +63,11 @@ export default function ServicesPage() {
       );
 
       setServices([...services, res.data.data]);
-      setFormData({ name: '', description: '', price: 0 });
+      setFormData({ name: '', description: '', price: 0, discountedPrice: 0 });
       setShowForm(false);
+
     } catch (err: any) {
+
       alert('Failed to add service');
     }
   }
@@ -105,6 +113,7 @@ export default function ServicesPage() {
 
       {showForm && (
         <form onSubmit={handleAddService} className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-6 space-y-4">
+
           <div>
             <label className="block text-sm font-semibold mb-2">Service Name</label>
             <input
@@ -136,6 +145,17 @@ export default function ServicesPage() {
               className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:border-purple-500"
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-2">Discounted Price (₹)</label>
+            <input
+              type="number"
+              value={formData.discountedPrice}
+              onChange={(e) => setFormData({ ...formData, discountedPrice: parseFloat(e.target.value) })}
+              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:border-purple-500"
+            />
+          </div>
+
 
           <div className="flex gap-2">
             <button type="submit" className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition">

@@ -3,8 +3,8 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = 'admin@example.com';
-  const password = 'AdminPass123!';
+const email = 'admin@gsttaxwale.com';
+  const password = 'admin123';
   const name = 'Administrator';
   const pan = 'ADMINP0000A';
 

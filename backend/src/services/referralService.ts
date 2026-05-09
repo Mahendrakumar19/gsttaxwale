@@ -9,35 +9,28 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export async function generateReferralCode(userId: string) {
   try {
-    // Check if already exists
-    const existingCode = await prisma.referralCode.findUnique({
-      where: { userId },
+    // 1. Get user details for code generation
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) },
+      select: { name: true, phone: true }
     });
 
-    if (existingCode) {
-      return existingCode;
-    }
+    if (!user) throw new Error('User not found');
 
-    // Generate unique code (8 chars alphanumeric)
-    let code: string;
-    let isUnique = false;
-
-    while (!isUnique) {
-      code = uuidv4().substring(0, 8).toUpperCase();
-      const existing = await prisma.referralCode.findUnique({
-        where: { code },
-      }).catch(() => null);
-      if (!existing) {
-        isUnique = true;
-      }
-    }
+    // 2. Generate custom code: GTW + first 3 of name + last 3 of mobile
+    const namePart = (user.name || 'USR').substring(0, 3).toUpperCase().padEnd(3, 'X');
+    const phonePart = (user.phone || '000').slice(-3).padStart(3, '0');
+    const code = `GTW${namePart}${phonePart}`;
 
     const link = `${process.env.FRONTEND_URL}/?ref=${code}`;
 
-    const referralCode = await prisma.referralCode.create({
-      data: {
-        userId,
-        code: code!,
+    // 3. Create or Update referral code
+    const referralCode = await prisma.referralCode.upsert({
+      where: { userId: parseInt(userId) },
+      update: { code, link },
+      create: {
+        userId: parseInt(userId),
+        code: code,
         link,
         isActive: true,
       },

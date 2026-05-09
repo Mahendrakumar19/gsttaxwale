@@ -51,6 +51,33 @@ async function authenticate(req, res, next) {
 }
 
 // ────────────────────────────────────────────────────────────────────
+// OPTIONAL AUTHENTICATE - Attaches user context if available, but doesn't block
+// ────────────────────────────────────────────────────────────────────
+async function optionalAuthenticate(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = jwt.verify(token, config.jwt.secret);
+        req.userId = decoded.userId;
+        const user = await db.findOne('User', { id: decoded.userId });
+        if (user) {
+          req.userRole = user.role;
+          req.userEmail = user.email;
+          req.user = user;
+        }
+      } catch (err) {
+        // Ignore invalid token in optional auth
+      }
+    }
+  } catch (error) {
+    // Ignore any other errors
+  }
+  next();
+}
+
+// ────────────────────────────────────────────────────────────────────
 // ADMIN ROLE CHECK
 // ────────────────────────────────────────────────────────────────────
 function adminOnly(req, res, next) {
@@ -106,6 +133,7 @@ function asyncHandler(fn) {
 
 module.exports = {
   authenticate,
+  optionalAuthenticate,
   adminOnly,
   caOnly,
   errorHandler,

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import api from '@/lib/api';
 import { adminAuth } from '@/lib/adminAuth';
 import { Edit2, Trash2, X } from 'lucide-react';
 
@@ -17,6 +17,7 @@ export default function AdminServices() {
     title: '',
     description: '',
     price: 0,
+    discountedPrice: 0,
     features: '',
   });
 
@@ -34,12 +35,7 @@ export default function AdminServices() {
 
   async function loadServices() {
     try {
-      const token = adminAuth.getAdminToken();
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/services`,
-        config
-      );
+      const res = await api.get('/api/services');
       setServices(res.data.data?.services || []);
     } catch (err) {
       console.error('Failed to load services', err);
@@ -49,7 +45,7 @@ export default function AdminServices() {
   }
 
   const resetForm = () => {
-    setFormData({ title: '', description: '', price: 0, features: '' });
+    setFormData({ title: '', description: '', price: 0, discountedPrice: 0, features: '' });
     setIsEditing(false);
     setEditingId(null);
     setShowForm(false);
@@ -60,6 +56,7 @@ export default function AdminServices() {
       title: service.title,
       description: service.description,
       price: service.price,
+      discountedPrice: service.discountedPrice || 0,
       features: Array.isArray(service.features) ? service.features.join(', ') : 
                 (typeof service.features === 'string' ? service.features : ''),
     });
@@ -77,21 +74,14 @@ export default function AdminServices() {
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
+        discountedPrice: Number(formData.discountedPrice) || 0,
         features: formData.features.split(',').map(f => f.trim()).filter(f => f),
       };
 
       if (isEditing && editingId) {
-        await axios.put(
-          `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/services/${editingId}`,
-          payload,
-          config
-        );
+        await api.put(`/api/admin/services/${editingId}`, payload);
       } else {
-        await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/services`,
-          payload,
-          config
-        );
+        await api.post('/api/admin/services', payload);
       }
       
       resetForm();
@@ -104,12 +94,7 @@ export default function AdminServices() {
   async function handleDeleteService(id: string) {
     if (!confirm('Delete this service?')) return;
     try {
-      const token = adminAuth.getAdminToken();
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/services/${id}`,
-        config
-      );
+      await api.delete(`/api/admin/services/${id}`);
       loadServices();
     } catch (err) {
       alert('Failed to delete service');
@@ -205,6 +190,20 @@ export default function AdminServices() {
                     />
                   </div>
                 </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-black mb-2 uppercase tracking-wide">Discounted Price (₹)</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                    <input
+                      type="number"
+                      placeholder="3999"
+                      value={formData.discountedPrice}
+                      onChange={(e) => setFormData({ ...formData, discountedPrice: Number(e.target.value) })}
+                      className="w-full pl-8 pr-4 py-3 bg-white border border-gray-300 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition font-mono"
+                    />
+                  </div>
+                </div>
 
                 <div>
                   <label className="block text-sm font-bold text-black mb-2 uppercase tracking-wide">Features (comma-separated)</label>
@@ -257,9 +256,18 @@ export default function AdminServices() {
                       <div className="text-sm text-gray-600 mt-0.5 line-clamp-1">{s.description}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-bold bg-green-50 text-green-700">
-                        ₹{Number(s.price).toLocaleString()}
-                      </span>
+                      {s.discountedPrice > 0 ? (
+                        <div className="flex flex-col">
+                          <span className="text-xs text-gray-400 line-through">₹{Number(s.price).toLocaleString()}</span>
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-bold bg-green-50 text-green-700 w-fit">
+                            ₹{Number(s.discountedPrice).toLocaleString()}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-bold bg-gray-50 text-gray-700">
+                          ₹{Number(s.price).toLocaleString()}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">

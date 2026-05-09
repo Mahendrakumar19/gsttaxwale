@@ -22,11 +22,14 @@ interface DashboardSidebarProps {
 export default function DashboardSidebar({ isOpen = true, user }: DashboardSidebarProps) {
   const router = useRouter();
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    router.push('/auth/login');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('userRole');
+    setShowLogoutModal(false);
+    router.push('/');
   };
 
   const menuItems = [
@@ -141,12 +144,34 @@ export default function DashboardSidebar({ isOpen = true, user }: DashboardSideb
           {user?.pan && <p className="text-xs text-gray-600">PAN: {user.pan}</p>}
         </div>
         <button
-          onClick={handleLogout}
+          onClick={() => setShowLogoutModal(true)}
           className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 hover:text-red-700 text-sm font-medium transition rounded-lg border border-red-200">
           <LogOut size={16} />
           Logout
         </button>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm mx-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Logout Confirmation</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to logout?</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-medium">
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition font-medium">
+                Yes, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

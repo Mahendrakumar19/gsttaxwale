@@ -18,7 +18,7 @@ export default function AdminHeader() {
 
   const handleLogout = () => {
     adminAuth.clearAdmin();
-    window.location.href = '/admin';
+    window.location.href = '/';
   };
 
   if (!mounted) {

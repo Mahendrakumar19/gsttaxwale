@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { adminAuth } from '@/lib/adminAuth';
 import Link from 'next/link';
-import { LogOut, Menu, X, LayoutDashboard, Users, FileText, ShoppingCart, Ticket, Gift, Settings, Home, Phone } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Users, FileText, ShoppingCart, Ticket, Gift, Settings, Home, Phone, MapPin, Layout } from 'lucide-react';
 
 export default function RootAdminLayout({
   children,
@@ -71,9 +71,10 @@ export default function RootAdminLayout({
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
     { icon: Users, label: 'Customers', href: '/admin/customers' },
-    { icon: FileText, label: 'Documents', href: '/admin/documents' },
     { icon: ShoppingCart, label: 'Orders', href: '/admin/orders' },
+    { icon: FileText, label: 'Documents', href: '/admin/documents' },
     { icon: Home, label: 'Services', href: '/admin/services' },
+    { icon: MapPin, label: 'Store Locations', href: '/admin/locations' },
     { icon: Ticket, label: 'Support Tickets', href: '/admin/tickets' },
     { icon: Gift, label: 'Referrals', href: '/admin/referrals' },
     { icon: Settings, label: 'Settings', href: '/admin/settings' },

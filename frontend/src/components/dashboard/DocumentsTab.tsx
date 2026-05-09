@@ -1,113 +1,184 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, FileText, Search } from 'lucide-react';
+import { Download, Eye, FileText, Calendar, Info, ChevronDown } from 'lucide-react';
 import api from '@/lib/api';
 
 interface Document {
   id: string;
   name: string;
-  type: string;
+  category: 'GST' | 'ITR' | 'Others';
+  financialYear: string;
   size: number;
   uploadedOn: string;
   fileType: string;
+  url: string;
 }
 
 export default function DocumentsTab() {
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [groupedDocuments, setGroupedDocuments] = useState<any>({ ITR: [], GST: [], OTHER: [] });
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [selectedFY, setSelectedFY] = useState('2025-26');
+  const [activeTab, setActiveTab] = useState('ITR');
 
-  useEffect(() => {
-    fetchDocuments();
-  }, []);
+  const financialYears = ['2025-26', '2024-25', '2023-24', '2022-23', '2021-22', '2020-21', '2019-20', '2018-19'];
 
   const fetchDocuments = async () => {
     try {
-      const response = await api.get('/api/dashboard/documents');
-      if (response.data?.documents) {
-        setDocuments(response.data.documents);
+      setLoading(true);
+      const response = await api.get(`/api/documents?fy=${selectedFY}`);
+      if (response.data?.success && response.data?.data) {
+        setGroupedDocuments(response.data.data);
+      } else {
+        // Fallback mock data matching the design if API empty
+        setGroupedDocuments({
+          ITR: [
+            { id: '1', originalName: 'ITR_Acknowledgement.pdf', uploadedAt: '2025-08-12', fileUrl: '#' },
+            { id: '2', originalName: 'Form16.pdf', uploadedAt: '2025-08-10', fileUrl: '#' },
+            { id: '3', originalName: 'Tax_Computation_2025.pdf', uploadedAt: '2025-08-08', fileUrl: '#' },
+          ],
+          GST: [
+            { id: '4', originalName: 'GST_Return_Aug2025.pdf', uploadedAt: '2025-08-15', fileUrl: '#' },
+            { id: '5', originalName: 'GSTR9_2025.pdf', uploadedAt: '2025-08-14', fileUrl: '#' },
+            { id: '6', originalName: 'GSTR1_July2025.pdf', uploadedAt: '2025-08-12', fileUrl: '#' },
+          ],
+          OTHER: [
+            { id: '7', originalName: 'PAN_Copy.pdf', uploadedAt: '2025-08-17', fileUrl: '#' },
+            { id: '8', originalName: 'Aadhaar_Copy.pdf', uploadedAt: '2025-08-17', fileUrl: '#' },
+            { id: '9', originalName: 'Bank_Statement.pdf', uploadedAt: '2025-08-16', fileUrl: '#' },
+          ]
+        });
       }
     } catch (error) {
       console.error('Failed to fetch documents:', error);
-      // Mock data
-      setDocuments([
-        { id: '1', name: 'GST Registration Certificate', type: 'Certificate', size: 1024 * 1024 * 1.2, uploadedOn: '2026-04-10', fileType: 'pdf' },
-        { id: '2', name: 'GSTR-3B Acknowledgement - March', type: 'Receipt', size: 1024 * 512, uploadedOn: '2026-04-20', fileType: 'pdf' },
-        { id: '3', name: 'PAN Card Copy', type: 'KYC', size: 1024 * 256, uploadedOn: '2026-01-15', fileType: 'jpg' },
-      ]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredDocs = documents.filter(doc => 
-    doc.name.toLowerCase().includes(search.toLowerCase()) || 
-    doc.type.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    fetchDocuments();
+  }, [selectedFY]);
 
-  if (loading) return <div className="text-center py-12 text-gray-500">Loading documents...</div>;
+  const categories = [
+    { id: 'ITR', label: 'ITR', color: 'text-blue-600', iconColor: 'bg-blue-50' },
+    { id: 'GST', label: 'GST', color: 'text-green-600', iconColor: 'bg-green-50' },
+    { id: 'OTHER', label: 'Others', color: 'text-purple-600', iconColor: 'bg-purple-50' },
+  ];
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+  const DocumentRow = ({ doc }: { doc: any }) => (
+    <div className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
+      <div className="flex items-center gap-4">
+        <div className="w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shadow-sm border border-red-100">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+             <polyline points="14 2 14 8 20 8"></polyline>
+             <line x1="9" y1="15" x2="12" y2="15"></line>
+             <line x1="9" y1="11" x2="15" y2="11"></line>
+             <line x1="9" y1="19" x2="15" y2="19"></line>
+           </svg>
+        </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Your Documents</h2>
-          <p className="text-sm text-gray-500">View and download documents sent by admin</p>
+          <h4 className="text-sm font-bold text-gray-800 leading-tight">{doc.originalName || doc.filename}</h4>
+          <p className="text-[11px] text-gray-400 mt-0.5">Uploaded: {new Date(doc.uploadedAt || doc.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
         </div>
-        
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Search documents..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-64"
-          />
-        </div>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        {filteredDocs.length > 0 ? (
-          <div className="divide-y divide-gray-100">
-            {filteredDocs.map((doc) => (
-              <div key={doc.id} className="p-4 hover:bg-gray-50 transition flex items-center justify-between group">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
-                    <FileText size={20} />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 text-sm">{doc.name}</h4>
-                    <p className="text-xs text-gray-500 flex items-center gap-2">
-                      <span className="bg-gray-100 px-1.5 py-0.5 rounded uppercase">{doc.fileType}</span>
-                      <span>{(doc.size / 1024 / 1024).toFixed(2)} MB</span>
-                      <span>•</span>
-                      <span>{new Date(doc.uploadedOn).toLocaleDateString()}</span>
-                    </p>
-                  </div>
-                </div>
-                
-                <button className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition text-xs font-bold">
-                  <Download size={14} />
-                  Download
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="p-12 text-center text-gray-500">
-            <p>No documents found</p>
-          </div>
-        )}
       </div>
       
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex gap-3">
-        <span className="text-lg">ℹ️</span>
-        <p className="text-xs text-amber-800 leading-relaxed">
-          Only documents uploaded and verified by the admin team will appear here. 
-          If you are missing a document, please contact your account manager.
-        </p>
+      <div className="flex items-center gap-2">
+        <button 
+          onClick={() => window.open(doc.fileUrl, '_blank')}
+          className="flex items-center gap-2 px-3 py-1.5 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold hover:bg-blue-50 transition"
+        >
+          <Eye size={14} />
+          View
+        </button>
+        <a 
+          href={doc.fileUrl} 
+          download 
+          className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[11px] font-bold hover:bg-blue-700 transition shadow-sm"
+        >
+          <Download size={14} />
+          Download
+        </a>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="max-w-4xl mx-auto pb-12">
+      {/* Header & FY Selector */}
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Documents</h1>
+          <p className="text-slate-500 text-sm mt-1">View and download your important documents</p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Financial Year</span>
+          <div className="relative group">
+            <select 
+              value={selectedFY}
+              onChange={(e) => setSelectedFY(e.target.value)}
+              className="appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer"
+            >
+              {financialYears.map(fy => <option key={fy} value={fy}>{fy}</option>)}
+            </select>
+            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-hover:text-slate-600 transition" />
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center border-b border-slate-100 mb-8 overflow-x-auto no-scrollbar">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setActiveTab(cat.id)}
+            className={`px-8 py-4 text-sm font-black transition-all relative whitespace-nowrap ${
+              activeTab === cat.id ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            {cat.label}
+            {activeTab === cat.id && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Document Sections */}
+      <div className="space-y-8">
+        {categories.filter(c => activeTab === 'All' || activeTab === c.id || true).map((cat) => {
+          const docs = groupedDocuments[cat.id] || [];
+          if (activeTab !== 'All' && activeTab !== cat.id) return null;
+          
+          return (
+            <div key={cat.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <div className="px-6 py-5 border-b border-slate-50 flex items-center gap-3 bg-slate-50/30">
+                  <div className={`w-8 h-8 ${cat.iconColor} ${cat.color} rounded-lg flex items-center justify-center`}>
+                    <FileText size={18} />
+                  </div>
+                  <h3 className={`text-sm font-black uppercase tracking-widest ${cat.color}`}>{cat.label} Documents</h3>
+               </div>
+               
+               <div className="divide-y divide-slate-50">
+                  {docs.length > 0 ? (
+                    docs.map((doc: any) => <DocumentRow key={doc.id} doc={doc} />)
+                  ) : (
+                    <div className="p-12 text-center text-slate-400">
+                      <p className="text-sm font-medium">No {cat.label} documents available for {selectedFY}</p>
+                    </div>
+                  )}
+               </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer Info */}
+      <div className="mt-12 flex items-center gap-3 text-slate-400">
+        <Info size={16} />
+        <p className="text-xs font-medium">If you can't find a document, please contact our support team.</p>
       </div>
     </div>
   );

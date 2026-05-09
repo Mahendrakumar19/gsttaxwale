@@ -94,7 +94,7 @@ export default function RefundPolicy() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">8. Contact Information</h2>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-3">
               <p><strong className="text-gray-900">Email:</strong> help@gsttaxwale.com</p>
-              <p><strong className="text-gray-900">Phone:</strong> +91-XXXXXXXXXX</p>
+              <p><strong className="text-gray-900">Phone:</strong> +91-7739-301-568</p>
               <p><strong className="text-gray-900">Address:</strong> GST Tax Wale, India</p>
               <p><strong className="text-gray-900">Business Hours:</strong> Monday - Friday, 9 AM - 6 PM IST</p>
             </div>

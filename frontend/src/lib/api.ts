@@ -15,8 +15,12 @@ api.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
       const token = sessionStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      const adminToken = sessionStorage.getItem('adminToken');
+      const tempToken = sessionStorage.getItem('tempToken');
+      
+      const authToken = adminToken || token || tempToken;
+      if (authToken) {
+        config.headers.Authorization = `Bearer ${authToken}`;
       }
     }
     return config;

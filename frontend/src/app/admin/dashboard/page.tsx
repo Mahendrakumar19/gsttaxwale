@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import api from '@/lib/api';
 import { adminAuth } from '@/lib/adminAuth';
-import { Users, FileText, ShoppingCart, Ticket, Gift, BarChart3, TrendingUp, Activity } from 'lucide-react';
+import { Users, FileText, ShoppingCart, Ticket, Gift, BarChart3, TrendingUp, Activity, Layout, MapPin } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -28,7 +28,7 @@ export default function AdminDashboard() {
     const user = adminAuth.getAdminUser();
     
     if (!adminToken || !user || user.role !== 'admin') {
-      router.push('/admin/login');
+      router.push('/auth/admin-login');
       return;
     }
     
@@ -41,32 +41,21 @@ export default function AdminDashboard() {
 
     async function loadStats() {
       try {
-        const token = adminAuth.getAdminToken();
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const [servRes, ordRes, usersRes] = await Promise.all([
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/services`, config).catch(() => ({ data: { data: { services: [] } } })),
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders`, config).catch(() => ({ data: { data: { orders: [] } } })),
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/users`, config).catch(() => ({ data: { data: { users: [] } } })),
-        ]);
-
-        const services = servRes.data.data?.services || [];
-        const orders = ordRes.data.data?.orders || [];
-        const users = usersRes.data.data?.users || [];
-        const totalRevenue = orders.reduce((sum: number, o: any) => sum + (o.amount || 0), 0);
-        const pendingOrders = orders.filter((o: any) => o.status === 'pending').length;
-
+        const response = await api.get('/api/admin/analytics');
+        const data = response.data.data || response.data;
+        
         setStats({
-          services: services.length,
-          orders: orders.length,
-          totalRevenue,
-          pendingOrders,
-          totalUsers: users.length,
-          clients: 15,
-          documents: 128,
-          tickets: 23,
+          services: data.totalServices || 0,
+          orders: data.totalOrders || 0,
+          totalRevenue: data.totalRevenue || 0,
+          pendingOrders: data.pendingOrders || 0,
+          totalUsers: data.totalUsers || 0,
+          clients: data.totalUsers || 0,
+          documents: data.totalDocuments || 0,
+          tickets: data.totalTickets || 0,
         });
       } catch (err) {
-        console.error('Failed to load stats:', err);
+        console.error('Failed to load analytics:', err);
       } finally {
         setLoading(false);
       }
@@ -95,20 +84,28 @@ export default function AdminDashboard() {
       count: stats.orders,
     },
     {
-      icon: FileText,
-      label: 'Documents',
-      desc: 'Manage uploaded documents',
-      href: '/admin/documents',
-      color: 'purple',
-      count: stats.documents,
+      icon: Activity,
+      label: 'Services',
+      desc: 'Manage tax services',
+      href: '/admin/services',
+      color: 'indigo',
+      count: stats.services,
     },
     {
-      icon: Ticket,
-      label: 'Support Tickets',
-      desc: 'Handle customer support',
-      href: '/admin/tickets',
-      color: 'orange',
-      count: stats.tickets,
+      icon: Gift,
+      label: 'Referrals',
+      desc: 'Track user rewards',
+      href: '/admin/referrals',
+      color: 'pink',
+      count: stats.totalUsers,
+    },
+    {
+      icon: Users,
+      label: 'Users',
+      desc: 'Manage customer accounts',
+      href: '/admin/customers',
+      color: 'blue',
+      count: stats.totalUsers,
     },
   ];
 

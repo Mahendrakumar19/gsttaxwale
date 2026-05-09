@@ -14,9 +14,10 @@ export default function SiteHeader() {
 
   const checkAuthStatus = async () => {
     // Check for both token and adminToken
-    const token = sessionStorage.getItem('token') || sessionStorage.getItem('adminToken');
-    const adminToken = sessionStorage.getItem('adminToken');
-    const userRole = sessionStorage.getItem('userRole');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token') || 
+                  sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
+    const adminToken = sessionStorage.getItem('adminToken') || localStorage.getItem('adminToken');
+    const userRole = sessionStorage.getItem('userRole') || localStorage.getItem('userRole');
     
     if (token) {
       setIsLoggedIn(true);
@@ -55,11 +56,8 @@ export default function SiteHeader() {
   }, []);
 
   const handleLogout = () => {
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('user');
-    sessionStorage.removeItem('adminToken');
-    sessionStorage.removeItem('adminUser');
-    sessionStorage.removeItem('userRole');
+    sessionStorage.clear();
+    localStorage.clear();
     setIsLoggedIn(false);
     setIsAdmin(false);
     router.push('/');
@@ -100,8 +98,8 @@ export default function SiteHeader() {
             <Link href="/services" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition">
               Services
             </Link>
-            <Link href="/pricing" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition">
-              Pricing
+            <Link href="/about-us" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition">
+              About Us
             </Link>
             <Link href="/contact" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition">
               Contact
@@ -159,11 +157,11 @@ export default function SiteHeader() {
                 Services
               </Link>
               <Link
-                href="/pricing"
+                href="/about-us"
                 className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 block px-3 py-2 rounded-md text-base font-medium transition"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Pricing
+                About Us
               </Link>
               <Link
                 href="/contact"

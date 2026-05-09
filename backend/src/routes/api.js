@@ -1,3 +1,5 @@
+console.log('🚀 Loading API routes...');
+
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
@@ -12,23 +14,55 @@ const inquiryController = require('../controllers/inquiryController');
 const consultationController = require('../controllers/consultationController');
 const customerController = require('../controllers/customerController');
 const documentController = require('../controllers/documentController');
+const dueDatesController = require('../controllers/dueDatesController');
+const pricingController = require('../controllers/pricingController');
+const contactController = require('../controllers/contactController');
+const publicReferralController = require('../controllers/publicReferralController');
+const locationController = require('../controllers/locationController');
 const multer = require('multer');
-const { authenticate, adminOnly, asyncHandler } = require('../middleware/auth');
+const { authenticate, adminOnly, optionalAuthenticate, asyncHandler } = require('../middleware/auth');
+const db = require('../utils/db');
+
+// DEBUG ROUTES
+router.get('/debug/db-test', asyncHandler(async (req, res) => {
+  try {
+    const r1 = await db.query('SELECT 1 as test');
+    const r2 = await db.query('SELECT * FROM Service LIMIT 1');
+    res.json({ 
+      success: true, 
+      connection: 'OK', 
+      node: process.version,
+      env: process.env.NODE_ENV,
+      testResult: r1, 
+      serviceSample: r2 
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message, stack: err.stack });
+  }
+}));
 
 // Multer configuration for file uploads
 const upload = multer({ dest: 'uploads/temp' });
 
-// ────────────────────────────────────────────────────────────────────
+// CONTACT FORM
+router.post('/contact', optionalAuthenticate, asyncHandler(contactController.handleContactForm));
+router.post('/referrals/generate-public', asyncHandler(publicReferralController.generatePublicReferral));
+
 // AUTH ROUTES
-// ────────────────────────────────────────────────────────────────────
+router.post('/auth/send-service-purchase-otp', asyncHandler(authController.sendServicePurchaseOTP));
+router.post('/auth/verify-service-purchase-otp', asyncHandler(authController.verifyServicePurchaseOTP));
 // SIGNUP REMOVED - Users can only be created by admin
 router.post('/auth/login', asyncHandler(authController.login));
+router.post('/auth/admin-login', asyncHandler(authController.adminLogin));
 router.post('/auth/send-otp', asyncHandler(authController.sendOTP));
-router.post('/auth/verify-otp', asyncHandler(authController.verifyOTPCode));
+router.post('/auth/verify-otp', asyncHandler(authController.verifyOTP));
 router.post('/auth/forgot-password', asyncHandler(authController.forgotPassword));
 router.post('/auth/verify-password-otp', asyncHandler(authController.verifyPasswordOTP));
 router.post('/auth/reset-password', asyncHandler(authController.resetPassword));
 router.post('/auth/logout', authenticate, asyncHandler(authController.logout));
+router.post('/auth/convert-guest-to-account', asyncHandler(authController.convertGuestToAccount));
+router.post('/auth/check-email', asyncHandler(authController.checkEmail));
+router.post('/auth/create-guest', asyncHandler(authController.createGuest));
 router.get('/auth/me', authenticate, asyncHandler(authController.getCurrentUser));
 router.put('/auth/profile', authenticate, asyncHandler(authController.updateProfile));
 
@@ -50,12 +84,39 @@ router.get('/admin/tickets', authenticate, adminOnly, asyncHandler(ticketControl
 // REFERRAL ROUTES
 // ────────────────────────────────────────────────────────────────────
 router.post('/referrals', authenticate, asyncHandler(referralController.createReferral));
-router.get('/referrals', authenticate, asyncHandler(referralController.getUserReferrals));
+router.get('/referrals', authenticate, asyncHandler(referralController.getReferralInfo));
+router.get('/referrals/link', authenticate, asyncHandler(referralController.getReferralLink));
+router.post('/referrals/register', asyncHandler(referralController.registerReferral));
+router.post('/referrals/convert', authenticate, asyncHandler(referralController.trackReferralConversion));
+router.post('/referrals/redeem-points', authenticate, asyncHandler(referralController.redeemPoints));
+router.get('/referrals/history', authenticate, asyncHandler(referralController.getRedemptionHistory));
 router.get('/referrals/:id', authenticate, asyncHandler(referralController.getReferral));
 router.put('/referrals/:id', authenticate, adminOnly, asyncHandler(referralController.updateReferral));
 router.get('/admin/referrals', authenticate, adminOnly, asyncHandler(referralController.getAllReferrals));
 router.get('/admin/referrals-stats', authenticate, adminOnly, asyncHandler(referralController.getReferralStats));
 router.post('/admin/referrals/:id/verify', authenticate, adminOnly, asyncHandler(referralController.verifyReferral));
+
+// ────────────────────────────────────────────────────────────────────
+// DOCUMENT ROUTES
+// ────────────────────────────────────────────────────────────────────
+router.post('/documents/upload', authenticate, upload.single('file'), asyncHandler(documentController.uploadDocument));
+router.get('/documents', authenticate, asyncHandler(documentController.getUserDocuments));
+router.delete('/documents/:documentId', authenticate, asyncHandler(documentController.deleteDocument));
+router.get('/documents/financial-years', authenticate, asyncHandler(documentController.getFinancialYears));
+
+// ────────────────────────────────────────────────────────────────────
+// ADMIN SYSTEM ROUTES
+// ────────────────────────────────────────────────────────────────────
+router.get('/admin/stats', authenticate, adminOnly, asyncHandler(adminController.getAdminStats));
+
+// ────────────────────────────────────────────────────────────────────
+// DASHBOARD ROUTES
+// ────────────────────────────────────────────────────────────────────
+router.get('/dashboard', authenticate, asyncHandler(dashboardController.getDashboard));
+router.get('/dashboard/filing-status', authenticate, asyncHandler(dashboardController.getFilingStatus));
+router.get('/dashboard/services', authenticate, asyncHandler(dashboardController.getUserServices));
+router.get('/dashboard/documents', authenticate, asyncHandler(dashboardController.getUserDocumentsGrouped));
+router.delete('/dashboard/filing', authenticate, asyncHandler(dashboardController.removeFiling));
 
 // ────────────────────────────────────────────────────────────────────
 // INQUIRY ROUTES
@@ -152,6 +213,17 @@ router.get('/admin/export/users-excel', authenticate, adminOnly, asyncHandler(ad
 router.get('/admin/analytics', authenticate, adminOnly, asyncHandler(adminController.getAnalytics));
 
 // ────────────────────────────────────────────────────────────────────
+// SERVICE PRICING (Admin Management)
+// ────────────────────────────────────────────────────────────────────
+router.get('/admin/pricing', authenticate, adminOnly, asyncHandler(pricingController.getServicePricing));
+router.get('/admin/pricing/:serviceId', authenticate, adminOnly, asyncHandler(pricingController.getServicePrice));
+router.post('/admin/pricing', authenticate, adminOnly, asyncHandler(pricingController.setServicePricing));
+router.delete('/admin/pricing/:serviceId', authenticate, adminOnly, asyncHandler(pricingController.removePricing));
+
+// Public endpoint to get active pricing
+router.get('/pricing/active', asyncHandler(pricingController.getActivePricing));
+
+// ────────────────────────────────────────────────────────────────────
 // SERVICES (PUBLIC)
 // ────────────────────────────────────────────────────────────────────
 router.get('/services', asyncHandler(serviceController.listServices));
@@ -167,43 +239,42 @@ router.delete('/admin/services/:id', authenticate, adminOnly, asyncHandler(servi
 // ────────────────────────────────────────────────────────────────────
 // ORDERS / CHECKOUT (Razorpay Integration)
 // ────────────────────────────────────────────────────────────────────
-// No guest checkout - account required
 router.post('/orders', authenticate, asyncHandler(orderController.createOrder));
+router.post('/orders/create-inquiry', asyncHandler(orderController.createInquiry));
+router.post('/orders/guest-checkout', asyncHandler(orderController.createGuestCheckout));
 router.get('/orders', authenticate, asyncHandler(orderController.listOrders));
 router.get('/orders/:id', authenticate, asyncHandler(orderController.getOrder));
 router.post('/orders/verify', asyncHandler(orderController.verifyPayment));
 
 
 // ────────────────────────────────────────────────────────────────────
-// DOCUMENT MANAGEMENT ROUTES
+// CLEAN BACKEND FLOW ROUTES
 // ────────────────────────────────────────────────────────────────────
-// Admin uploads documents for users
-router.post('/admin/documents/upload', authenticate, adminOnly, upload.single('file'), asyncHandler(documentController.uploadDocument));
+// FLOW 1: ADMIN UPLOADS DOCUMENT
+router.post('/admin/upload-document', authenticate, adminOnly, upload.single('file'), asyncHandler(documentController.adminUploadDocument));
+router.post('/admin/documents/upload', authenticate, adminOnly, upload.single('file'), asyncHandler(documentController.adminUploadDocument));
 
-// Get documents for specific user
-router.get('/documents/user/:userId', authenticate, asyncHandler(documentController.getUserDocuments));
 
-// User's own documents
-router.get('/documents/my-documents', authenticate, asyncHandler(documentController.getUserDocuments));
+// FLOW 2: USER OPENS DOCUMENT PAGE (Grouped by Category & FY)
+router.get('/documents', authenticate, asyncHandler(documentController.getGroupedDocuments));
 
-// Download document
-router.get('/documents/download/:filename', authenticate, asyncHandler(documentController.downloadDocument));
+// WALLET & POINTS
+router.get('/dashboard/wallet', authenticate, asyncHandler(referralController.getReferralInfo));
 
-// Admin - view all documents
-router.get('/admin/documents', authenticate, adminOnly, asyncHandler(documentController.getAllDocuments));
+// FLOW 3: ADMIN UPDATES FILING STATUS
+router.put('/admin/update-filing-status', authenticate, adminOnly, asyncHandler(adminController.updateFilingStatus));
 
-// Admin - archive document
-router.patch('/admin/documents/:documentId/archive', authenticate, adminOnly, asyncHandler(documentController.archiveDocument));
+// ────────────────────────────────────────────────────────────────────
+// ADMIN: SUPPORT & REDEMPTION TICKETS
+// ────────────────────────────────────────────────────────────────────
+router.get('/admin/tickets', authenticate, adminOnly, asyncHandler(ticketController.getAllTickets));
+router.get('/admin/tickets/:id', authenticate, adminOnly, asyncHandler(ticketController.getTicket));
+router.put('/admin/tickets/:id', authenticate, adminOnly, asyncHandler(ticketController.updateTicket));
+router.delete('/admin/tickets/:id', authenticate, adminOnly, asyncHandler(ticketController.deleteTicket));
+router.get('/admin/referrals', authenticate, adminOnly, asyncHandler(referralController.getAllReferrals));
 
-// Admin - delete document
-router.delete('/admin/documents/:documentId', authenticate, adminOnly, asyncHandler(documentController.deleteDocument));
 
-// Admin - update document status
-router.put('/admin/documents/:documentId/status', authenticate, adminOnly, asyncHandler(documentController.updateDocumentStatus));
-
-// Admin - document statistics
-router.get('/admin/documents/stats', authenticate, adminOnly, asyncHandler(documentController.getDocumentStats));
-
+// DOCUMENT MANAGEMENT ROUTES (Existing)
 // ────────────────────────────────────────────────────────────────────
 // NEWS & UPDATES ROUTES (PUBLIC)
 // ────────────────────────────────────────────────────────────────────
@@ -289,114 +360,26 @@ router.get('/news', (req, res) => {
 });
 
 // ────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────
+// LOCATION ROUTES
+// ────────────────────────────────────────────────────────────────────
+router.get('/locations', asyncHandler(locationController.listLocations));
+router.get('/admin/locations', authenticate, adminOnly, asyncHandler(locationController.adminListLocations));
+router.post('/admin/locations', authenticate, adminOnly, asyncHandler(locationController.createLocation));
+router.put('/admin/locations/:id', authenticate, adminOnly, asyncHandler(locationController.updateLocation));
+router.delete('/admin/locations/:id', authenticate, adminOnly, asyncHandler(locationController.deleteLocation));
+
 // DUE DATES ROUTES (PUBLIC)
 // ────────────────────────────────────────────────────────────────────
-// Get upcoming deadlines and due dates
-router.get('/due-dates', (req, res) => {
-  const MOCK_DUE_DATES = [
-    {
-      id: '1',
-      title: 'GSTR-3B Filing',
-      description: 'File GSTR-3B for March 2026 (Monthly filing)',
-      dueDate: '2026-04-20',
-      filingType: 'GSTR-3B',
-      status: 'upcoming',
-      frequency: 'Monthly (20th of next month)',
-    },
-    {
-      id: '2',
-      title: 'GSTR-1 Filing',
-      description: 'File GSTR-1 for March 2026 (Outward supplies)',
-      dueDate: '2026-04-11',
-      filingType: 'GSTR-1',
-      status: 'upcoming',
-      frequency: 'Monthly (11th of next month)',
-    },
-    {
-      id: '3',
-      title: 'GSTR-2A Reconciliation',
-      description: 'Reconcile your GSTR-2A with supplier invoices',
-      dueDate: '2026-04-25',
-      filingType: 'GSTR-2',
-      status: 'upcoming',
-      frequency: 'Monthly',
-    },
-    {
-      id: '4',
-      title: 'Annual Return (GSTR-9)',
-      description: 'File GSTR-9 for FY 2025-26 (Annual return)',
-      dueDate: '2026-06-30',
-      filingType: 'GSTR-9',
-      status: 'upcoming',
-      frequency: 'Annual (June 30)',
-    },
-    {
-      id: '5',
-      title: 'ITC Reconciliation (GSTR-2B)',
-      description: 'Review and reconcile input tax credit from GSTR-2B',
-      dueDate: '2026-05-31',
-      filingType: 'GSTR-2',
-      status: 'upcoming',
-      frequency: 'Monthly/As required',
-    },
-    {
-      id: '6',
-      title: 'TDS/TCS Filing',
-      description: 'File TDS/TCS returns for March quarter 2026',
-      dueDate: '2026-04-30',
-      filingType: 'TDS',
-      status: 'upcoming',
-      frequency: 'Quarterly',
-    },
-    {
-      id: '7',
-      title: 'Income Tax Return (ITR)',
-      description: 'File ITR for FY 2025-26',
-      dueDate: '2026-07-31',
-      filingType: 'ITR',
-      status: 'upcoming',
-      frequency: 'Annual (July 31)',
-    },
-  ];
+// Get all due dates (GST and ITR)
+router.get('/due-dates', asyncHandler(dueDatesController.getDueDates));
 
-  try {
-    const limit = parseInt(req.query.limit || '6');
-    const filingType = req.query.filingType;
-    const status = req.query.status;
+// Get only GST due dates
+router.get('/due-dates/gst', asyncHandler(dueDatesController.getGSTDueDates));
 
-    let dueDates = [...MOCK_DUE_DATES];
+// Get only ITR due dates
+router.get('/due-dates/itr', asyncHandler(dueDatesController.getITRDueDates));
 
-    // Filter by filing type if provided
-    if (filingType) {
-      dueDates = dueDates.filter((item) => item.filingType === filingType);
-    }
-
-    // Filter by status if provided
-    if (status && ['upcoming', 'due-soon', 'overdue'].includes(status)) {
-      dueDates = dueDates.filter((item) => item.status === status);
-    }
-
-    // Sort by due date (earliest first)
-    dueDates.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-
-    // Limit results
-    const limited = dueDates.slice(0, limit);
-
-    res.json({
-      success: true,
-      data: {
-        dueDates: limited,
-        total: limited.length,
-      },
-    });
-  } catch (error) {
-    console.error('Error fetching due dates:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch due dates',
-    });
-  }
-});
 
 // ────────────────────────────────────────────────────────────────────
 // FALLBACK ROUTE FOR UNHANDLED API REQUESTS

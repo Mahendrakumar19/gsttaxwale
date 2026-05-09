@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import api from '@/lib/api';
 import { adminAuth } from '@/lib/adminAuth';
 
 export default function AdminOrders() {
@@ -26,12 +26,7 @@ export default function AdminOrders() {
   async function loadOrders() {
     setRefreshing(true);
     try {
-      const token = adminAuth.getAdminToken();
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders`,
-        config
-      );
+      const res = await api.get('/api/orders');
       setOrders(res.data.data?.orders || []);
     } catch (err) {
       console.error('Failed to load orders', err);
@@ -43,13 +38,7 @@ export default function AdminOrders() {
 
   async function handleUpdateOrderStatus(orderId: string, newStatus: string) {
     try {
-      const token = adminAuth.getAdminToken();
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/orders/${orderId}`,
-        { status: newStatus },
-        config
-      );
+      await api.put(`/api/admin/orders/${orderId}`, { status: newStatus });
       loadOrders();
     } catch (err) {
       alert('Failed to update order status');
@@ -123,10 +112,14 @@ export default function AdminOrders() {
                 {orders.map((o) => (
                   <tr key={o.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
                     <td className="px-6 py-4 text-sm font-mono text-gray-900">{o.id.substring(0, 8)}…</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{o.serviceId || '—'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{o.service?.title || o.serviceId || '—'}</td>
                     <td className="px-6 py-4 font-semibold text-green-600">₹{o.amount?.toLocaleString()}</td>
                     <td className="px-6 py-4">{getStatusBadge(o.status)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{o.customer?.name || o.customer?.email || 'Guest'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      <div className="font-medium">{o.customer?.name || o.guestName || 'Guest'}</div>
+                      <div className="text-xs text-gray-500">{o.customer?.email || o.guestEmail}</div>
+                      {o.guestPan && <div className="text-[10px] text-blue-600 font-mono uppercase">PAN: {o.guestPan}</div>}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-900">{new Date(o.createdAt).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-right space-x-2">
                       {o.status !== 'paid' && (

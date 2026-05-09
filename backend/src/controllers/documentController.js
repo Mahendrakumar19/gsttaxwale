@@ -21,6 +21,12 @@ exports.uploadDocument = async (req, res) => {
       return res.status(400).json({ error: 'Customer ID, name, and PAN are required' });
     }
 
+    const parsedCustomerId = parseInt(customerId);
+    if (isNaN(parsedCustomerId)) {
+      if (file) fs.unlinkSync(file.path);
+      return res.status(400).json({ error: 'Invalid Customer ID' });
+    }
+
     // Check file size (50MB max)
     if (file.size > 52428800) {
       fs.unlinkSync(file.path);
@@ -28,7 +34,7 @@ exports.uploadDocument = async (req, res) => {
     }
 
     // Create organized directory structure: uploads/[customerId]/[fiscalYear]/[category]
-    const uploadDir = path.join(__dirname, '../../uploads');
+    const uploadDir = path.join(__dirname, '../../../uploads');
     const customerDir = path.join(uploadDir, customerId);
     const yearDir = path.join(customerDir, fiscalYear || 'general');
     const categoryDir = path.join(yearDir, category || 'other');
@@ -46,7 +52,7 @@ exports.uploadDocument = async (req, res) => {
     // Save document info to database
     const document = await prisma.document.create({
       data: {
-        userId: customerId,
+        userId: parsedCustomerId,
         title: file.originalname,
         description: `${category} - ${fiscalYear}`,
         type: category || 'other',
@@ -59,8 +65,9 @@ exports.uploadDocument = async (req, res) => {
         filePath: path.relative(uploadDir, finalPath), // Store relative path
         fileType: file.mimetype,
         downloadUrl: `/api/documents/download/${uniqueFilename}`,
-        uploadedBy: req.user?.id || 'admin',
+        uploadedBy: req.userId || 1,
         status: 'active',
+        isAdminUploaded: true,
       },
     });
 
@@ -113,7 +120,7 @@ exports.downloadDocument = async (req, res) => {
     }
 
     // Check file exists
-    const uploadDir = path.join(__dirname, '../../uploads');
+    const uploadDir = path.join(__dirname, '../../../uploads');
     const filePath = path.join(uploadDir, filename);
 
     if (!fs.existsSync(filePath)) {
@@ -262,7 +269,7 @@ exports.deleteDocument = async (req, res) => {
     }
 
     // Delete file from filesystem
-    const uploadDir = path.join(__dirname, '../../uploads');
+    const uploadDir = path.join(__dirname, '../../../uploads');
     const filePath = path.join(uploadDir, document.filePath);
     
     if (fs.existsSync(filePath)) {
@@ -365,5 +372,102 @@ exports.getDocumentStats = async (req, res) => {
   } catch (err) {
     console.error('Error fetching document stats:', err);
     res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+};
+// ════════════════════════════════════════════════════════════════════
+// FLOW 1: ADMIN UPLOADS DOCUMENT
+// ════════════════════════════════════════════════════════════════════
+exports.adminUploadDocument = async (req, res) => {
+  try {
+    const { userId, documentType, financialYear } = req.body;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    if (!userId || !documentType || !financialYear) {
+      if (file) fs.unlinkSync(file.path);
+      return res.status(400).json({ error: 'userId, documentType, and financialYear are required' });
+    }
+
+    const uploadDir = path.join(__dirname, '../../../uploads');
+    const userDir = path.join(uploadDir, userId.toString());
+    const yearDir = path.join(userDir, financialYear);
+    
+    if (!fs.existsSync(yearDir)) {
+      fs.mkdirSync(yearDir, { recursive: true });
+    }
+
+    const uniqueFilename = `${Date.now()}_${file.originalname}`;
+    const finalPath = path.join(yearDir, uniqueFilename);
+    fs.renameSync(file.path, finalPath);
+
+    // Save DB record using correct schema fields
+    const document = await prisma.document.create({
+      data: {
+        userId: parseInt(userId),
+        title: file.originalname,
+        fileName: file.originalname,
+        fileSize: file.size,
+        filePath: path.relative(uploadDir, finalPath),
+        fileType: file.mimetype,
+        type: 'tax-filing',
+        category: documentType, // e.g. "ITR", "GST", "OTHER"
+        fiscalYear: financialYear,
+        downloadUrl: `/api/documents/download/${uniqueFilename}`,
+        uploadedBy: req.userId || 1, // Must be an Int
+        isAdminUploaded: true,
+        status: 'active'
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Document uploaded successfully',
+      data: document
+    });
+  } catch (err) {
+    console.error('Error in adminUploadDocument:', err);
+    res.status(500).json({ error: 'Failed to upload document: ' + err.message });
+  }
+};
+
+// ════════════════════════════════════════════════════════════════════
+// FLOW 2: USER OPENS DOCUMENT PAGE (Grouped)
+// ════════════════════════════════════════════════════════════════════
+exports.getGroupedDocuments = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { fy } = req.query;
+
+    if (!fy) {
+      return res.status(400).json({ error: 'Financial year (fy) is required' });
+    }
+
+    const documents = await prisma.document.findMany({
+      where: {
+        userId: userId,
+        financialYear: fy,
+        visible: true,
+        deletedAt: null
+      },
+      orderBy: { uploadedAt: 'desc' }
+    });
+
+    // Grouping logic: ITR, GST, OTHER
+    const grouped = {
+      ITR: documents.filter(d => d.documentType === 'ITR'),
+      GST: documents.filter(d => d.documentType === 'GST'),
+      OTHER: documents.filter(d => d.documentType === 'OTHER' || !['ITR', 'GST'].includes(d.documentType))
+    };
+
+    res.json({
+      success: true,
+      data: grouped
+    });
+  } catch (err) {
+    console.error('Error in getGroupedDocuments:', err);
+    res.status(500).json({ error: 'Failed to fetch documents' });
   }
 };

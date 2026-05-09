@@ -1,223 +1,321 @@
-const prisma = require('../utils/prisma');
+// =============================================================================
+// REFERRAL CONTROLLER - Handle referral system, points, and rewards
+// =============================================================================
 
-// Create a referral (user refers someone)
-async function createReferral(req, res) {
-  const { refereeEmail, refereePhone } = req.body;
-  const referrerId = req.user.id;
+const db = require('../utils/db');
+const { successResponse, errorResponse } = require('../utils/helpers');
 
-  if (!refereeEmail) {
-    return res.status(400).json({ error: 'Referee email is required' });
-  }
-
-  const referral = await prisma.referral.create({
-    data: {
-      referrerId,
-      refereeEmail,
-      refereePhone: refereePhone || null,
-      commissionPercent: 10,
-      referralStatus: 'pending'
-    },
-    include: { referrer: { select: { id: true, name: true, email: true } } }
-  });
-
-  res.json({ data: { referral }, message: 'Referral created successfully' });
-}
-
-// Get user's referrals
-async function getUserReferrals(req, res) {
-  const userId = req.user.id;
-
-  const referrals = await prisma.referral.findMany({
-    where: { referrerId: userId },
-    include: { 
-      referee: { select: { id: true, name: true, email: true } }
-    },
-    orderBy: { createdAt: 'desc' }
-  });
-
-  // Calculate total commission
-  const totalCommission = referrals.reduce((sum, ref) => sum + (ref.commissionAmount || 0), 0);
-
-  res.json({ 
-    data: { 
-      referrals,
-      totalCommission,
-      count: referrals.length
-    } 
-  });
-}
-
-// Get all referrals (admin)
-async function getAllReferrals(req, res) {
-  const referrals = await prisma.referral.findMany({
-    include: {
-      referrer: { select: { id: true, name: true, email: true } },
-      referee: { select: { id: true, name: true, email: true } }
-    },
-    orderBy: { createdAt: 'desc' }
-  });
-
-  res.json({ data: { referrals } });
-}
-
-// Get referral by ID
-async function getReferral(req, res) {
-  const { id } = req.params;
-
-  const referral = await prisma.referral.findUnique({
-    where: { id },
-    include: {
-      referrer: { select: { id: true, name: true, email: true } },
-      referee: { select: { id: true, name: true, email: true } }
-    }
-  });
-
-  if (!referral) {
-    return res.status(404).json({ error: 'Referral not found' });
-  }
-
-  res.json({ data: { referral } });
-}
-
-// Update referral (admin - add commission, change status)
-async function updateReferral(req, res) {
-  const { id } = req.params;
-  const { referralStatus, commissionAmount, orderId, notes } = req.body;
-
-  const referral = await prisma.referral.findUnique({ where: { id } });
-  if (!referral) {
-    return res.status(404).json({ error: 'Referral not found' });
-  }
-
-  const updateData = {};
-  if (referralStatus) updateData.referralStatus = referralStatus;
-  if (commissionAmount !== undefined) updateData.commissionAmount = commissionAmount;
-  if (orderId) updateData.orderId = orderId;
-  if (notes) updateData.notes = notes;
-
-  const updatedReferral = await prisma.referral.update({
-    where: { id },
-    data: updateData,
-    include: {
-      referrer: { select: { id: true, name: true, email: true } },
-      referee: { select: { id: true, name: true, email: true } }
-    }
-  });
-
-  res.json({ data: { referral: updatedReferral }, message: 'Referral updated successfully' });
-}
-
-// Get referral stats (admin dashboard)
-async function getReferralStats(req, res) {
-  const stats = await prisma.referral.groupBy({
-    by: ['referralStatus'],
-    _count: { id: true },
-    _sum: { commissionAmount: true }
-  });
-
-  const allReferrals = await prisma.referral.findMany();
-  const totalCommission = allReferrals.reduce((sum, ref) => sum + (ref.commissionAmount || 0), 0);
-
-  res.json({ 
-    data: { 
-      stats,
-      totalCommission,
-      totalReferrals: allReferrals.length
-    } 
-  });
-}
-
-// ────────────────────────────────────────────────────────────────────
-// VERIFY REFERRAL - Admin verifies referral based on email or phone
-// ────────────────────────────────────────────────────────────────────
-async function verifyReferral(req, res) {
+/**
+ * Get user's referral information
+ */
+async function getReferralInfo(req, res) {
   try {
-    const { referralId, verifiedUserId } = req.body;
+    const userId = req.user.id;
 
-    if (!referralId || !verifiedUserId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Referral ID and verified user ID are required',
-      });
+    const [user] = await db.query(
+      'SELECT email, referral_code, points_wallet FROM User WHERE id = ?',
+      [userId]
+    );
+
+    if (!user) {
+      return res.status(404).json(errorResponse('User not found'));
     }
 
-    // Find referral
-    const referral = await prisma.referral.findUnique({
-      where: { id: referralId },
+    // Get count of referrals where this user is the referrer
+    const [referralCount] = await db.query(
+      'SELECT COUNT(*) as count FROM Referral WHERE referrerEmail = ?',
+      [user.email]
+    );
+
+    // Get total redeemed points by checking 'redemption' tickets for this user
+    // This assumes processed tickets indicate redemption completion
+    const prisma = require('../utils/prisma');
+    const redemptionTickets = await prisma.ticket.findMany({
+      where: {
+        userId: userId,
+        category: 'redemption'
+      }
     });
+
+    const totalRedeemed = redemptionTickets.reduce((sum, ticket) => {
+      // Extract points from description "Redemption Request: ... wants to redeem 200 points."
+      const match = ticket.description.match(/redeem (\d+) points/);
+      return sum + (match ? parseInt(match[1]) : 0);
+    }, 0);
+
+    return res.status(200).json(
+      successResponse('Referral information retrieved', {
+        referralCode: user.referral_code,
+        balance: user.points_wallet || 0,
+        pointsRedeemed: totalRedeemed,
+        totalReferrals: referralCount.count || 0,
+        earned: (user.points_wallet || 0) + totalRedeemed
+      })
+    );
+  } catch (error) {
+    console.error('❌ Error fetching referral info:', error);
+    return res.status(500).json(errorResponse('Failed to fetch referral information: ' + error.message));
+  }
+}
+
+/**
+ * Create a referral (user refers someone)
+ */
+async function createReferral(req, res) {
+  try {
+    const userId = req.user.id;
+    const { refereeEmail, refereePhone } = req.body;
+
+    if (!refereeEmail) {
+      return res.status(400).json(errorResponse('Referee email is required'));
+    }
+
+    // Create referral record
+    const [result] = await db.query(
+      `INSERT INTO referrals (referrer_id, referred_email, status)
+       VALUES (?, ?, 'pending')`,
+      [userId, refereeEmail]
+    );
+
+    console.log(`✅ Referral created: ${refereeEmail} referred by user ${userId}`);
+
+    return res.status(200).json(
+      successResponse('Referral created successfully', {
+        referralId: result.insertId,
+        refereeEmail,
+      })
+    );
+  } catch (error) {
+    console.error('❌ Error creating referral:', error);
+    return res.status(500).json(errorResponse('Failed to create referral'));
+  }
+}
+
+/**
+ * Get referral link for sharing
+ */
+async function getReferralLink(req, res) {
+  try {
+    const userId = req.user.id;
+
+    const [user] = await db.query(
+      'SELECT referral_code FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (!user) {
+      return res.status(404).json(errorResponse('User not found'));
+    }
+
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const referralLink = `${baseUrl}/signup?ref=${user.referral_code}`;
+
+    return res.status(200).json(
+      successResponse('Referral link generated', {
+        referralLink,
+        referralCode: user.referral_code,
+      })
+    );
+  } catch (error) {
+    console.error('❌ Error generating referral link:', error);
+    return res.status(500).json(errorResponse('Failed to generate referral link'));
+  }
+}
+
+/**
+ * Register a referred user (called during signup with ?ref=code)
+ */
+async function registerReferral(req, res) {
+  try {
+    const { referralCode, email } = req.body;
+
+    if (!referralCode) {
+      return res.status(200).json(successResponse('No referral code provided'));
+    }
+
+    const [referrer] = await db.query(
+      'SELECT id FROM users WHERE referral_code = ?',
+      [referralCode]
+    );
+
+    if (!referrer) {
+      return res.status(200).json(
+        successResponse('Referral code invalid (will not block signup)')
+      );
+    }
+
+    await db.query(
+      `INSERT INTO referrals (referrer_id, referred_email, status)
+       VALUES (?, ?, 'pending')
+       ON DUPLICATE KEY UPDATE status = 'pending'`,
+      [referrer.id, email]
+    );
+
+    console.log(`✅ Referral registered: ${email} referred by code ${referralCode}`);
+
+    return res.status(200).json(
+      successResponse('Referral registered', {
+        referrerId: referrer.id,
+      })
+    );
+  } catch (error) {
+    console.error('❌ Error registering referral:', error);
+    return res.status(500).json(errorResponse('Failed to register referral'));
+  }
+}
+
+/**
+ * Track referral conversion (user made a purchase)
+ */
+async function trackReferralConversion(req, res) {
+  try {
+    const userId = req.user.id;
+    const { referralId } = req.body;
+
+    const [referral] = await db.query(
+      'SELECT referrer_id, reward_points FROM referrals WHERE id = ? AND referred_user_id = ?',
+      [referralId, userId]
+    );
 
     if (!referral) {
-      return res.status(404).json({
-        success: false,
-        message: 'Referral not found',
-      });
+      return res.status(404).json(errorResponse('Referral not found'));
     }
 
-    // Update referral status to active/verified
-    const updatedReferral = await prisma.referral.update({
-      where: { id: referralId },
-      data: {
-        refereeId: verifiedUserId,
-        referralStatus: 'active',
-        updatedAt: new Date(),
-      },
-      include: {
-        referrer: {
-          select: { id: true, name: true, email: true },
-        },
-        referee: {
-          select: { id: true, name: true, email: true },
-        },
-      },
-    });
+    await db.query(
+      'UPDATE referrals SET status = "converted" WHERE id = ?',
+      [referralId]
+    );
 
-    // Award points to referrer
-    const pointsToAward = 500; // Default points for referral verification
-    await prisma.user.update({
-      where: { id: updatedReferral.referrerId },
-      data: {
-        points_wallet: {
-          increment: pointsToAward,
-        },
-      },
-    });
+    await db.query(
+      'UPDATE users SET referral_points = referral_points + ? WHERE id = ?',
+      [referral.reward_points, referral.referrer_id]
+    );
 
-    // Create points history record
-    await prisma.pointsHistory.create({
-      data: {
-        userId: updatedReferral.referrerId,
-        type: 'credit',
-        points: pointsToAward,
-        reason: 'referral',
-        description: `Referral verified for ${updatedReferral.referee?.name}`,
-        referenceId: referralId,
-      },
-    });
+    console.log(
+      `✅ Referral converted: User ${userId} converted, +${referral.reward_points} points to referrer`
+    );
 
-    res.status(200).json({
-      success: true,
-      message: 'Referral verified successfully',
-      data: {
-        referral: updatedReferral,
-        pointsAwarded: pointsToAward,
-      },
-    });
+    return res.status(200).json(
+      successResponse('Referral conversion tracked', {
+        pointsAwarded: referral.reward_points,
+        referrerId: referral.referrer_id,
+      })
+    );
   } catch (error) {
-    console.error('Verify referral error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to verify referral',
-      error: error.message,
+    console.error('❌ Error tracking referral conversion:', error);
+    return res.status(500).json(errorResponse('Failed to track referral conversion'));
+  }
+}
+
+/**
+ * Redeem referral points - Creates a ticket for Admin
+ */
+async function redeemPoints(req, res) {
+  try {
+    const userId = req.user.id;
+    const { pointsToRedeem } = req.body;
+
+    if (!pointsToRedeem || pointsToRedeem <= 0) {
+      return res.status(400).json(errorResponse('Invalid points amount'));
+    }
+
+    // 1. Check if user has enough points
+    const [user] = await db.query(
+      `SELECT points_wallet, email, name FROM User WHERE id = ?`,
+      [userId]
+    );
+
+    if (!user || (user.points_wallet || 0) < pointsToRedeem) {
+      return res.status(400).json(
+        errorResponse('Insufficient referral points')
+      );
+    }
+
+    // 2. Deduct points from User table
+    await db.query(
+      'UPDATE User SET points_wallet = points_wallet - ? WHERE id = ?',
+      [pointsToRedeem, userId]
+    );
+
+    // 3. Create a Ticket for Admin (using Prisma as confirmed in ticketController)
+    const prisma = require('../utils/prisma');
+    await prisma.ticket.create({
+      data: {
+        userId: userId,
+        subject: 'Points Redemption Request',
+        description: `Redemption Request: ${user.name} (${user.email}) wants to redeem ${pointsToRedeem} points.`,
+        category: 'redemption',
+        priority: 'high'
+      }
     });
+
+    console.log(`✅ Redemption ticket created: User ${userId} redeemed ${pointsToRedeem} points`);
+
+    return res.status(200).json(
+      successResponse('Redemption request submitted successfully. Our team will contact you soon.', {
+        pointsRedeemed: pointsToRedeem,
+        remainingPoints: (user.points_wallet || 0) - pointsToRedeem,
+      })
+    );
+  } catch (error) {
+    console.error('❌ Error redeeming points:', error);
+    return res.status(500).json(errorResponse('Failed to submit redemption request: ' + error.message));
+  }
+}
+
+/**
+ * Get redemption history
+ */
+async function getRedemptionHistory(req, res) {
+  try {
+    const userId = req.user.id;
+
+    const [redemptions] = await db.query(
+      `SELECT id, points_used, description, status, created_at
+       FROM redemptions
+       WHERE user_id = ?
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+
+    return res.status(200).json(
+      successResponse('Redemption history retrieved', {
+        redemptions,
+      })
+    );
+  } catch (error) {
+    console.error('❌ Error fetching redemption history:', error);
+    return res.status(500).json(errorResponse('Failed to fetch redemption history'));
+  }
+}
+
+/**
+ * Get all referrals (Admin only)
+ */
+async function getAllReferrals(req, res) {
+  try {
+    const referrals = await db.query(`
+      SELECT r.*, u1.name as referrerName, u1.email as referrerEmail, u2.name as refereeName, u2.email as refereeEmail
+      FROM Referral r
+      LEFT JOIN User u1 ON r.referrerId = u1.id
+      LEFT JOIN User u2 ON r.refereeId = u2.id
+      ORDER BY r.createdAt DESC
+    `);
+
+    return res.status(200).json(successResponse('All referrals retrieved', { referrals }));
+  } catch (error) {
+    console.error('❌ Error fetching all referrals:', error);
+    return res.status(500).json(errorResponse('Failed to fetch referrals'));
   }
 }
 
 module.exports = {
+  getReferralInfo,
   createReferral,
-  getUserReferrals,
+  getReferralLink,
+  registerReferral,
+  trackReferralConversion,
+  redeemPoints,
+  getRedemptionHistory,
   getAllReferrals,
-  getReferral,
-  updateReferral,
-  getReferralStats,
-  verifyReferral,
 };

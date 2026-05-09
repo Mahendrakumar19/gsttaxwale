@@ -23,9 +23,12 @@ export interface DueDate {
   title: string;
   description: string;
   dueDate: string;
-  filingType: 'GSTR-1' | 'GSTR-2' | 'GSTR-3B' | 'GSTR-9' | 'ITR' | 'TDS' | 'other';
+  filingType: 'GSTR-1' | 'GSTR-2A' | 'GSTR-2' | 'GSTR-3B' | 'GSTR-9' | 'ITR-1/ITR-4' | 'ITR-2/ITR-3' | 'Company-ITR' | 'Partnership-ITR' | 'TDS' | 'other';
   status: 'upcoming' | 'due-soon' | 'overdue';
   frequency?: string;
+  deadline?: string;
+  lateFee?: string;
+  type?: 'gst' | 'itr';
   url?: string;
 }
 

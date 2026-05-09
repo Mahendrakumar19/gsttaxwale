@@ -30,12 +30,6 @@ const TABS: Tab[] = [
     component: OverviewTab,
   },
   {
-    id: 'returns',
-    label: 'Returns',
-    icon: <BarChart3 className="w-4 h-4" />,
-    component: ReturnSummary,
-  },
-  {
     id: 'documents',
     label: 'Documents',
     icon: <FolderOpen className="w-4 h-4" />,

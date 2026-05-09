@@ -1,11 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, Mail, Phone, FileText, Lock, LogOut } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { User, Mail, Phone, FileText, Shield } from 'lucide-react';
 
 export default function ProfileTab() {
-  const router = useRouter();
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -17,64 +15,59 @@ export default function ProfileTab() {
     }
   }, []);
 
-  const handleLogout = () => {
-    sessionStorage.clear();
-    router.push('/auth/login');
-  };
-
   if (!user) return <div className="py-12 text-center text-gray-400 text-sm">Loading profile...</div>;
 
   const data = [
-    { icon: User, label: 'Name', value: user.name },
-    { icon: Mail, label: 'Email', value: user.email },
-    { icon: Phone, label: 'Phone', value: user.phone || 'Not provided' },
-    { icon: FileText, label: 'PAN', value: user.pan || 'Not provided' },
+    { icon: User, label: 'Full Name', value: user.name },
+    { icon: Mail, label: 'Email Address', value: user.email },
+    { icon: Phone, label: 'Mobile Number', value: user.phone || 'Not provided' },
+    { icon: FileText, label: 'PAN Number', value: user.pan || 'Not provided' },
+    { icon: Shield, label: 'Account Role', value: user.role || 'Client' },
   ];
 
   return (
-    <div className="max-w-xl mx-auto space-y-6">
-      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-5">
-        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-md">
-          {user.name?.[0].toUpperCase()}
-        </div>
-        <div>
-          <h3 className="text-xl font-bold text-gray-900 leading-tight">{user.name}</h3>
-          <p className="text-xs text-gray-500 mt-1 uppercase tracking-wider font-bold">{user.role || 'Client'}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3">
-        {data.map((item, idx) => (
-          <div key={idx} className="bg-white border border-gray-50 rounded-xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gray-50 text-gray-400 rounded-lg">
-                <item.icon size={16} />
-              </div>
-              <div>
-                <p className="text-[10px] text-gray-400 font-bold uppercase">{item.label}</p>
-                <p className="text-sm font-semibold text-gray-900">{item.value}</p>
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 h-32 relative">
+          <div className="absolute -bottom-12 left-8">
+            <div className="w-24 h-24 bg-white rounded-2xl p-1 shadow-lg">
+              <div className="w-full h-full bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 text-3xl font-bold">
+                {user.name?.[0].toUpperCase()}
               </div>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+        
+        <div className="pt-16 pb-8 px-8">
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-gray-900">{user.name}</h3>
+            <p className="text-sm text-gray-500">Member since {new Date().getFullYear()}</p>
+          </div>
 
-      <div className="flex gap-3">
-        <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition text-sm font-bold">
-          <Lock size={16} />
-          Change Password
-        </button>
-        <button 
-          onClick={handleLogout}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 border border-red-100 rounded-xl hover:bg-red-100 transition text-sm font-bold"
-        >
-          <LogOut size={16} />
-          Sign Out
-        </button>
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {data.map((item, idx) => (
+              <div key={idx} className="space-y-1.5">
+                <div className="flex items-center gap-2 text-gray-400">
+                  <item.icon size={14} />
+                  <p className="text-[10px] uppercase font-bold tracking-widest">{item.label}</p>
+                </div>
+                <p className="text-sm font-semibold text-gray-900 bg-gray-50 px-4 py-2.5 rounded-lg border border-gray-100">
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </div>
 
-      <div className="text-center">
-        <p className="text-[10px] text-gray-400">Account ID: {user.id || 'N/A'}</p>
+          <div className="mt-10 pt-6 border-t border-gray-100">
+            <div className="flex items-center gap-3 text-orange-600 bg-orange-50 p-4 rounded-xl border border-orange-100">
+              <Shield size={20} className="shrink-0" />
+              <p className="text-xs leading-relaxed font-medium">
+                This is a read-only compliance account. Profile information can only be updated by the admin team to ensure compliance integrity. 
+                Contact support if you need to update your details.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

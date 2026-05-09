@@ -22,7 +22,7 @@ export default function ClientsPage() {
     // Verify admin access
     const adminToken = adminAuth.getAdminToken();
     if (!adminToken) {
-      window.location.href = '/admin/login';
+      window.location.href = '/auth/admin-login';
       return;
     }
     fetchClients();

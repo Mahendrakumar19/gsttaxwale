@@ -7,6 +7,7 @@ import AdminHeader from '../components/AdminHeader';
 import SiteFooter from '../components/SiteFooter';
 import StickyReferralButton from '../components/StickyReferralButton';
 import WhatsAppWidget from '../components/WhatsAppWidget';
+import { Toaster } from 'sonner';
 
 export default function RootLayoutClient({
   children,
@@ -19,15 +20,20 @@ export default function RootLayoutClient({
   useEffect(() => {
     setMounted(true);
     
-    // Migration: Clear old persistent localStorage sessions
+    // Referral Tracking
+    const searchParams = new URLSearchParams(window.location.search);
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      sessionStorage.setItem('referralCode', refCode);
+      console.log('🔗 Referral code tracked:', refCode);
+    }
+    
+    // Synchronization: Ensure sessionStorage has latest auth from localStorage
     const keys = ['token', 'user', 'adminToken', 'adminUser', 'userRole'];
     keys.forEach(key => {
       const val = localStorage.getItem(key);
-      if (val) {
-        if (!sessionStorage.getItem(key)) {
-          sessionStorage.setItem(key, val);
-        }
-        localStorage.removeItem(key);
+      if (val && !sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, val);
       }
     });
   }, []);
@@ -50,6 +56,7 @@ export default function RootLayoutClient({
   
   return (
     <>
+      <Toaster position="top-center" richColors />
       {!isAdmin && <SiteHeader />}
       <main className="flex-1 w-full">{children}</main>
       {!isAdmin && !isDashboard && <SiteFooter />}

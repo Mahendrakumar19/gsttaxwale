@@ -164,6 +164,40 @@ export async function verifyOTP(userId: string, code: string): Promise<boolean> 
 }
 
 /**
+ * Send OTP via SMS
+ */
+export async function sendOTPSMS(phone: string, otp: string): Promise<boolean> {
+  try {
+    // If Twilio is configured, use it. Otherwise, log the OTP for development.
+    const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+    const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+    const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+
+    if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
+      // Use Twilio for SMS
+      const twilio = require('twilio');
+      const client = twilio(twilioAccountSid, twilioAuthToken);
+
+      await client.messages.create({
+        body: `Your OTP for Tax Filing Platform is: ${otp}. This OTP will expire in 10 minutes.`,
+        from: twilioPhoneNumber,
+        to: phone
+      });
+
+      console.log(`✓ SMS sent to ${phone}`);
+      return true;
+    } else {
+      // Development mode: log the OTP
+      console.log(`[DEV MODE] SMS OTP for ${phone}: ${otp}`);
+      return true; // Assume success in dev mode
+    }
+  } catch (error) {
+    console.error('Failed to send OTP SMS:', error);
+    return false;
+  }
+}
+
+/**
  * Validate PAN number format
  */
 export function validatePAN(pan: string): boolean {
@@ -248,6 +282,7 @@ export default {
   comparePassword,
   generateOTP,
   sendOTPEmail,
+  sendOTPSMS,
   createOTP,
   verifyOTP,
   validatePAN,

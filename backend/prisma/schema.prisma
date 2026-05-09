@@ -84,6 +84,34 @@ model User {
   @@index([pan])
   @@index([email])
   @@index([resetToken])
+
+  gstProfile GstProfile?
+}
+
+// ════════════════════════════════════════════════════════════════════
+// GST PROFILE - Professional GST details per user
+// ════════════════════════════════════════════════════════════════════
+model GstProfile {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @unique
+  gstin            String?  @unique
+  businessName     String?
+  legalName        String?
+  registrationDate DateTime?
+  state            String?
+  complianceStatus String?  @default("active") // active, late, suspended, cancelled
+  lastFilingDate   DateTime?
+  nextDueDate      DateTime?
+  turnoverLastYear Float?   @default(0)
+  category         String?  // regular, composition, exempt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([gstin])
+  @@index([userId])
+  @@index([complianceStatus])
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -351,6 +379,7 @@ model Service {
   title       String?
   description String?
   price       Float
+  discountedPrice Float    @default(0)
   features    String   // JSON array stored as text for SQLite
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -716,4 +745,32 @@ model RedeemRequest {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// CMS / PAGE CONTENT MANAGEMENT
+// ════════════════════════════════════════════════════════════════════
+model PageContent {
+  id          Int      @id @default(autoincrement())
+  page        String   // e.g., 'home', 'services', 'contact'
+  section     String   // e.g., 'hero', 'about_us', 'faq'
+  key         String   // Unique key within page/section
+  content     String   @db.Text // Text, HTML or JSON content
+  type        String   @default("text") // text, html, image, json
+  metadata    Json?    // Optional metadata
+  updatedAt   DateTime @updatedAt
+
+  @@unique([page, section, key], name: "page_section_key")
+  @@index([page])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SITE SETTINGS - Global configuration
+// ════════════════════════════════════════════════════════════════════
+model SiteSettings {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String   @db.Text
+  type      String   @default("text")
+  updatedAt DateTime @updatedAt
 }

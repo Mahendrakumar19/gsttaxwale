@@ -7,36 +7,25 @@ import NewsSection from '../components/NewsSection';
 import DueDatesSection from '../components/DueDatesSection';
 
 export default function HomePage() {
+  // No auto-redirect so logged-in users can browse home page
   React.useEffect(() => {
-    // Migration: Clear old persistent localStorage sessions once 
-    // to prevent "automatic login" from previous builds
-    const keys = ['token', 'user', 'adminToken', 'adminUser', 'userRole'];
-    keys.forEach(key => {
-      const val = localStorage.getItem(key);
-      if (val) {
-        // One-time migration to sessionStorage if they were logged in
-        if (!sessionStorage.getItem(key)) {
-          sessionStorage.setItem(key, val);
-        }
-        localStorage.removeItem(key);
-      }
-    });
+    // Analytics or other home-page specific initialization
   }, []);
 
   return (
     <>
       {/* Hero Section */}
-      <section className="relative px-4 pt-16 pb-24 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-12 text-center">
-            <h1 className="mb-4 text-4xl font-bold leading-tight text-gray-900 md:text-5xl">
-              Complete Tax & Compliance Solutions
+      <section className="relative px-4 pt-16 pb-24 bg-white overflow-hidden">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="mb-16 text-center">
+            <h1 className="mb-6 text-5xl md:text-7xl font-black leading-tight text-gray-900 tracking-tighter">
+              Complete Tax & <span className="text-blue-600">Compliance</span> Solutions
             </h1>
-            <p className="max-w-3xl mx-auto mb-8 text-base text-gray-600 md:text-lg">
-              Professional GST filing, income tax returns, and business compliance services
+            <p className="max-w-3xl mx-auto mb-12 text-lg text-gray-600 md:text-xl font-medium">
+              Professional GST filing, income tax returns, and business compliance services delivered by expert CAs.
             </p>
             {/* Image Slider */}
-            <ImageSlider autoPlay={true} interval={4000} />
+            <ImageSlider autoPlay={true} interval={6000} />
           </div>
         </div>
       </section>
@@ -58,6 +47,16 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* GST & ITR Due Dates Section */}
+      <section className="px-4 py-16 bg-white border-t border-blue-100">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-8">
+            <h2 className="mb-2 text-3xl font-bold text-gray-900 md:text-4xl">📅 Important Filing Due Dates</h2>
+            <p className="text-gray-600">Upcoming GST and Income Tax compliance deadlines and notices</p>
+          </div>
+          <DueDatesSection limit={8} />
+        </div>
+      </section>
 
 
       {/* How It Works Section */}
@@ -162,26 +161,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Final CTA Section */}
-      <section className="px-4 py-16 bg-white border-t border-blue-100">
-        <div className="max-w-4xl mx-auto">
-          <div className="p-10 text-center border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl">
-            <div className="mb-3 text-4xl">🚀</div>
-            <h3 className="mb-4 text-2xl font-bold text-gray-900 md:text-3xl">Ready to Simplify Your Tax Compliance?</h3>
-            <p className="max-w-2xl mx-auto mb-6 text-sm text-gray-700 md:text-base">
-              Join thousands of businesses that have simplified their tax compliance with our expert support
-            </p>
-            <div className="flex flex-col justify-center gap-3 sm:flex-row">
-              <Link href="/services" className="px-6 py-2 text-sm font-medium text-white transition bg-blue-600 rounded-lg hover:bg-blue-700 hover:shadow-lg">
-                Get Started Today
-              </Link>
-              <Link href="/contact" className="px-6 py-2 text-sm font-medium text-blue-600 transition border-2 border-blue-600 rounded-lg hover:bg-blue-100">
-                Schedule Free Call
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+
     </>
   );
 }

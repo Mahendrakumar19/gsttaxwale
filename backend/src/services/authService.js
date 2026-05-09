@@ -43,10 +43,13 @@ async function sendOTPEmail(email, otp) {
       },
     });
 
+    const fromName = process.env.SMTP_FROM_NAME || 'GST Tax Wale';
+    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER;
+
     const mailOptions = {
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      from: `"${fromName}" <${fromEmail}>`,
       to: email,
-      subject: `Your OTP for ${process.env.NEXT_PUBLIC_APP_NAME || 'GST Tax Wale'}`,
+      subject: `Your OTP for ${fromName}`,
       text: `Your OTP is ${otp}. It expires in ${OTP_EXPIRY_MINUTES} minutes.`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; color: #333;">
@@ -79,10 +82,13 @@ async function sendUserCreatedEmail(email, password, referenceNumber) {
       },
     });
 
+    const fromName = process.env.SMTP_FROM_NAME || 'GST Tax Wale';
+    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER;
+
     const mailOptions = {
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      from: `"${fromName}" <${fromEmail}>`,
       to: email,
-      subject: `Welcome to ${process.env.NEXT_PUBLIC_APP_NAME || 'GST Tax Wale'} - Your Account Details`,
+      subject: `Welcome to ${fromName} - Your Account Details`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">
           <h2 style="color: #2563eb;">Welcome to GST Tax Wale!</h2>
@@ -182,6 +188,40 @@ async function getUser(userId) {
   return { id: user.id, email: user.email, name: user.name, role: user.role, status: user.status, createdAt: user.createdAt };
 }
 
+/**
+ * Send OTP via SMS
+ */
+async function sendOTPSMS(phone, otp) {
+  try {
+    // If Twilio is configured, use it. Otherwise, log the OTP for development.
+    const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+    const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+    const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+
+    if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
+      // Use Twilio for SMS
+      const twilio = require('twilio');
+      const client = twilio(twilioAccountSid, twilioAuthToken);
+
+      await client.messages.create({
+        body: `Your OTP for GST Tax Wale is: ${otp}. This OTP will expire in ${OTP_EXPIRY_MINUTES} minutes.`,
+        from: twilioPhoneNumber,
+        to: phone
+      });
+
+      console.log(`✓ SMS sent to ${phone}`);
+      return true;
+    } else {
+      // Development mode: log the OTP
+      console.log(`[DEV MODE] SMS OTP for ${phone}: ${otp}`);
+      return true; // Assume success in dev mode
+    }
+  } catch (error) {
+    console.error('Failed to send OTP SMS:', error);
+    return false;
+  }
+}
+
 module.exports = {
   hashPassword,
   comparePassword,
@@ -189,6 +229,7 @@ module.exports = {
   verifyToken,
   generateOTP,
   sendOTPEmail,
+  sendOTPSMS,
   createOTP,
   verifyOTP,
   validateEmail,

@@ -16,7 +16,7 @@ export default function AdminPage() {
       router.push('/admin/dashboard');
     } else {
       // Otherwise redirect to admin login
-      router.push('/admin/login');
+      router.push('/auth/admin-login');
     }
   }, [router]);
 

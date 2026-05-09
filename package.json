@@ -11,7 +11,7 @@
     "npm": ">=8.0.0"
   },
   "scripts": {
-    "dev": "node server.js",
+    "dev": "nodemon server.js",
     "start": "node server.js",
     "build": "npm install && npx prisma generate && cd frontend && npm install && npm run build && cd .. && cd backend && npm install && cd ..",
     "setup-db": "node backend/scripts/setup_db.js",

@@ -1,7 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
+import { getPageContent, getContent } from './lib/cms';
 
 export default async function HomePage() {
+  // Fetch CMS content for the homepage
+  const cmsContent = await getPageContent('home');
+  
   // Fetch services from our unified API
   let services = [];
   try {
@@ -15,6 +19,9 @@ export default async function HomePage() {
     console.error('Failed to fetch services:', e);
     services = [];
   }
+
+  const heroTitle = getContent(cmsContent, 'hero_title', 'Financial Peace of Mind with Easy Tax Compliance');
+  const heroSubtitle = getContent(cmsContent, 'hero_subtitle', 'Expert-assisted GST filing, income tax returns, and professional tax consulting.');
 
   return (
     <>
@@ -30,10 +37,10 @@ export default async function HomePage() {
               <div className="text-6xl">💰</div>
             </div>
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-              Financial Peace of Mind with <span className="bg-gradient-to-r from-amber-400 to-yellow-400 bg-clip-text text-transparent">Easy Tax Compliance</span>
+              {heroTitle}
             </h1>
             <p className="text-xl text-slate-300 max-w-3xl mx-auto mb-8">
-              Expert-assisted GST filing, income tax returns, and professional tax consulting. Let our team of certified professionals handle your compliance while you focus on growth.
+              {heroSubtitle}
             </p>
             
             {/* Trust Indicators */}
@@ -142,7 +149,7 @@ export default async function HomePage() {
                   <h3 className="text-xl font-bold text-white mb-3">{service.title}</h3>
                   <p className="text-slate-300 mb-4">{service.description}</p>
                   <div className="text-3xl font-bold text-amber-400 mb-4">₹{service.price}</div>
-                  <Link href={`/checkout?serviceId=${service.id}`} className="block w-full bg-gradient-to-r from-amber-600 to-yellow-500 text-white text-center py-2 rounded-lg hover:from-amber-700 hover:to-yellow-600 transition">
+                  <Link href={`/services/${service.id}`} className="block w-full bg-gradient-to-r from-amber-600 to-yellow-500 text-white text-center py-2 rounded-lg hover:from-amber-700 hover:to-yellow-600 transition">
                     Get Started
                   </Link>
                 </div>

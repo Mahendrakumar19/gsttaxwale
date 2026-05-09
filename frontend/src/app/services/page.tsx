@@ -6,44 +6,41 @@ import { useRouter } from 'next/navigation';
 
 // Mock services data - Always available
 const MOCK_SERVICES = [
-  { id: '1', slug: 'itr-filing-individual', title: 'Individual ITR Filing', price: 999, features: ['PAN validation', 'Income verification', 'E-filing submission', 'Expert CA review'] },
-  { id: '2', slug: 'gst-registration', title: 'GST Registration & Setup', price: 2499, features: ['Online registration', 'Document verification', 'Portal training', '30-day support'] },
-  { id: '3', slug: 'gst-filing-quarterly', title: 'GST Filing (Quarterly)', price: 1299, features: ['GSTR-1 & GSTR-2 filing', 'Input-output match', 'Late fee calculation', 'Amendment support'] },
-  { id: '4', slug: 'gst-filing-annual', title: 'GST Annual Return (GSTR-9)', price: 1999, features: ['Annual reconciliation', 'Audit trail preparation', 'Document compilation', 'Amendment support'] },
-  { id: '5', slug: 'tds-compliance', title: 'TDS Compliance & Filing', price: 1499, features: ['TDS calculation', 'Quarterly filing', 'Challan preparation', 'Outstanding TDS tracking'] },
-  { id: '6', slug: 'business-tax-consulting', title: 'Business Tax Consulting (2 hrs)', price: 4999, features: ['2-hour consultation', 'Personalized strategy', 'Document review', 'Action plan'] },
-  { id: '7', slug: 'audit-support', title: 'Income Tax Audit Support', price: 7999, features: ['Document compilation', 'Audit defense', 'Notice response', 'Follow-up support'] },
-  { id: '8', slug: 'startup-tax-setup', title: 'Startup Tax Setup Package', price: 9999, features: ['GST registration', 'PAN registration', 'Accounting setup', '6-month support'] },
-  { id: '9', slug: 'payroll-compliance', title: 'Monthly Payroll Compliance', price: 4999, features: ['Salary processing', 'TDS filing', 'Statutory compliance', 'Employee reports'] },
-  { id: '10', slug: 'investment-advisory', title: 'Tax Saving Investment Advisory', price: 2999, features: ['Income analysis', 'Investment recommendations', 'Tax saving strategies', 'Quarterly review'] },
-  { id: '11', slug: 'nri-tax-filing', title: 'NRI Income Tax Filing', price: 3999, features: ['NRI-specific ITR', 'Foreign asset filing', 'Remittance tracking', 'FATCA compliance'] },
-  { id: '12', slug: 'professional-tax-filing', title: 'Professional Income Tax', price: 2499, features: ['Professional deduction', 'Business expense analysis', 'Quarterly advance tax', 'Audit support'] },
-  { id: '13', slug: 'capital-gains-planning', title: 'Capital Gains Tax Planning', price: 3499, features: ['Gain calculation', 'Exemption planning', 'Loss offsetting', 'Investment recommendations'] },
-  { id: '14', slug: 'property-tax-setup', title: 'Property & Rental Tax Setup', price: 2999, features: ['Rental income tracking', 'Expense documentation', 'Depreciation calculation', 'Annual ITR filing'] },
-  { id: '15', slug: 'tax-notice-response', title: 'Income Tax Notice Response', price: 5999, features: ['Notice analysis', 'Document compilation', 'Written response', 'Meeting support'] }
+  { id: '1', slug: 'itr-filing-individual', title: 'Individual ITR Filing', price: 999, discountedPrice: 799, features: ['PAN validation', 'Income verification', 'E-filing submission', 'Expert CA review'] },
+  { id: '2', slug: 'gst-registration', title: 'GST Registration & Setup', price: 2499, discountedPrice: 1999, features: ['Online registration', 'Document verification', 'Portal training', '30-day support'] },
+  { id: '3', slug: 'gst-filing-quarterly', title: 'GST Filing (Quarterly)', price: 1299, discountedPrice: 999, features: ['GSTR-1 & GSTR-2 filing', 'Input-output match', 'Late fee calculation', 'Amendment support'] },
+  { id: '4', slug: 'gst-filing-annual', title: 'GST Annual Return (GSTR-9)', price: 1999, discountedPrice: 1499, features: ['Annual reconciliation', 'Audit trail preparation', 'Document compilation', 'Amendment support'] },
+  { id: '5', slug: 'tds-compliance', title: 'TDS Compliance & Filing', price: 1499, discountedPrice: 1199, features: ['TDS calculation', 'Quarterly filing', 'Challan preparation', 'Outstanding TDS tracking'] },
+  { id: '6', slug: 'business-tax-consulting', title: 'Business Tax Consulting (2 hrs)', price: 4999, discountedPrice: 3999, features: ['2-hour consultation', 'Personalized strategy', 'Document review', 'Action plan'] },
+  { id: '7', slug: 'audit-support', title: 'Income Tax Audit Support', price: 7999, discountedPrice: 6499, features: ['Document compilation', 'Audit defense', 'Notice response', 'Follow-up support'] },
+  { id: '8', slug: 'startup-tax-setup', title: 'Startup Tax Setup Package', price: 9999, discountedPrice: 7999, features: ['GST registration', 'PAN registration', 'Accounting setup', '6-month support'] },
+  { id: '9', slug: 'payroll-compliance', title: 'Monthly Payroll Compliance', price: 4999, discountedPrice: 3999, features: ['Salary processing', 'TDS filing', 'Statutory compliance', 'Employee reports'] },
+  { id: '10', slug: 'investment-advisory', title: 'Tax Saving Investment Advisory', price: 2999, discountedPrice: 2499, features: ['Income analysis', 'Investment recommendations', 'Tax saving strategies', 'Quarterly review'] },
+  { id: '11', slug: 'nri-tax-filing', title: 'NRI Income Tax Filing', price: 3999, discountedPrice: 3499, features: ['NRI-specific ITR', 'Foreign asset filing', 'Remittance tracking', 'FATCA compliance'] },
+  { id: '12', slug: 'professional-tax-filing', title: 'Professional Income Tax', price: 2499, discountedPrice: 1999, features: ['Professional deduction', 'Business expense analysis', 'Quarterly advance tax', 'Audit support'] },
+  { id: '13', slug: 'capital-gains-planning', title: 'Capital Gains Tax Planning', price: 3499, discountedPrice: 2999, features: ['Gain calculation', 'Exemption planning', 'Loss offsetting', 'Investment recommendations'] },
+  { id: '14', slug: 'property-tax-setup', title: 'Property & Rental Tax Setup', price: 2999, discountedPrice: 2499, features: ['Rental income tracking', 'Expense documentation', 'Depreciation calculation', 'Annual ITR filing'] },
+  { id: '15', slug: 'tax-notice-response', title: 'Income Tax Notice Response', price: 5999, discountedPrice: 4999, features: ['Notice analysis', 'Document compilation', 'Written response', 'Meeting support'] }
 ];
 
 export default function ServicesPage() {
   const [services, setServices] = useState<any[]>(MOCK_SERVICES);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Try to fetch from backend API, but use mock data if it fails
     async function fetchServices() {
       try {
         const res = await api.get('/api/services');
-        if (res.data?.status === 'success' && res.data?.data?.services) {
+        if (res.data?.success && res.data?.data?.services) {
           setServices(res.data.data.services);
         }
       } catch (err) {
         console.log('Using mock services (API not available)');
-        // Keep mock data on error
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
-    // Always show mock data first, then try to fetch real data
-    setServices(MOCK_SERVICES);
     fetchServices();
   }, []);
 
@@ -55,15 +52,15 @@ export default function ServicesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-white px-4 py-16 border-b border-blue-100">
+      <section className="px-4 py-16 border-b border-blue-100 bg-gradient-to-br from-blue-50 to-white">
         <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="mb-4 text-4xl font-bold text-gray-900 md:text-5xl">
             Our Services & Pricing
           </h1>
-          <p className="text-xl text-gray-600 mb-2">
+          <p className="mb-2 text-xl text-gray-600">
             Complete tax and compliance solutions for individuals and businesses
           </p>
-          <p className="text-gray-600 mb-8">
+          <p className="mb-8 text-gray-600">
             Transparent pricing. No hidden fees. Expert support included.
           </p>
         </div>
@@ -76,12 +73,12 @@ export default function ServicesPage() {
             {services.map((service) => (
               <div
                 key={service.id}
-                className="bg-white border border-gray-200 rounded-xl p-6 hover:border-blue-400 hover:shadow-lg transition group cursor-pointer"
+                className="p-6 transition bg-white border border-gray-200 cursor-pointer rounded-xl hover:border-blue-400 hover:shadow-lg group"
               >
-                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition">
+                <h3 className="mb-2 text-xl font-bold text-gray-900 transition group-hover:text-blue-600">
                   {service.title}
                 </h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="mb-4 text-sm text-gray-600">
                   Professional {service.title.toLowerCase()} services
                 </p>
 
@@ -99,13 +96,26 @@ export default function ServicesPage() {
                 )}
 
                 {/* Price and CTA */}
-                <div className="border-t border-gray-200 pt-4 flex items-center justify-between">
+          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                   <div>
-                    <div className="text-3xl font-bold text-blue-600">₹{service.price?.toLocaleString()}</div>
+                    {service.discountedPrice !== undefined && service.discountedPrice !== null && service.discountedPrice > 0 && service.discountedPrice < (service.price || 0) ? (
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg text-slate-400 line-through">₹{service.price?.toLocaleString()}</span>
+                        <span className="text-2xl font-bold text-green-400">₹{service.discountedPrice?.toLocaleString()}</span>
+                      </div>
+                    ) : (
+                      <div className="text-2xl font-bold text-purple-400">₹{service.price?.toLocaleString()}</div>
+                    )}
+
+                    {service.discountedPrice !== undefined && service.discountedPrice !== null && service.discountedPrice > 0 && service.discountedPrice < (service.price || 0) && service.price > 0 ? (
+                      <div className="mt-2 inline-flex items-center px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded">
+                        {Math.round(((service.price - service.discountedPrice) / service.price) * 100)}% OFF
+                      </div>
+                    ) : null}
                   </div>
                   <a
                     href={buyHrefFor(service)}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+                    className="px-4 py-2 text-sm font-medium text-white transition bg-blue-600 rounded-lg hover:bg-blue-700"
                   >
                     Get Started
                   </a>
@@ -117,9 +127,9 @@ export default function ServicesPage() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="bg-blue-50 px-4 py-16 border-t border-blue-100">
+      <section className="px-4 py-16 border-t border-blue-100 bg-blue-50">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
+          <h2 className="mb-12 text-3xl font-bold text-center text-gray-900 md:text-4xl">
             Why Choose GST Tax Wale?
           </h2>
 
@@ -131,8 +141,8 @@ export default function ServicesPage() {
               { icon: '🛡️', title: '10 AM - 6 PM Support', desc: 'Dedicated support for all your queries' }
             ].map((item, i) => (
               <div key={i} className="text-center">
-                <div className="text-5xl mb-4">{item.icon}</div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{item.title}</h3>
+                <div className="mb-4 text-5xl">{item.icon}</div>
+                <h3 className="mb-2 text-lg font-bold text-gray-900">{item.title}</h3>
                 <p className="text-gray-600">{item.desc}</p>
               </div>
             ))}
@@ -141,24 +151,7 @@ export default function ServicesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="px-4 py-16 bg-white border-t border-blue-100">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Ready to Get Started?
-          </h2>
-          <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-            Choose a service above or contact our team to discuss your specific tax compliance needs.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <a href="/auth/login" className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
-              Buy Now
-            </a>
-            <a href="/contact" className="px-6 py-3 border-2 border-blue-600 text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition">
-              Contact Us
-            </a>
-          </div>
-        </div>
-      </section>
+      
     </div>
   );
 }

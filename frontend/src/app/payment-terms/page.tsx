@@ -137,7 +137,7 @@ export default function PaymentTerms() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">11. Contact Information</h2>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-3">
               <p><strong className="text-gray-900">For Payment Issues:</strong> help@gsttaxwale.com</p>
-              <p><strong className="text-gray-900">Phone:</strong> +91-XXXXXXXXXX</p>
+              <p><strong className="text-gray-900">Phone:</strong> +91-7739-301-568</p>
               <p><strong className="text-gray-900">Payment Gateway Support:</strong> Razorpay (support@razorpay.com)</p>
               <p><strong className="text-gray-900">Response Time:</strong> Within 2 hours during business hours</p>
             </div>

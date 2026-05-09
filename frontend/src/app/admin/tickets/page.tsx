@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import api from '@/lib/api';
 import { adminAuth } from '@/lib/adminAuth';
 import { AlertCircle, MessageSquare, User, Filter } from 'lucide-react';
 
@@ -28,12 +28,7 @@ export default function AdminTickets() {
   async function loadTickets() {
     setRefreshing(true);
     try {
-      const token = adminAuth.getAdminToken();
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/tickets`,
-        config
-      );
+      const res = await api.get('/api/admin/tickets');
       setTickets(res.data.data?.tickets || []);
     } catch (err) {
       console.error('Failed to load tickets', err);

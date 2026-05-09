@@ -87,7 +87,7 @@ export default function Terms() {
           <div className="mt-4 p-4 bg-gray-100 border border-gray-300 rounded-lg">
             <p><strong className="text-gray-900">Email:</strong> help@gsttaxwale.com</p>
             <p><strong className="text-gray-900">Address:</strong> GST Tax Wale, India</p>
-            <p><strong className="text-gray-900">WhatsApp:</strong> +91-9999-999-999</p>
+            <p><strong className="text-gray-900">WhatsApp:</strong> +91-7739-301-568</p>
           </div>
         </ContentSection>
       </section>

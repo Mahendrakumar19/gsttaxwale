@@ -94,7 +94,7 @@ export default function PrivacyPolicy() {
           <div className="mt-4 p-4 bg-slate-800/50 border border-amber-500/30 rounded-lg">
             <p><strong className="text-gray-900">Email:</strong> privacy@gsttaxwale.com</p>
             <p><strong className="text-gray-900">Address:</strong> GST Tax Wale, India</p>
-            <p><strong className="text-gray-900">WhatsApp:</strong> +91-9999-999-999</p>
+            <p><strong className="text-gray-900">WhatsApp:</strong> +91-7739-301-568</p>
           </div>
         </ContentSection>
       </section>

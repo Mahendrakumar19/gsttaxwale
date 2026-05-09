@@ -1,9 +1,9 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { Search, Plus, Edit, Trash2, X, User, Phone, Mail, Hash, Tag, Download } from 'lucide-react';
 import { adminAuth } from '@/lib/adminAuth';
+import api from '@/lib/api';
 import * as XLSX from 'xlsx';
 
 interface Customer {
@@ -53,7 +53,7 @@ export default function CustomersPage() {
     const adminToken = adminAuth.getAdminToken();
     const adminUser = adminAuth.getAdminUser();
     if (!adminToken || !adminUser || adminUser.role !== 'admin') {
-      router.push('/admin/login');
+      router.push('/auth/admin-login');
       return;
     }
     fetchCustomers();
@@ -71,17 +71,12 @@ export default function CustomersPage() {
 
   const fetchCustomers = async () => {
     try {
-      const token = adminAuth.getAdminToken();
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/users`,
-        config
-      );
-      const users = response.data.data?.users || [];
+      const response = await api.get('/api/admin/users');
+      const users = response.data.data?.users || response.data.users || [];
       setCustomers(
         users.map((user: any) => ({
           id: user.id,
-          name: ((user.firstName || '') + ' ' + (user.lastName || user.name || '')).trim(),
+          name: user.name || ((user.firstName || '') + ' ' + (user.lastName || '')).trim() || 'Unnamed',
           email: user.email,
           phone: user.phone || 'N/A',
           city: user.city || 'N/A',
@@ -90,8 +85,8 @@ export default function CustomersPage() {
           totalOrders: user.totalOrders || 0,
           totalSpent: user.totalSpent || 0,
           status: user.status === 'inactive' ? 'inactive' : 'active',
-          referenceNumber: user.reference_number || '—',
-          referralCode: user.referral_code || '—',
+          referenceNumber: user.reference_number || user.referenceNumber || '—',
+          referralCode: user.referral_code || user.referralCode || '—',
           pan: user.pan || '—',
           dateOfBirth: user.dateOfBirth || null,
         }))
@@ -121,11 +116,7 @@ export default function CustomersPage() {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this customer?')) {
       try {
-        const token = adminAuth.getAdminToken();
-        await axios.delete(
-          `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/users/${id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await api.delete(`/api/admin/users/${id}`);
         setCustomers(customers.filter((c) => c.id !== id));
         alert('Customer deleted successfully');
       } catch (err) {
@@ -157,11 +148,7 @@ export default function CustomersPage() {
         role: 'user',
       };
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/users`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post('/api/admin/users', payload);
 
       setShowCreateModal(false);
       setNewUser({ name: '', email: '', phone: '', password: '', pan: '', dateOfBirth: '' });

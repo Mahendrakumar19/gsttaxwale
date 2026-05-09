@@ -7,21 +7,21 @@ import { Star, Check, Shield, Clock, Users, Award, ArrowLeft } from 'lucide-reac
 
 // Mock services data - Match with services page
 const MOCK_SERVICES = [
-  { id: '1', slug: 'itr-filing-individual', title: 'Individual ITR Filing', price: 999, description: 'Professional Individual Income Tax Return filing with expert review', features: ['PAN validation', 'Income verification', 'E-filing submission', 'Expert CA review', 'ITR form selection', 'Deduction optimization'], benefits: ['Zero compliance errors', '24/7 support', 'Lifetime access', 'Amendment support'] },
-  { id: '2', slug: 'gst-registration', title: 'GST Registration & Setup', price: 2499, description: 'Complete GST registration with document verification and portal training', features: ['Online registration', 'Document verification', 'Portal training', '30-day support', 'Business type consultation', 'Eligibility check'], benefits: ['Fast processing', 'Expert guidance', 'Document assistance', 'Post-registration support'] },
-  { id: '3', slug: 'gst-filing-quarterly', title: 'GST Filing (Quarterly)', price: 1299, description: 'Quarterly GST return filing with input-output matching', features: ['GSTR-1 & GSTR-2 filing', 'Input-output match', 'Late fee calculation', 'Amendment support', 'Invoice reconciliation', 'HSN/SAC coding'], benefits: ['On-time filing', 'Error detection', 'Compliance assurance', 'Expert support'] },
-  { id: '4', slug: 'gst-filing-annual', title: 'GST Annual Return (GSTR-9)', price: 1999, description: 'Annual GST return (GSTR-9) with complete reconciliation', features: ['Annual reconciliation', 'Audit trail preparation', 'Document compilation', 'Amendment support', 'ITC reconciliation', 'Advance tax planning'], benefits: ['Full year audit ready', 'Compliance certified', 'Liability reduction', 'Future planning'] },
-  { id: '5', slug: 'tds-compliance', title: 'TDS Compliance & Filing', price: 1499, description: 'TDS calculation, filing, and quarterly compliance management', features: ['TDS calculation', 'Quarterly filing', 'Challan preparation', 'Outstanding TDS tracking', 'Deductee management', 'Monthly reconciliation'], benefits: ['Zero penalties', 'Automatic tracking', 'Expert consultation', 'Year-end reporting'] },
-  { id: '6', slug: 'business-tax-consulting', title: 'Business Tax Consulting (2 hrs)', price: 4999, description: '2-hour personalized tax strategy session with expert CA', features: ['2-hour consultation', 'Personalized strategy', 'Document review', 'Action plan', 'Quarterly check-ins', 'Email support'], benefits: ['Custom solutions', 'Tax optimization', 'Growth planning', 'Ongoing support'] },
-  { id: '7', slug: 'audit-support', title: 'Income Tax Audit Support', price: 7999, description: 'Complete support for income tax audit with defense strategy', features: ['Document compilation', 'Audit defense', 'Notice response', 'Follow-up support', 'Expert representation', 'Notice analysis'], benefits: ['Peace of mind', 'Professional defense', 'Fast resolution', 'Compliance assured'] },
-  { id: '8', slug: 'startup-tax-setup', title: 'Startup Tax Setup Package', price: 9999, description: 'Complete tax setup for new startups with 6-month support', features: ['GST registration', 'PAN registration', 'Accounting setup', '6-month support', 'Compliance calendar', 'Investor documentation'], benefits: ['Investor ready', 'Compliant setup', 'Growth oriented', 'Dedicated support'] },
-  { id: '9', slug: 'payroll-compliance', title: 'Monthly Payroll Compliance', price: 4999, description: 'Monthly payroll processing with statutory compliance', features: ['Salary processing', 'TDS filing', 'Statutory compliance', 'Employee reports', 'PF/ESI management', 'Attendance integration'], benefits: ['Employee satisfaction', 'Zero compliance issues', 'Automated processing', 'Monthly reporting'] },
-  { id: '10', slug: 'investment-advisory', title: 'Tax Saving Investment Advisory', price: 2999, description: 'Personalized investment recommendations for tax savings', features: ['Income analysis', 'Investment recommendations', 'Tax saving strategies', 'Quarterly review', 'Portfolio optimization', 'Risk assessment'], benefits: ['Maximum tax savings', 'Smart investments', 'Growth planning', 'Expert guidance'] },
-  { id: '11', slug: 'nri-tax-filing', title: 'NRI Income Tax Filing', price: 3999, description: 'Specialized NRI income tax return filing', features: ['NRI-specific ITR', 'Foreign asset filing', 'Remittance tracking', 'FATCA compliance', 'Dual taxation relief', 'FEMA compliance'], benefits: ['Complete compliance', 'Foreign income covered', 'Relief claimed', 'Expert NRI guidance'] },
-  { id: '12', slug: 'professional-tax-filing', title: 'Professional Income Tax', price: 2499, description: 'Professional income tax return with deduction optimization', features: ['Professional deduction', 'Business expense analysis', 'Quarterly advance tax', 'Audit support', 'Deduction tracking', 'Income categorization'], benefits: ['Maximum deductions', 'Accurate filing', 'Audit ready', 'Year-round support'] },
-  { id: '13', slug: 'capital-gains-planning', title: 'Capital Gains Tax Planning', price: 3499, description: 'Capital gains calculation and tax planning strategies', features: ['Gain calculation', 'Exemption planning', 'Loss offsetting', 'Investment recommendations', 'Timeline optimization', 'Reinvestment guidance'], benefits: ['Minimize tax', 'Optimize gains', 'Smart planning', 'Long-term benefit'] },
-  { id: '14', slug: 'property-tax-setup', title: 'Property & Rental Tax Setup', price: 2999, description: 'Rental income documentation and annual ITR filing', features: ['Rental income tracking', 'Expense documentation', 'Depreciation calculation', 'Annual ITR filing', 'Deduction optimization', 'Property management support'], benefits: ['Rental income optimized', 'Expense maximized', 'Depreciation claimed', 'Audit ready'] },
-  { id: '15', slug: 'tax-notice-response', title: 'Income Tax Notice Response', price: 5999, description: 'Expert response to income tax notices with full support', features: ['Notice analysis', 'Document compilation', 'Written response', 'Meeting support', 'Representation', 'Penalty mitigation'], benefits: ['Fast resolution', 'Expert defense', 'Penalty reduction', 'Peace of mind'] }
+  { id: '1', slug: 'itr-filing-individual', title: 'Individual ITR Filing', price: 999, discountedPrice: 799, description: 'Professional Individual Income Tax Return filing with expert review', features: ['PAN validation', 'Income verification', 'E-filing submission', 'Expert CA review', 'ITR form selection', 'Deduction optimization'], benefits: ['Zero compliance errors', '24/7 support', 'Lifetime access', 'Amendment support'] },
+  { id: '2', slug: 'gst-registration', title: 'GST Registration & Setup', price: 2499, discountedPrice: 1999, description: 'Complete GST registration with document verification and portal training', features: ['Online registration', 'Document verification', 'Portal training', '30-day support', 'Business type consultation', 'Eligibility check'], benefits: ['Fast processing', 'Expert guidance', 'Document assistance', 'Post-registration support'] },
+  { id: '3', slug: 'gst-filing-quarterly', title: 'GST Filing (Quarterly)', price: 1299, discountedPrice: 999, description: 'Quarterly GST return filing with input-output matching', features: ['GSTR-1 & GSTR-2 filing', 'Input-output match', 'Late fee calculation', 'Amendment support', 'Invoice reconciliation', 'HSN/SAC coding'], benefits: ['On-time filing', 'Error detection', 'Compliance assurance', 'Expert support'] },
+  { id: '4', slug: 'gst-filing-annual', title: 'GST Annual Return (GSTR-9)', price: 1999, discountedPrice: 1499, description: 'Annual GST return (GSTR-9) with complete reconciliation', features: ['Annual reconciliation', 'Audit trail preparation', 'Document compilation', 'Amendment support', 'ITC reconciliation', 'Advance tax planning'], benefits: ['Full year audit ready', 'Compliance certified', 'Liability reduction', 'Future planning'] },
+  { id: '5', slug: 'tds-compliance', title: 'TDS Compliance & Filing', price: 1499, discountedPrice: 1199, description: 'TDS calculation, filing, and quarterly compliance management', features: ['TDS calculation', 'Quarterly filing', 'Challan preparation', 'Outstanding TDS tracking', 'Deductee management', 'Monthly reconciliation'], benefits: ['Zero penalties', 'Automatic tracking', 'Expert consultation', 'Year-end reporting'] },
+  { id: '6', slug: 'business-tax-consulting', title: 'Business Tax Consulting (2 hrs)', price: 4999, discountedPrice: 3999, description: '2-hour personalized tax strategy session with expert CA', features: ['2-hour consultation', 'Personalized strategy', 'Document review', 'Action plan', 'Quarterly check-ins', 'Email support'], benefits: ['Custom solutions', 'Tax optimization', 'Growth planning', 'Ongoing support'] },
+  { id: '7', slug: 'audit-support', title: 'Income Tax Audit Support', price: 7999, discountedPrice: 6499, description: 'Complete support for income tax audit with defense strategy', features: ['Document compilation', 'Audit defense', 'Notice response', 'Follow-up support', 'Expert representation', 'Notice analysis'], benefits: ['Peace of mind', 'Professional defense', 'Fast resolution', 'Compliance assured'] },
+  { id: '8', slug: 'startup-tax-setup', title: 'Startup Tax Setup Package', price: 9999, discountedPrice: 7999, description: 'Complete tax setup for new startups with 6-month support', features: ['GST registration', 'PAN registration', 'Accounting setup', '6-month support', 'Compliance calendar', 'Investor documentation'], benefits: ['Investor ready', 'Compliant setup', 'Growth oriented', 'Dedicated support'] },
+  { id: '9', slug: 'payroll-compliance', title: 'Monthly Payroll Compliance', price: 4999, discountedPrice: 3999, description: 'Monthly payroll processing with statutory compliance', features: ['Salary processing', 'TDS filing', 'Statutory compliance', 'Employee reports', 'PF/ESI management', 'Attendance integration'], benefits: ['Employee satisfaction', 'Zero compliance issues', 'Automated processing', 'Monthly reporting'] },
+  { id: '10', slug: 'investment-advisory', title: 'Tax Saving Investment Advisory', price: 2999, discountedPrice: 2499, description: 'Personalized investment recommendations for tax savings', features: ['Income analysis', 'Investment recommendations', 'Tax saving strategies', 'Quarterly review', 'Portfolio optimization', 'Risk assessment'], benefits: ['Maximum tax savings', 'Smart investments', 'Growth planning', 'Expert guidance'] },
+  { id: '11', slug: 'nri-tax-filing', title: 'NRI Income Tax Filing', price: 3999, discountedPrice: 3499, description: 'Specialized NRI income tax return filing', features: ['NRI-specific ITR', 'Foreign asset filing', 'Remittance tracking', 'FATCA compliance', 'Dual taxation relief', 'FEMA compliance'], benefits: ['Complete compliance', 'Foreign income covered', 'Relief claimed', 'Expert NRI guidance'] },
+  { id: '12', slug: 'professional-tax-filing', title: 'Professional Income Tax', price: 2499, discountedPrice: 1999, description: 'Professional income tax return with deduction optimization', features: ['Professional deduction', 'Business expense analysis', 'Quarterly advance tax', 'Audit support', 'Deduction tracking', 'Income categorization'], benefits: ['Maximum deductions', 'Accurate filing', 'Audit ready', 'Year-round support'] },
+  { id: '13', slug: 'capital-gains-planning', title: 'Capital Gains Tax Planning', price: 3499, discountedPrice: 2999, description: 'Capital gains calculation and tax planning strategies', features: ['Gain calculation', 'Exemption planning', 'Loss offsetting', 'Investment recommendations', 'Timeline optimization', 'Reinvestment guidance'], benefits: ['Minimize tax', 'Optimize gains', 'Smart planning', 'Long-term benefit'] },
+  { id: '14', slug: 'property-tax-setup', title: 'Property & Rental Tax Setup', price: 2999, discountedPrice: 2499, description: 'Rental income documentation and annual ITR filing', features: ['Rental income tracking', 'Expense documentation', 'Depreciation calculation', 'Annual ITR filing', 'Deduction optimization', 'Property management support'], benefits: ['Rental income optimized', 'Expense maximized', 'Depreciation claimed', 'Audit ready'] },
+  { id: '15', slug: 'tax-notice-response', title: 'Income Tax Notice Response', price: 5999, discountedPrice: 4999, description: 'Expert response to income tax notices with full support', features: ['Notice analysis', 'Document compilation', 'Written response', 'Meeting support', 'Representation', 'Penalty mitigation'], benefits: ['Fast resolution', 'Expert defense', 'Penalty reduction', 'Peace of mind'] }
 ];
 
 export default function ServiceDetail({ params }: { params: { id: string } }) {
@@ -78,9 +78,8 @@ export default function ServiceDetail({ params }: { params: { id: string } }) {
 
   const handlePurchaseNow = () => {
     if (!isLoggedIn) {
-      // Redirect to login with return URL
-      const returnUrl = `/checkout?serviceId=${id}`;
-      router.push(`/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+      // Redirect to guest purchase flow
+      router.push(`/auth/service-purchase?serviceId=${id}`);
     } else {
       // Go directly to checkout
       router.push(`/checkout?serviceId=${id}`);
@@ -144,16 +143,38 @@ export default function ServiceDetail({ params }: { params: { id: string } }) {
               </p>
 
               {/* Price Section */}
-              <div className="mb-8 p-6 bg-white border border-gray-200 rounded-xl">
-                <div className="flex items-baseline gap-4 mb-4">
-                  <span className="text-sm text-gray-600">Starting at</span>
-                  <div className="text-4xl font-bold text-blue-600">
-                    ₹{service.price?.toLocaleString()}
+              <div className="mb-8 p-6 bg-white border border-gray-200 rounded-xl shadow-sm relative overflow-hidden">
+                {service.discountedPrice > 0 && service.discountedPrice < service.price && (
+                  <div className="absolute top-0 right-0">
+                    <div className="bg-red-500 text-white text-[10px] font-bold px-3 py-1 uppercase tracking-tighter rounded-bl-lg">
+                      Save {Math.round(((service.price - service.discountedPrice) / service.price) * 100)}%
+                    </div>
                   </div>
-                  <span className="text-gray-600">One-time payment</span>
+                )}
+                
+                <div className="flex items-baseline gap-4 mb-2">
+                  <span className="text-sm text-gray-500 font-medium">Starting at</span>
+                  <div className="flex flex-col">
+                    {service.discountedPrice > 0 && service.discountedPrice < service.price ? (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <span className="text-4xl font-bold text-blue-600">₹{service.discountedPrice.toLocaleString()}</span>
+                          <span className="text-xl text-gray-400 line-through">₹{service.price.toLocaleString()}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-4xl font-bold text-blue-600">
+                        ₹{service.price?.toLocaleString()}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <p className="text-sm text-gray-500">
-                  No hidden charges. GST included.
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span className="text-xs text-green-600 font-bold uppercase tracking-widest">Limited Time Offer</span>
+                </div>
+                <p className="mt-4 text-xs text-gray-400 border-t pt-3">
+                  * Inclusive of all taxes. No hidden charges.
                 </p>
               </div>
 
@@ -208,17 +229,17 @@ export default function ServiceDetail({ params }: { params: { id: string } }) {
                 </ul>
               </div>
 
-              {/* Benefits Box */}
-              <div className="p-6 bg-blue-50 border border-blue-200 rounded-xl">
+              {/* Documents Required Box */}
+              <div className="p-6 bg-amber-50 border border-amber-200 rounded-xl">
                 <h3 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                  Key Benefits
+                  <Star className="w-5 h-5 text-amber-500" />
+                  Documents Required
                 </h3>
                 <ul className="space-y-3">
-                  {(service.benefits || ['Expert support', 'Instant access', 'Lifetime updates', 'Full documentation']).map((benefit: string, i: number) => (
+                  {(service.requiredDocuments || ['PAN Card', 'Aadhaar Card', 'Bank Statements', 'Form 16 / Income Details']).map((doc: string, i: number) => (
                     <li key={i} className="flex items-start gap-3">
-                      <span className="text-blue-600 font-bold">→</span>
-                      <span className="text-gray-700">{benefit}</span>
+                      <Check className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700">{doc}</span>
                     </li>
                   ))}
                 </ul>
@@ -311,7 +332,7 @@ export default function ServiceDetail({ params }: { params: { id: string } }) {
         <div className="max-w-4xl mx-auto text-center text-gray-600">
           <h3 className="font-bold text-gray-900 mb-4">Need Help?</h3>
           <p className="mb-4">
-            Contact our support team at <a href="mailto:help@gsttaxwale.com" className="text-blue-600 hover:underline">help@gsttaxwale.com</a> or call <a href="tel:+91-9999999999" className="text-blue-600 hover:underline">+91-9999999999</a>
+            Contact our support team at <a href="mailto:help@gsttaxwale.com" className="text-blue-600 hover:underline">help@gsttaxwale.com</a> or call <a href="tel:+917739301568" className="text-blue-600 hover:underline">7739301568</a>
           </p>
           <p className="text-sm text-gray-500">Available Monday - Friday, 9 AM - 6 PM IST</p>
         </div>

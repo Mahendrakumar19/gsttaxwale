@@ -29,7 +29,7 @@ export default function AdminLayout({ children, adminUser }: AdminLayoutProps) {
 
   function handleLogout() {
     adminAuth.clearAdmin();
-    router.push('/auth/login');
+    router.push('/');
   }
 
   return (
