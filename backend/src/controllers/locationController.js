@@ -6,7 +6,7 @@ const { successResponse, errorResponse } = require('../utils/helpers');
  */
 async function listLocations(req, res) {
   try {
-    const locations = await db.query('SELECT * FROM Location WHERE active = 1 ORDER BY id DESC');
+    const locations = await db.query('SELECT * FROM Location WHERE active = 1 ORDER BY id ASC');
     return res.status(200).json(successResponse({ locations: locations || [] }, 'Locations fetched'));
   } catch (error) {
     console.error('List locations error:', error);
@@ -19,7 +19,7 @@ async function listLocations(req, res) {
  */
 async function adminListLocations(req, res) {
   try {
-    const locations = await db.query('SELECT * FROM Location ORDER BY id DESC');
+    const locations = await db.query('SELECT * FROM Location ORDER BY id ASC');
     return res.status(200).json(successResponse({ locations: locations || [] }, 'All locations fetched'));
   } catch (error) {
     console.error('Admin list locations error:', error);
