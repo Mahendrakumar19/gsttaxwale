@@ -36,6 +36,7 @@ async function getAnalytics(req, res) {
     const [serviceStats] = await db.query("SELECT COUNT(*) as totalServices FROM Service");
     const [docStats] = await db.query("SELECT COUNT(*) as totalDocuments FROM Document");
     const [ticketStats] = await db.query("SELECT COUNT(*) as totalTickets FROM SupportTicket");
+    const [visitorStats] = await db.query("SELECT value FROM SiteSettings WHERE `key` = 'visitor_count'");
 
     const analytics = {
       totalUsers: userStats?.totalUsers || 0,
@@ -45,6 +46,7 @@ async function getAnalytics(req, res) {
       totalServices: serviceStats?.totalServices || 0,
       totalDocuments: docStats?.totalDocuments || 0,
       totalTickets: ticketStats?.totalTickets || 0,
+      totalVisitors: visitorStats ? Number(visitorStats.value) : 0,
       conversionRate: userStats?.totalUsers > 0 ? ((orderStats?.totalOrders / userStats.totalUsers) * 100).toFixed(2) : 0
     };
 
@@ -116,10 +118,14 @@ async function createUser(req, res) {
       referralCode, refNum, dateOfBirth || null
     ]);
 
+    const [user] = await db.query('SELECT id, name, email, phone, pan, referral_code, reference_number, dateOfBirth FROM User WHERE id = ?', [result.insertId]);
+
     res.status(201).json(successResponse({ 
-      id: result.insertId, 
-      referralCode,
-      referenceNumber: refNum 
+      user,
+      credentials: {
+        email: email,
+        password: password // Return the raw password provided by admin
+      }
     }, 'User created successfully'));
   } catch (error) {
     console.error('Create user error:', error);
@@ -154,6 +160,32 @@ async function deleteUser(req, res) {
     await db.query('DELETE FROM User WHERE id = ?', [id]);
     res.status(200).json(successResponse(null, 'User deleted'));
   } catch (error) {
+    res.status(500).json(errorResponse(error.message));
+  }
+}
+
+/**
+ * Reset User Password (Admin)
+ */
+async function resetPassword(req, res) {
+  const { id } = req.params;
+  const { password } = req.body;
+
+  if (!password) {
+    return res.status(400).json(errorResponse('New password is required'));
+  }
+
+  try {
+    const hashedPassword = await authService.hashPassword(password);
+    
+    await db.query(
+      'UPDATE User SET password = ?, updatedAt = NOW() WHERE id = ?',
+      [hashedPassword, id]
+    );
+
+    res.status(200).json(successResponse(null, 'Password reset successfully'));
+  } catch (error) {
+    console.error('Reset password error:', error);
     res.status(500).json(errorResponse(error.message));
   }
 }
@@ -313,6 +345,7 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
+  resetPassword,
   exportUsersCSV,
   exportUsersExcel: exportUsersCSV,
   updateFilingStatus,

@@ -29,7 +29,7 @@ export default function OrdersPage() {
         headers: { Authorization: `Bearer ${token}` },
       };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders`,
+        `${process.env.NEXT_PUBLIC_API_URL || ''}/api/orders`,
         config
       );
       setOrders(res.data.data?.orders || []);

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Upload, Trash2, FileText, Search, Download, Calendar } from 'lucide-react';
-import axios from 'axios';
-import { adminAuth } from '@/lib/adminAuth';
+import { Upload, Trash2, FileText, Search, Download, Calendar, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import api from '@/lib/api';
+
 
 interface Customer {
   id: string;
@@ -47,8 +47,10 @@ export default function AdminDocumentUpload() {
     customerPan: '',
     fiscalYear: 'FY2025-26',
     category: 'gst',
+    displayTitle: '',
     file: null as File | null,
   });
+
 
   // Fetch customers on component mount
   useEffect(() => {
@@ -58,16 +60,11 @@ export default function AdminDocumentUpload() {
 
   const fetchCustomers = async () => {
     try {
-      const token = adminAuth.getAdminToken();
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/users`,
-        config
-      );
-      const users = response.data.data?.users || [];
+      const response = await api.get('/api/admin/users');
+      const users = response.data.data?.users || response.data.data || [];
       const customersList = users.map((user: any) => ({
-        id: user.id,
-        name: ((user.firstName || '') + ' ' + (user.lastName || user.name || '')).trim(),
+        id: user.id.toString(),
+        name: (user.name || ((user.firstName || '') + ' ' + (user.lastName || '')).trim()),
         email: user.email,
         phone: user.phone || 'N/A',
         pan: user.pan || 'N/A',
@@ -81,17 +78,13 @@ export default function AdminDocumentUpload() {
 
   const fetchDocuments = async () => {
     try {
-      const token = adminAuth.getAdminToken();
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/documents`,
-        config
-      );
-      setDocuments(response.data.data?.documents || []);
+      const response = await api.get('/api/admin/documents');
+      setDocuments(response.data.data?.documents || response.data.data || []);
     } catch (err) {
       console.error('Failed to fetch documents:', err);
     }
   };
+
 
   const handleCustomerSelect = (customerId: string) => {
     const selected = customers.find(c => c.id === customerId);
@@ -105,17 +98,6 @@ export default function AdminDocumentUpload() {
     }
   };
 
-  const handleCustomerByPan = (pan: string) => {
-    const selected = customers.find(c => c.pan === pan);
-    if (selected) {
-      setFormData({
-        ...formData,
-        customerId: selected.id,
-        customerName: selected.name,
-        customerPan: selected.pan,
-      });
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -140,27 +122,20 @@ export default function AdminDocumentUpload() {
     setUploading(true);
 
     try {
-      const token = adminAuth.getAdminToken();
       const uploadFormData = new FormData();
       uploadFormData.append('customerId', formData.customerId);
       uploadFormData.append('customerName', formData.customerName);
       uploadFormData.append('customerPan', formData.customerPan);
       uploadFormData.append('fiscalYear', formData.fiscalYear);
       uploadFormData.append('category', formData.category);
+      uploadFormData.append('displayTitle', formData.displayTitle);
       uploadFormData.append('file', formData.file);
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      };
 
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/documents/upload`,
-        uploadFormData,
-        config
-      );
+      await api.post('/api/admin/documents/upload', uploadFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
 
       setSuccess(`Document uploaded successfully for ${formData.customerName}`);
       setFormData({
@@ -169,8 +144,10 @@ export default function AdminDocumentUpload() {
         customerPan: '',
         fiscalYear: 'FY2025-26',
         category: 'gst',
+        displayTitle: '',
         file: null,
       });
+
       
       // Reset file input
       const fileInput = document.getElementById('file-input') as HTMLInputElement;
@@ -185,41 +162,34 @@ export default function AdminDocumentUpload() {
     }
   };
 
-  const handleDelete = async (docId: string) => {
+  const handleDelete = async (docId: any) => {
     if (!confirm('Are you sure you want to delete this document?')) return;
 
     try {
-      const token = adminAuth.getAdminToken();
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/documents/${docId}`,
-        config
-      );
-      setDocuments(documents.filter((doc) => doc.id !== docId));
+      await api.delete(`/api/admin/documents/${docId}`);
+      // Use loose inequality or convert to string to ensure matching works regardless of type
+      setDocuments(documents.filter((doc) => String(doc.id) !== String(docId)));
       setSuccess('Document deleted successfully');
+      // Also refresh just in case
+      setTimeout(() => fetchDocuments(), 500);
     } catch (err) {
       setError('Failed to delete document');
     }
   };
 
-  const handleArchive = async (docId: string) => {
+  const handleArchive = async (docId: any) => {
     try {
-      const token = adminAuth.getAdminToken();
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.patch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/documents/${docId}/archive`,
-        {},
-        config
-      );
+      await api.patch(`/api/admin/documents/${docId}/archive`, {});
       setDocuments(
         documents.map((doc) =>
-          doc.id === docId ? { ...doc, status: 'archived' } : doc
+          String(doc.id) === String(docId) ? { ...doc, status: 'archived' } : doc
         )
       );
     } catch (err) {
       setError('Failed to archive document');
     }
   };
+
 
   const filteredDocuments = documents.filter((doc) => {
     const q = searchTerm.toLowerCase();
@@ -288,12 +258,13 @@ export default function AdminDocumentUpload() {
                 Or Select by PAN Number
               </label>
               <select
-                onChange={(e) => handleCustomerByPan(e.target.value)}
+                value={formData.customerId}
+                onChange={(e) => handleCustomerSelect(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 bg-white"
               >
                 <option value="">-- Select by PAN --</option>
                 {customers.map((customer) => (
-                  <option key={customer.id} value={customer.pan}>
+                  <option key={customer.id} value={customer.id}>
                     {customer.pan} - {customer.name}
                   </option>
                 ))}
@@ -348,7 +319,25 @@ export default function AdminDocumentUpload() {
                 <option value="other">Other</option>
               </select>
             </div>
+
+            {/* Display Title */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Document Display Title (Optional - defaults to filename)
+              </label>
+              <div className="relative">
+                <FileText className="absolute left-3 top-3 text-gray-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="e.g. GST Registration Certificate"
+                  value={formData.displayTitle}
+                  onChange={(e) => setFormData({ ...formData, displayTitle: e.target.value })}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 bg-white"
+                />
+              </div>
+            </div>
           </div>
+
 
           {/* Selected Customer Info */}
           {formData.customerId && (

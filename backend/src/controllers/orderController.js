@@ -76,22 +76,57 @@ async function getOrder(req, res) {
  * Create order (Razorpay)
  */
 async function createOrder(req, res) {
-  const { serviceId, notes } = req.body;
-  const userId = req.userId;
+  let userId = req.userId;
+  const { serviceId, notes, customerEmail, customerName, customerPhone, customerPan } = req.body;
 
   if (!serviceId || !userId) {
     return res.status(400).json(errorResponse('Missing required fields'));
   }
 
   try {
+    // If it's a guest user (temp token), ensure they have a record in the User table
+    if (req.userRole === 'guest') {
+      const email = customerEmail || req.userEmail;
+      const { referralCode } = req.body;
+
+      // Check if user already exists (maybe they previously bought something as guest)
+      const existingUsers = await db.query('SELECT id FROM User WHERE email = ?', [email]);
+      
+      if (existingUsers.length > 0) {
+        userId = existingUsers[0].id;
+      } else {
+        // Find referrer if referralCode is provided
+        let referrerId = null;
+        if (referralCode) {
+          const [referrer] = await db.query('SELECT id, email FROM User WHERE referral_code = ?', [referralCode]);
+          if (referrer) {
+            referrerId = referrer.id;
+            
+            // Also create a record in the Referral table for compatibility
+            await db.query(
+              'INSERT INTO Referral (refereeEmail, referrerEmail, referralCode, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, NOW(), NOW())',
+              [email, referrer.email, referralCode, 'pending']
+            ).catch(err => console.log('Referral entry failed (likely duplicate):', err.message));
+          }
+        }
+
+        // Create a new guest user
+        const newUser = await db.query(
+          `INSERT INTO User (name, email, phone, pan, role, active, referrer_id, createdAt, updatedAt) 
+           VALUES (?, ?, ?, ?, 'user', 1, ?, NOW(), NOW())`,
+          [customerName || 'Guest User', email, customerPhone || '', customerPan || null, referrerId]
+        );
+        userId = newUser.insertId;
+      }
+    }
+
     // Fetch service price from DB to prevent client-side manipulation
     const [service] = await db.query('SELECT price, discountPrice FROM Service WHERE id = ?', [serviceId]);
     if (!service) {
       return res.status(404).json(errorResponse('Service not found'));
     }
 
-    // Determine the actual amount to charge (like Amazon/Flipkart logic)
-    // If discountPrice exists and is valid (> 0 and < price), use it. Otherwise use price.
+    // Determine the actual amount to charge
     const finalAmount = (service.discountPrice > 0 && service.discountPrice < service.price) 
       ? service.discountPrice 
       : service.price;
@@ -101,15 +136,20 @@ async function createOrder(req, res) {
     // Create Razorpay order if possible
     let razorpayOrderId = null;
     if (razorpay) {
-      const rzpOrder = await razorpay.orders.create({
-        amount: Math.round(finalAmount * 100),
-        currency: 'INR',
-        receipt: orderNo
-      });
-      razorpayOrderId = rzpOrder.id;
+      try {
+        const rzpOrder = await razorpay.orders.create({
+          amount: Math.round(finalAmount * 100),
+          currency: 'INR',
+          receipt: orderNo
+        });
+        razorpayOrderId = rzpOrder.id;
+      } catch (rzpErr) {
+        console.error('Razorpay order creation error:', rzpErr);
+        // Continue without razorpayOrderId, but ideally we should handle this
+      }
     }
 
-    // Store in DB - amount is the dummy/original, finalAmount is what was actually charged
+    // Store in DB
     const result = await db.query(`
       INSERT INTO \`Order\` (orderNo, userId, serviceId, amount, finalAmount, status, paymentStatus, paymentId, notes, createdAt, updatedAt)
       VALUES (?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?, NOW(), NOW())
@@ -141,38 +181,48 @@ async function verifyPayment(req, res) {
       WHERE id = ?
     `, [paymentId, orderId]);
 
-    // TRIGGER REFERRAL REWARD: If user was referred, give 200 points to referrer
+    // TRIGGER REFERRAL REWARD (Phase 6)
     try {
-      const [order] = await db.query('SELECT userId FROM \`Order\` WHERE id = ?', [orderId]);
+      const ReferralService = require('../services/referralService');
+      const [order] = await db.query('SELECT userId, finalAmount, serviceId FROM `Order` WHERE id = ?', [orderId]);
+      
       if (order) {
-        const [user] = await db.query('SELECT email FROM User WHERE id = ?', [order.userId]);
+        const [user] = await db.query('SELECT email, referrer_id FROM User WHERE id = ?', [order.userId]);
+        
         if (user) {
-          // Check if this user email is in the Referral table
-          const [referral] = await db.query(
-            "SELECT referrerId FROM Referral WHERE refereeEmail = ? AND referralStatus = 'pending'",
-            [user.email]
-          );
+          let referrerId = user.referrer_id;
+          
+          // If not in User table, check Referral table
+          if (!referrerId) {
+            const [referral] = await db.query(
+              'SELECT u.id FROM Referral r JOIN User u ON r.referrerEmail = u.email WHERE r.refereeEmail = ? LIMIT 1',
+              [user.email]
+            );
+            if (referral) referrerId = referral.id;
+          }
 
-          if (referral) {
-            // Update referral status
-            await db.query(
-              "UPDATE Referral SET referralStatus = 'completed', commissionAmount = 200, updatedAt = NOW() WHERE refereeEmail = ? AND referrerId = ?",
-              [user.email, referral.referrerId]
+          if (referrerId) {
+            // Process dynamic reward
+            await ReferralService.processPurchaseReward(
+              referrerId, 
+              order.userId, 
+              orderId, 
+              order.finalAmount, 
+              order.serviceId
             );
 
-            // Add points to referrer's wallet
+            // Update status in existing table for compatibility
             await db.query(
-              "UPDATE User SET points_wallet = points_wallet + 200, updatedAt = NOW() WHERE id = ?",
-              [referral.referrerId]
+              "UPDATE Referral SET status = 'completed', updatedAt = NOW() WHERE refereeEmail = ?",
+              [user.email]
             );
 
-            console.log(`🎁 Referral reward (+200 points) awarded to user ${referral.referrerId} for referring ${user.email}`);
+            console.log(`🎁 Dynamic Referral reward processed for user ${referrerId} for referee ${user.email}`);
           }
         }
       }
     } catch (refErr) {
       console.error('❌ Error processing referral reward:', refErr);
-      // Don't fail the payment verification if referral logic fails
     }
 
     res.status(200).json(successResponse(null, 'Payment verified'));

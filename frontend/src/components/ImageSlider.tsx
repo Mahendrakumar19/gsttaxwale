@@ -13,6 +13,7 @@ interface ImageSliderProps {
   images?: ImageData[];
   autoPlay?: boolean;
   interval?: number;
+  showCounter?: boolean;
 }
 
 const DEFAULT_IMAGES: ImageData[] = [
@@ -33,7 +34,8 @@ const DEFAULT_IMAGES: ImageData[] = [
 export default function ImageSlider({ 
   images = DEFAULT_IMAGES, 
   autoPlay = true, 
-  interval = 5000 
+  interval = 5000,
+  showCounter = true
 }: ImageSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlay, setIsAutoPlay] = useState(autoPlay);
@@ -83,7 +85,7 @@ export default function ImageSlider({
       onMouseLeave={() => setIsAutoPlay(autoPlay)}
     >
       {/* Image Container */}
-      <div className="relative w-full h-[450px] md:h-[550px] lg:h-[600px] bg-slate-900">
+      <div className="relative w-full h-[300px] md:h-[400px] lg:h-[450px] bg-slate-900">
         {images.map((image, index) => (
           <div
             key={index}
@@ -150,9 +152,11 @@ export default function ImageSlider({
       </div>
 
       {/* Slide Counter Overlay */}
-      <div className="absolute top-8 right-8 px-4 py-2 bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl text-xs font-black tracking-widest">
-        {String(currentIndex + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}
-      </div>
+      {showCounter && (
+        <div className="absolute top-8 right-8 px-4 py-2 bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl text-xs font-black tracking-widest">
+          {String(currentIndex + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}
+        </div>
+      )}
     </div>
   );
 }

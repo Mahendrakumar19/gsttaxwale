@@ -35,7 +35,7 @@ export default function AboutUsPage() {
             <p className="text-4xl font-bold text-blue-600 mb-2">1100+</p>
             <p className="text-gray-600 font-semibold mb-6">Clients Served</p>
             <hr className="mb-6" />
-            <p className="text-2xl font-bold text-blue-600 mb-2">15+</p>
+            <p className="text-2xl font-bold text-blue-600 mb-2">7+</p>
             <p className="text-gray-600 font-semibold">Years of Experience</p>
           </div>
         </div>

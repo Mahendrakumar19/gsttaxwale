@@ -5,26 +5,7 @@ import fetchClient from '@/lib/fetchClient';
 import { toast } from 'sonner';
 import { Star, Check, Shield, Clock, Users, Award, ArrowLeft } from 'lucide-react';
 
-// Mock services data - Match with services page
-const MOCK_SERVICES = [
-  { id: '1', slug: 'itr-filing-individual', title: 'Individual ITR Filing', price: 999, discountedPrice: 799, description: 'Professional Individual Income Tax Return filing with expert review', features: ['PAN validation', 'Income verification', 'E-filing submission', 'Expert CA review', 'ITR form selection', 'Deduction optimization'], benefits: ['Zero compliance errors', '24/7 support', 'Lifetime access', 'Amendment support'] },
-  { id: '2', slug: 'gst-registration', title: 'GST Registration & Setup', price: 2499, discountedPrice: 1999, description: 'Complete GST registration with document verification and portal training', features: ['Online registration', 'Document verification', 'Portal training', '30-day support', 'Business type consultation', 'Eligibility check'], benefits: ['Fast processing', 'Expert guidance', 'Document assistance', 'Post-registration support'] },
-  { id: '3', slug: 'gst-filing-quarterly', title: 'GST Filing (Quarterly)', price: 1299, discountedPrice: 999, description: 'Quarterly GST return filing with input-output matching', features: ['GSTR-1 & GSTR-2 filing', 'Input-output match', 'Late fee calculation', 'Amendment support', 'Invoice reconciliation', 'HSN/SAC coding'], benefits: ['On-time filing', 'Error detection', 'Compliance assurance', 'Expert support'] },
-  { id: '4', slug: 'gst-filing-annual', title: 'GST Annual Return (GSTR-9)', price: 1999, discountedPrice: 1499, description: 'Annual GST return (GSTR-9) with complete reconciliation', features: ['Annual reconciliation', 'Audit trail preparation', 'Document compilation', 'Amendment support', 'ITC reconciliation', 'Advance tax planning'], benefits: ['Full year audit ready', 'Compliance certified', 'Liability reduction', 'Future planning'] },
-  { id: '5', slug: 'tds-compliance', title: 'TDS Compliance & Filing', price: 1499, discountedPrice: 1199, description: 'TDS calculation, filing, and quarterly compliance management', features: ['TDS calculation', 'Quarterly filing', 'Challan preparation', 'Outstanding TDS tracking', 'Deductee management', 'Monthly reconciliation'], benefits: ['Zero penalties', 'Automatic tracking', 'Expert consultation', 'Year-end reporting'] },
-  { id: '6', slug: 'business-tax-consulting', title: 'Business Tax Consulting (2 hrs)', price: 4999, discountedPrice: 3999, description: '2-hour personalized tax strategy session with expert CA', features: ['2-hour consultation', 'Personalized strategy', 'Document review', 'Action plan', 'Quarterly check-ins', 'Email support'], benefits: ['Custom solutions', 'Tax optimization', 'Growth planning', 'Ongoing support'] },
-  { id: '7', slug: 'audit-support', title: 'Income Tax Audit Support', price: 7999, discountedPrice: 6499, description: 'Complete support for income tax audit with defense strategy', features: ['Document compilation', 'Audit defense', 'Notice response', 'Follow-up support', 'Expert representation', 'Notice analysis'], benefits: ['Peace of mind', 'Professional defense', 'Fast resolution', 'Compliance assured'] },
-  { id: '8', slug: 'startup-tax-setup', title: 'Startup Tax Setup Package', price: 9999, discountedPrice: 7999, description: 'Complete tax setup for new startups with 6-month support', features: ['GST registration', 'PAN registration', 'Accounting setup', '6-month support', 'Compliance calendar', 'Investor documentation'], benefits: ['Investor ready', 'Compliant setup', 'Growth oriented', 'Dedicated support'] },
-  { id: '9', slug: 'payroll-compliance', title: 'Monthly Payroll Compliance', price: 4999, discountedPrice: 3999, description: 'Monthly payroll processing with statutory compliance', features: ['Salary processing', 'TDS filing', 'Statutory compliance', 'Employee reports', 'PF/ESI management', 'Attendance integration'], benefits: ['Employee satisfaction', 'Zero compliance issues', 'Automated processing', 'Monthly reporting'] },
-  { id: '10', slug: 'investment-advisory', title: 'Tax Saving Investment Advisory', price: 2999, discountedPrice: 2499, description: 'Personalized investment recommendations for tax savings', features: ['Income analysis', 'Investment recommendations', 'Tax saving strategies', 'Quarterly review', 'Portfolio optimization', 'Risk assessment'], benefits: ['Maximum tax savings', 'Smart investments', 'Growth planning', 'Expert guidance'] },
-  { id: '11', slug: 'nri-tax-filing', title: 'NRI Income Tax Filing', price: 3999, discountedPrice: 3499, description: 'Specialized NRI income tax return filing', features: ['NRI-specific ITR', 'Foreign asset filing', 'Remittance tracking', 'FATCA compliance', 'Dual taxation relief', 'FEMA compliance'], benefits: ['Complete compliance', 'Foreign income covered', 'Relief claimed', 'Expert NRI guidance'] },
-  { id: '12', slug: 'professional-tax-filing', title: 'Professional Income Tax', price: 2499, discountedPrice: 1999, description: 'Professional income tax return with deduction optimization', features: ['Professional deduction', 'Business expense analysis', 'Quarterly advance tax', 'Audit support', 'Deduction tracking', 'Income categorization'], benefits: ['Maximum deductions', 'Accurate filing', 'Audit ready', 'Year-round support'] },
-  { id: '13', slug: 'capital-gains-planning', title: 'Capital Gains Tax Planning', price: 3499, discountedPrice: 2999, description: 'Capital gains calculation and tax planning strategies', features: ['Gain calculation', 'Exemption planning', 'Loss offsetting', 'Investment recommendations', 'Timeline optimization', 'Reinvestment guidance'], benefits: ['Minimize tax', 'Optimize gains', 'Smart planning', 'Long-term benefit'] },
-  { id: '14', slug: 'property-tax-setup', title: 'Property & Rental Tax Setup', price: 2999, discountedPrice: 2499, description: 'Rental income documentation and annual ITR filing', features: ['Rental income tracking', 'Expense documentation', 'Depreciation calculation', 'Annual ITR filing', 'Deduction optimization', 'Property management support'], benefits: ['Rental income optimized', 'Expense maximized', 'Depreciation claimed', 'Audit ready'] },
-  { id: '15', slug: 'tax-notice-response', title: 'Income Tax Notice Response', price: 5999, discountedPrice: 4999, description: 'Expert response to income tax notices with full support', features: ['Notice analysis', 'Document compilation', 'Written response', 'Meeting support', 'Representation', 'Penalty mitigation'], benefits: ['Fast resolution', 'Expert defense', 'Penalty reduction', 'Peace of mind'] }
-];
-
-export default function ServiceDetail({ params }: { params: { id: string } }) {
+function ServiceDetail({ params }: { params: { id: string } }) {
   const { id } = params;
   const router = useRouter();
   const [service, setService] = useState<any>(null);
@@ -49,20 +30,24 @@ export default function ServiceDetail({ params }: { params: { id: string } }) {
         .catch((err) => console.log('Could not fetch user'));
     }
 
-    // Find service from mock data or try to fetch
+    // Fetch from API
     let mounted = true;
     async function loadService() {
       try {
-        // First check mock data
-        const mockService = MOCK_SERVICES.find(s => s.id === id);
-        if (mockService) {
-          if (mounted) setService(mockService);
-        } else {
-          // Try to fetch from API
-          const res = await fetchClient.get(`/api/services/${id}`);
-          if (mounted && res.data?.service) {
-            setService(res.data.service);
+        const res = await fetchClient.get(`/api/services/${id}`);
+        if (mounted && res.data?.service) {
+          const svc = res.data.service;
+          
+          // Parse requirements if it's a JSON string
+          if (svc.requirements && typeof svc.requirements === 'string') {
+            try {
+              svc.requiredDocuments = JSON.parse(svc.requirements);
+            } catch (e) {
+              svc.requiredDocuments = svc.requirements.split(',').map((s: string) => s.trim());
+            }
           }
+
+          setService(svc);
         }
       } catch (err) {
         console.error('Failed to load service:', err);
@@ -179,21 +164,14 @@ export default function ServiceDetail({ params }: { params: { id: string } }) {
               </div>
 
               {/* CTA Buttons */}
-              <div className="flex gap-4">
+              <div className="flex gap-4 mt-8">
                 <button
                   onClick={handlePurchaseNow}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold rounded-lg hover:from-blue-700 hover:to-blue-600 transition shadow-lg"
+                  className="w-full md:w-auto px-12 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold rounded-lg hover:from-blue-700 hover:to-blue-600 transition shadow-lg text-center"
                 >
                   {isLoggedIn ? 'Purchase Now' : 'Login & Purchase'}
                 </button>
-                <button
-                  onClick={() => router.push('/contact')}
-                  className="px-8 py-4 border border-gray-300 text-gray-700 font-bold rounded-lg hover:border-blue-500 hover:text-blue-600 transition"
-                >
-                  Contact Support
-                </button>
               </div>
-
               {/* Trust Indicators */}
               <div className="mt-8 space-y-3">
                 <div className="flex items-center gap-3 text-gray-700">
@@ -340,3 +318,5 @@ export default function ServiceDetail({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
+export default ServiceDetail;

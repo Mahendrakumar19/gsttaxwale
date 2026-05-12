@@ -35,7 +35,7 @@ export default function ReferralPage() {
     try {
       const config = { headers: { Authorization: `Bearer ${authToken}` } };
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/referrals`,
+        `${process.env.NEXT_PUBLIC_API_URL || ''}/api/referrals`,
         config
       );
       setReferrals(res.data.data?.referrals || []);
@@ -56,7 +56,7 @@ export default function ReferralPage() {
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/referrals`,
+        `${process.env.NEXT_PUBLIC_API_URL || ''}/api/referrals`,
         { refereeEmail },
         config
       );

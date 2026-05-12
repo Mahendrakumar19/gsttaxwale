@@ -5,22 +5,22 @@ import fetchClient from '@/lib/fetchClient';
 export default function ContactForm() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
+  const [query, setQuery] = useState('');
   const [ticketId, setTicketId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name || !email || !message) return alert('Please fill all fields');
+    if (!name || !email || !query) return alert('Please fill all fields');
     setSubmitting(true);
     try {
-      const response = await fetchClient.post('/api/contact', { name, email, message });
+      const response = await fetchClient.post('/api/contact', { name, email, message: query });
       if (response.data?.data?.ticketId) {
         setTicketId(response.data.data.ticketId);
       }
       setSent(true);
-      setName(''); setEmail(''); setMessage('');
+      setName(''); setEmail(''); setQuery('');
     } catch (err: any) {
       console.error('Contact submit failed', err);
       alert(err.response?.data?.message || 'Failed to send message. Please try again.');
@@ -49,7 +49,7 @@ export default function ContactForm() {
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500" />
         <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500" />
       </div>
-      <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={6} placeholder="Describe your query" className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500"></textarea>
+      <textarea value={query} onChange={(e) => setQuery(e.target.value)} rows={6} placeholder="Describe your query" className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500"></textarea>
       <div className="flex items-center justify-between">
         <button type="submit" disabled={submitting} className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg font-semibold">
           {submitting ? 'Sending…' : 'Send Message'}

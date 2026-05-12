@@ -110,7 +110,11 @@ export default function AdminTicketDetails() {
               <div className="space-y-2 text-slate-300 text-sm">
                 <div className="flex items-center gap-2">
                   <User size={16} className="text-amber-400" />
-                  {ticket.user?.name} ({ticket.user?.email})
+                  {ticket.user ? (
+                    `${ticket.user.name} (${ticket.user.email})`
+                  ) : (
+                    `Guest (via Contact Form)`
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar size={16} className="text-amber-400" />

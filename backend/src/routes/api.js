@@ -1,7 +1,4 @@
-console.log('🚀 Loading API routes...');
-
 const express = require('express');
-const router = express.Router();
 const authController = require('../controllers/authController');
 const reportController = require('../controllers/reportController');
 const dashboardController = require('../controllers/dashboardController');
@@ -19,376 +16,209 @@ const pricingController = require('../controllers/pricingController');
 const contactController = require('../controllers/contactController');
 const publicReferralController = require('../controllers/publicReferralController');
 const locationController = require('../controllers/locationController');
+const configController = require('../controllers/configController');
+const adminReferralController = require('../controllers/adminReferralController');
+const newsController = require('../controllers/newsController');
+const statsController = require('../controllers/statsController');
+
 const multer = require('multer');
 const { authenticate, adminOnly, optionalAuthenticate, asyncHandler } = require('../middleware/auth');
 const db = require('../utils/db');
 
-// DEBUG ROUTES
-router.get('/debug/db-test', asyncHandler(async (req, res) => {
-  try {
-    const r1 = await db.query('SELECT 1 as test');
-    const r2 = await db.query('SELECT * FROM Service LIMIT 1');
-    res.json({ 
-      success: true, 
-      connection: 'OK', 
-      node: process.version,
-      env: process.env.NODE_ENV,
-      testResult: r1, 
-      serviceSample: r2 
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message, stack: err.stack });
-  }
-}));
-
-// Multer configuration for file uploads
 const upload = multer({ dest: 'uploads/temp' });
 
-// CONTACT FORM
-router.post('/contact', optionalAuthenticate, asyncHandler(contactController.handleContactForm));
-router.post('/referrals/generate-public', asyncHandler(publicReferralController.generatePublicReferral));
+module.exports = function(app) {
+  const prefix = '/api';
 
-// AUTH ROUTES
-router.post('/auth/send-service-purchase-otp', asyncHandler(authController.sendServicePurchaseOTP));
-router.post('/auth/verify-service-purchase-otp', asyncHandler(authController.verifyServicePurchaseOTP));
-// SIGNUP REMOVED - Users can only be created by admin
-router.post('/auth/login', asyncHandler(authController.login));
-router.post('/auth/admin-login', asyncHandler(authController.adminLogin));
-router.post('/auth/send-otp', asyncHandler(authController.sendOTP));
-router.post('/auth/verify-otp', asyncHandler(authController.verifyOTP));
-router.post('/auth/forgot-password', asyncHandler(authController.forgotPassword));
-router.post('/auth/verify-password-otp', asyncHandler(authController.verifyPasswordOTP));
-router.post('/auth/reset-password', asyncHandler(authController.resetPassword));
-router.post('/auth/logout', authenticate, asyncHandler(authController.logout));
-router.post('/auth/convert-guest-to-account', asyncHandler(authController.convertGuestToAccount));
-router.post('/auth/check-email', asyncHandler(authController.checkEmail));
-router.post('/auth/create-guest', asyncHandler(authController.createGuest));
-router.get('/auth/me', authenticate, asyncHandler(authController.getCurrentUser));
-router.put('/auth/profile', authenticate, asyncHandler(authController.updateProfile));
+  app.get(`${prefix}/ping`, (req, res) => res.json({ success: true, message: 'platform-pong' }));
 
-// Users endpoint - GET current user
-router.get('/users/me', authenticate, asyncHandler(authController.getCurrentUser));
+  app.post(`${prefix}/contact`, optionalAuthenticate, asyncHandler(contactController.handleContactForm));
+  app.post(`${prefix}/stats/visitor`, asyncHandler(statsController.incrementVisitorCount));
+  app.post(`${prefix}/referrals/generate-public`, asyncHandler(publicReferralController.generatePublicReferral));
+  
+  // AUTH ROUTES
+  app.post(`${prefix}/auth/send-service-purchase-otp`, asyncHandler(authController.sendServicePurchaseOTP));
+  app.post(`${prefix}/auth/verify-service-purchase-otp`, asyncHandler(authController.verifyServicePurchaseOTP));
+  app.post(`${prefix}/auth/login`, asyncHandler(authController.login));
+  app.post(`${prefix}/auth/admin-login`, asyncHandler(authController.adminLogin));
+  app.post(`${prefix}/auth/send-otp`, asyncHandler(authController.sendOTP));
+  app.post(`${prefix}/auth/verify-otp`, asyncHandler(authController.verifyOTP));
+  app.post(`${prefix}/auth/forgot-password`, asyncHandler(authController.forgotPassword));
+  app.post(`${prefix}/auth/verify-password-otp`, asyncHandler(authController.verifyPasswordOTP));
+  app.post(`${prefix}/auth/reset-password`, asyncHandler(authController.resetPassword));
+  app.post(`${prefix}/auth/logout`, authenticate, asyncHandler(authController.logout));
+  app.post(`${prefix}/auth/convert-guest-to-account`, asyncHandler(authController.convertGuestToAccount));
+  app.post(`${prefix}/auth/check-email`, asyncHandler(authController.checkEmail));
+  app.post(`${prefix}/auth/create-guest`, asyncHandler(authController.createGuest));
+  app.get(`${prefix}/auth/me`, authenticate, asyncHandler(authController.getCurrentUser));
+  app.put(`${prefix}/auth/profile`, authenticate, asyncHandler(authController.updateProfile));
 
+  // SYSTEM CONFIG ROUTES
+  app.get(`${prefix}/config/public`, asyncHandler(configController.getPublicSettings));
+  app.get(`${prefix}/admin/config`, authenticate, adminOnly, asyncHandler(configController.getAllSettings));
+  app.post(`${prefix}/admin/config`, authenticate, adminOnly, asyncHandler(configController.updateSettings));
 
-// ────────────────────────────────────────────────────────────────────
-// TICKET ROUTES
-// ────────────────────────────────────────────────────────────────────
-router.post('/tickets', authenticate, asyncHandler(ticketController.createTicket));
-router.get('/tickets', authenticate, asyncHandler(ticketController.getUserTickets));
-router.get('/tickets/:id', authenticate, asyncHandler(ticketController.getTicket));
-router.put('/tickets/:id', authenticate, adminOnly, asyncHandler(ticketController.updateTicket));
-router.delete('/tickets/:id', authenticate, adminOnly, asyncHandler(ticketController.deleteTicket));
-router.get('/admin/tickets', authenticate, adminOnly, asyncHandler(ticketController.getAllTickets));
+  app.get(`${prefix}/users/me`, authenticate, asyncHandler(authController.getCurrentUser));
 
-// ────────────────────────────────────────────────────────────────────
-// REFERRAL ROUTES
-// ────────────────────────────────────────────────────────────────────
-router.post('/referrals', authenticate, asyncHandler(referralController.createReferral));
-router.get('/referrals', authenticate, asyncHandler(referralController.getReferralInfo));
-router.get('/referrals/link', authenticate, asyncHandler(referralController.getReferralLink));
-router.post('/referrals/register', asyncHandler(referralController.registerReferral));
-router.post('/referrals/convert', authenticate, asyncHandler(referralController.trackReferralConversion));
-router.post('/referrals/redeem-points', authenticate, asyncHandler(referralController.redeemPoints));
-router.get('/referrals/history', authenticate, asyncHandler(referralController.getRedemptionHistory));
-router.get('/referrals/:id', authenticate, asyncHandler(referralController.getReferral));
-router.put('/referrals/:id', authenticate, adminOnly, asyncHandler(referralController.updateReferral));
-router.get('/admin/referrals', authenticate, adminOnly, asyncHandler(referralController.getAllReferrals));
-router.get('/admin/referrals-stats', authenticate, adminOnly, asyncHandler(referralController.getReferralStats));
-router.post('/admin/referrals/:id/verify', authenticate, adminOnly, asyncHandler(referralController.verifyReferral));
+  // TICKET ROUTES
+  app.post(`${prefix}/tickets`, authenticate, asyncHandler(ticketController.createTicket));
+  app.get(`${prefix}/tickets`, authenticate, asyncHandler(ticketController.getUserTickets));
+  app.get(`${prefix}/tickets/:id`, authenticate, asyncHandler(ticketController.getTicket));
+  app.put(`${prefix}/tickets/:id`, authenticate, adminOnly, asyncHandler(ticketController.updateTicket));
+  app.delete(`${prefix}/tickets/:id`, authenticate, adminOnly, asyncHandler(ticketController.deleteTicket));
+  app.get(`${prefix}/admin/tickets`, authenticate, adminOnly, asyncHandler(ticketController.getAllTickets));
 
-// ────────────────────────────────────────────────────────────────────
-// DOCUMENT ROUTES
-// ────────────────────────────────────────────────────────────────────
-router.post('/documents/upload', authenticate, upload.single('file'), asyncHandler(documentController.uploadDocument));
-router.get('/documents', authenticate, asyncHandler(documentController.getUserDocuments));
-router.delete('/documents/:documentId', authenticate, asyncHandler(documentController.deleteDocument));
-router.get('/documents/financial-years', authenticate, asyncHandler(documentController.getFinancialYears));
+  // REFERRAL & WALLET ROUTES
+  app.post(`${prefix}/referrals`, authenticate, asyncHandler(referralController.createReferral));
+  app.get(`${prefix}/referrals`, authenticate, asyncHandler(referralController.getReferralInfo));
+  app.get(`${prefix}/referrals/link`, authenticate, asyncHandler(referralController.getReferralLink));
+  app.post(`${prefix}/referrals/register`, asyncHandler(referralController.registerReferral));
+  app.post(`${prefix}/referrals/convert`, authenticate, asyncHandler(referralController.trackReferralConversion));
+  app.post(`${prefix}/referrals/redeem-points`, authenticate, asyncHandler(referralController.redeemPoints));
+  app.get(`${prefix}/referrals/history`, authenticate, asyncHandler(referralController.getRedemptionHistory));
+  app.get(`${prefix}/wallet/history`, authenticate, asyncHandler(referralController.getWalletHistory));
 
-// ────────────────────────────────────────────────────────────────────
-// ADMIN SYSTEM ROUTES
-// ────────────────────────────────────────────────────────────────────
-router.get('/admin/stats', authenticate, adminOnly, asyncHandler(adminController.getAdminStats));
+  // ADMIN REFERRAL & WALLET
+  app.get(`${prefix}/admin/referral/rules`, authenticate, adminOnly, asyncHandler(adminReferralController.getRules));
+  app.post(`${prefix}/admin/referral/rules`, authenticate, adminOnly, asyncHandler(adminReferralController.createRule));
+  app.put(`${prefix}/admin/referral/rules/:id`, authenticate, adminOnly, asyncHandler(adminReferralController.updateRule));
+  app.get(`${prefix}/admin/wallet/transactions`, authenticate, adminOnly, asyncHandler(adminReferralController.getAllTransactions));
+  app.post(`${prefix}/admin/wallet/adjust`, authenticate, adminOnly, asyncHandler(adminReferralController.adjustWallet));
+  app.get(`${prefix}/admin/referral/settings`, authenticate, adminOnly, asyncHandler(adminReferralController.getSettings));
+  app.put(`${prefix}/admin/referral/settings`, authenticate, adminOnly, asyncHandler(adminReferralController.updateSettings));
+  app.get(`${prefix}/admin/referral/analytics`, authenticate, adminOnly, asyncHandler(adminReferralController.getReferralAnalytics));
+  app.get(`${prefix}/admin/referrals`, authenticate, adminOnly, asyncHandler(referralController.getAllReferrals));
 
-// ────────────────────────────────────────────────────────────────────
-// DASHBOARD ROUTES
-// ────────────────────────────────────────────────────────────────────
-router.get('/dashboard', authenticate, asyncHandler(dashboardController.getDashboard));
-router.get('/dashboard/filing-status', authenticate, asyncHandler(dashboardController.getFilingStatus));
-router.get('/dashboard/services', authenticate, asyncHandler(dashboardController.getUserServices));
-router.get('/dashboard/documents', authenticate, asyncHandler(dashboardController.getUserDocumentsGrouped));
-router.delete('/dashboard/filing', authenticate, asyncHandler(dashboardController.removeFiling));
+  // DOCUMENT ROUTES
+  app.post(`${prefix}/documents/upload`, authenticate, upload.single('file'), asyncHandler(documentController.uploadDocument));
+  app.get(`${prefix}/documents/user-list`, authenticate, asyncHandler(documentController.getUserDocuments));
+  app.delete(`${prefix}/documents/:documentId`, authenticate, asyncHandler(documentController.deleteDocument));
+  app.get(`${prefix}/documents/financial-years`, authenticate, asyncHandler(documentController.getFinancialYears));
 
-// ────────────────────────────────────────────────────────────────────
-// INQUIRY ROUTES
-// ────────────────────────────────────────────────────────────────────
-router.post('/inquiries', asyncHandler(inquiryController.createInquiry));
-router.get('/inquiries', authenticate, asyncHandler(inquiryController.getUserInquiries));
-router.get('/inquiries/:id', authenticate, asyncHandler(inquiryController.getInquiry));
-router.put('/inquiries/:id', authenticate, adminOnly, asyncHandler(inquiryController.updateInquiry));
-router.get('/admin/inquiries', authenticate, adminOnly, asyncHandler(inquiryController.getAllInquiries));
-router.get('/admin/inquiries-stats', authenticate, adminOnly, asyncHandler(inquiryController.getInquiryStats));
+  // ADMIN SYSTEM ROUTES
+  app.get(`${prefix}/admin/stats`, authenticate, adminOnly, asyncHandler(adminController.getAdminStats));
 
-// ────────────────────────────────────────────────────────────────────
-// CONSULTATION ROUTES
-// ────────────────────────────────────────────────────────────────────
-router.post('/consultations', authenticate, adminOnly, asyncHandler(consultationController.createConsultation));
-router.get('/consultations', authenticate, asyncHandler(consultationController.getUserConsultations));
-router.get('/consultations/:id', authenticate, asyncHandler(consultationController.getConsultation));
-router.get('/consultations/:id/document', authenticate, asyncHandler(consultationController.getConsultationDocument));
-router.put('/consultations/:id', authenticate, adminOnly, asyncHandler(consultationController.updateConsultation));
-router.get('/admin/consultations', authenticate, adminOnly, asyncHandler(consultationController.getAllConsultations));
-router.get('/admin/consultations-stats', authenticate, adminOnly, asyncHandler(consultationController.getConsultationStats));
+  // DASHBOARD ROUTES
+  app.get(`${prefix}/dashboard`, authenticate, asyncHandler(dashboardController.getDashboard));
+  app.get(`${prefix}/dashboard/filing-status`, authenticate, asyncHandler(dashboardController.getFilingStatus));
+  app.get(`${prefix}/dashboard/services`, authenticate, asyncHandler(dashboardController.getUserServices));
+  app.get(`${prefix}/dashboard/documents`, authenticate, asyncHandler(dashboardController.getUserDocumentsGrouped));
+  app.delete(`${prefix}/dashboard/filing`, authenticate, asyncHandler(dashboardController.removeFiling));
 
-// ────────────────────────────────────────────────────────────────────
-// CUSTOMER ROUTES (ADMIN)
-// ────────────────────────────────────────────────────────────────────
-router.get('/admin/customers', authenticate, adminOnly, asyncHandler(customerController.getAllCustomers));
-router.get('/admin/customers/search', authenticate, adminOnly, asyncHandler(customerController.searchCustomers));
-router.get('/admin/customers/email', authenticate, adminOnly, asyncHandler(customerController.getCustomerByEmail));
-router.get('/admin/customers/:id', authenticate, adminOnly, asyncHandler(customerController.getCustomerDetails));
+  // INQUIRY ROUTES
+  app.post(`${prefix}/inquiries`, asyncHandler(inquiryController.createInquiry));
+  app.get(`${prefix}/inquiries`, authenticate, asyncHandler(inquiryController.getUserInquiries));
+  app.get(`${prefix}/inquiries/:id`, authenticate, asyncHandler(inquiryController.getInquiry));
+  app.put(`${prefix}/inquiries/:id`, authenticate, adminOnly, asyncHandler(inquiryController.updateInquiry));
+  app.get(`${prefix}/admin/inquiries`, authenticate, adminOnly, asyncHandler(inquiryController.getAllInquiries));
+  app.get(`${prefix}/admin/inquiries-stats`, authenticate, adminOnly, asyncHandler(inquiryController.getInquiryStats));
 
-// ────────────────────────────────────────────────────────────────────
-// TAX FILING ROUTES
-// ────────────────────────────────────────────────────────────────────
-router.post('/tax/filing/create', authenticate, asyncHandler(reportController.createTaxFiling));
-router.get('/tax/filing/:id', authenticate, asyncHandler(reportController.getTaxFiling));
-router.get('/tax/filings', authenticate, asyncHandler(reportController.getTaxFilings));
-router.post('/tax/filing/:id/income', authenticate, asyncHandler(reportController.updateIncome));
-router.post('/tax/filing/:id/deductions', authenticate, asyncHandler(reportController.updateDeductions));
-router.post('/tax/filing/:id/calculate', authenticate, asyncHandler(reportController.calculateTax));
-router.post('/tax/filing/:id/submit', authenticate, asyncHandler(reportController.submitFiling));
-router.post('/tax/filing/:id/file', authenticate, asyncHandler(reportController.fileReturn));
-// router.post('/tax/filing/:id/compare-regimes', authenticate, asyncHandler(reportController.compareRegimes));
+  // CONSULTATION ROUTES
+  app.post(`${prefix}/consultations`, authenticate, adminOnly, asyncHandler(consultationController.createConsultation));
+  app.get(`${prefix}/consultations`, authenticate, asyncHandler(consultationController.getUserConsultations));
+  app.get(`${prefix}/consultations/:id`, authenticate, asyncHandler(consultationController.getConsultation));
+  app.get(`${prefix}/consultations/:id/document`, authenticate, asyncHandler(consultationController.getConsultationDocument));
+  app.put(`${prefix}/consultations/:id`, authenticate, adminOnly, asyncHandler(consultationController.updateConsultation));
+  app.get(`${prefix}/admin/consultations`, authenticate, adminOnly, asyncHandler(consultationController.getAllConsultations));
+  app.get(`${prefix}/admin/consultations-stats`, authenticate, adminOnly, asyncHandler(consultationController.getConsultationStats));
 
-// ────────────────────────────────────────────────────────────────────
-// DOCUMENT UPLOAD ROUTES (TO BE IMPLEMENTED)
-// ────────────────────────────────────────────────────────────────────
-// router.post('/upload/document', authenticate, asyncHandler(reportController.uploadDocument));
-// router.get('/documents/:filingId', authenticate, asyncHandler(reportController.getDocuments));
-// router.delete('/document/:id', authenticate, asyncHandler(reportController.deleteDocument));
+  // CUSTOMER ROUTES (ADMIN)
+  app.get(`${prefix}/admin/customers`, authenticate, adminOnly, asyncHandler(customerController.getAllCustomers));
+  app.get(`${prefix}/admin/customers/search`, authenticate, adminOnly, asyncHandler(customerController.searchCustomers));
+  app.get(`${prefix}/admin/customers/email`, authenticate, adminOnly, asyncHandler(customerController.getCustomerByEmail));
+  app.get(`${prefix}/admin/customers/:id`, authenticate, adminOnly, asyncHandler(customerController.getCustomerDetails));
 
-// ────────────────────────────────────────────────────────────────────
-// PAYMENT ROUTES (TO BE IMPLEMENTED)
-// ────────────────────────────────────────────────────────────────────
-// router.post('/payment/create-order', authenticate, asyncHandler(reportController.createPaymentOrder));
-// router.post('/payment/verify', authenticate, asyncHandler(reportController.verifyPayment));
-// router.get('/payments', authenticate, asyncHandler(reportController.getPayments));
+  // TAX FILING ROUTES
+  app.post(`${prefix}/tax/filing/create`, authenticate, asyncHandler(reportController.createTaxFiling));
+  app.get(`${prefix}/tax/filing/:id`, authenticate, asyncHandler(reportController.getTaxFiling));
+  app.get(`${prefix}/tax/filings`, authenticate, asyncHandler(reportController.getTaxFilings));
+  app.post(`${prefix}/tax/filing/:id/income`, authenticate, asyncHandler(reportController.updateIncome));
+  app.post(`${prefix}/tax/filing/:id/deductions`, authenticate, asyncHandler(reportController.updateDeductions));
+  app.post(`${prefix}/tax/filing/:id/calculate`, authenticate, asyncHandler(reportController.calculateTax));
+  app.post(`${prefix}/tax/filing/:id/submit`, authenticate, asyncHandler(reportController.submitFiling));
+  app.post(`${prefix}/tax/filing/:id/file`, authenticate, asyncHandler(reportController.fileReturn));
 
-// ────────────────────────────────────────────────────────────────────
-// CA ASSISTED FILING ROUTES (TO BE IMPLEMENTED)
-// ────────────────────────────────────────────────────────────────────
-// router.post('/ca/request', authenticate, asyncHandler(reportController.requestCA));
-// router.get('/ca/status/:id', authenticate, asyncHandler(reportController.getCAStatus));
-// router.get('/ca/filings', authenticate, asyncHandler(reportController.getCAAssignedFilings));
+  app.get(`${prefix}/dashboard/statistics`, authenticate, asyncHandler(dashboardController.getStatistics));
+  app.get(`${prefix}/dashboard/refund-status`, authenticate, asyncHandler(dashboardController.getRefundStatus));
 
-// ────────────────────────────────────────────────────────────────────
-// REPORT ROUTES (Legacy - TO BE IMPLEMENTED)
-// ────────────────────────────────────────────────────────────────────
-// router.post('/reports', authenticate, reportController.createReport);
-// router.get('/reports', authenticate, reportController.listReports);
-// router.get('/reports/:id', authenticate, reportController.getReport);
-// router.get('/reports/:id/download', authenticate, reportController.downloadReport);
+  // ADMIN ROUTES
+  app.get(`${prefix}/admin/users`, authenticate, adminOnly, asyncHandler(adminController.getUsers));
+  app.post(`${prefix}/admin/users`, authenticate, adminOnly, asyncHandler(adminController.createUser));
+  app.put(`${prefix}/admin/users/:id`, authenticate, adminOnly, asyncHandler(adminController.updateUser));
+  app.delete(`${prefix}/admin/users/:id`, authenticate, adminOnly, asyncHandler(adminController.deleteUser));
+  app.post(`${prefix}/admin/users/:id/reset-password`, authenticate, adminOnly, asyncHandler(adminController.resetPassword));
+  app.get(`${prefix}/admin/reports`, authenticate, adminOnly, asyncHandler(adminController.getReports));
+  app.put(`${prefix}/admin/points/:userId`, authenticate, adminOnly, asyncHandler(adminController.adjustPoints));
+  app.get(`${prefix}/admin/points-history/:userId`, authenticate, adminOnly, asyncHandler(adminController.getPointsHistory));
+  app.get(`${prefix}/admin/redeem-requests`, authenticate, adminOnly, asyncHandler(adminController.getRedeemRequests));
+  app.post(`${prefix}/admin/redeem-requests/:id/approve`, authenticate, adminOnly, asyncHandler(adminController.approveRedeemRequest));
+  app.get(`${prefix}/admin/export/users`, authenticate, adminOnly, asyncHandler(adminController.exportUsersCSV));
+  app.get(`${prefix}/admin/export/users-excel`, authenticate, adminOnly, asyncHandler(adminController.exportUsersExcel));
+  app.get(`${prefix}/admin/analytics`, authenticate, adminOnly, asyncHandler(adminController.getAnalytics));
+  app.get(`${prefix}/admin/stats/visitors`, authenticate, adminOnly, asyncHandler(statsController.getVisitorCount));
 
-// ────────────────────────────────────────────────────────────────────
-// DASHBOARD ROUTES
-// ────────────────────────────────────────────────────────────────────
-router.get('/dashboard', authenticate, asyncHandler(dashboardController.getDashboard));
-router.get('/dashboard/statistics', authenticate, asyncHandler(dashboardController.getStatistics));
-router.get('/dashboard/refund-status', authenticate, asyncHandler(dashboardController.getRefundStatus));
+  // SERVICE PRICING
+  app.get(`${prefix}/admin/pricing`, authenticate, adminOnly, asyncHandler(pricingController.getServicePricing));
+  app.get(`${prefix}/admin/pricing/:serviceId`, authenticate, adminOnly, asyncHandler(pricingController.getServicePrice));
+  app.post(`${prefix}/admin/pricing`, authenticate, adminOnly, asyncHandler(pricingController.setServicePricing));
+  app.delete(`${prefix}/admin/pricing/:serviceId`, authenticate, adminOnly, asyncHandler(pricingController.removePricing));
+  app.get(`${prefix}/pricing/active`, asyncHandler(pricingController.getActivePricing));
 
-// ────────────────────────────────────────────────────────────────────
-// ADMIN ROUTES
-// ────────────────────────────────────────────────────────────────────
-router.get('/admin/users', authenticate, adminOnly, asyncHandler(adminController.getUsers));
-router.post('/admin/users', authenticate, adminOnly, asyncHandler(adminController.createUser));
-router.put('/admin/users/:id', authenticate, adminOnly, asyncHandler(adminController.updateUser));
-router.delete('/admin/users/:id', authenticate, adminOnly, asyncHandler(adminController.deleteUser));
-router.get('/admin/reports', authenticate, adminOnly, asyncHandler(adminController.getReports));
-router.put('/admin/points/:userId', authenticate, adminOnly, asyncHandler(adminController.adjustPoints));
-router.get('/admin/points-history/:userId', authenticate, adminOnly, asyncHandler(adminController.getPointsHistory));
-router.get('/admin/redeem-requests', authenticate, adminOnly, asyncHandler(adminController.getRedeemRequests));
-router.post('/admin/redeem-requests/:id/approve', authenticate, adminOnly, asyncHandler(adminController.approveRedeemRequest));
-router.get('/admin/export/users', authenticate, adminOnly, asyncHandler(adminController.exportUsersCSV));
-router.get('/admin/export/users-excel', authenticate, adminOnly, asyncHandler(adminController.exportUsersExcel));
-router.get('/admin/analytics', authenticate, adminOnly, asyncHandler(adminController.getAnalytics));
+  // SERVICES
+  app.get(`${prefix}/services`, asyncHandler(serviceController.listServices));
+  app.get(`${prefix}/services/:id`, asyncHandler(serviceController.getService));
+  app.post(`${prefix}/admin/services`, authenticate, adminOnly, asyncHandler(serviceController.createService));
+  app.put(`${prefix}/admin/services/:id`, authenticate, adminOnly, asyncHandler(serviceController.updateService));
+  app.delete(`${prefix}/admin/services/:id`, authenticate, adminOnly, asyncHandler(serviceController.deleteService));
 
-// ────────────────────────────────────────────────────────────────────
-// SERVICE PRICING (Admin Management)
-// ────────────────────────────────────────────────────────────────────
-router.get('/admin/pricing', authenticate, adminOnly, asyncHandler(pricingController.getServicePricing));
-router.get('/admin/pricing/:serviceId', authenticate, adminOnly, asyncHandler(pricingController.getServicePrice));
-router.post('/admin/pricing', authenticate, adminOnly, asyncHandler(pricingController.setServicePricing));
-router.delete('/admin/pricing/:serviceId', authenticate, adminOnly, asyncHandler(pricingController.removePricing));
+  // ORDERS
+  app.post(`${prefix}/orders`, authenticate, asyncHandler(orderController.createOrder));
+  app.post(`${prefix}/orders/create-inquiry`, asyncHandler(orderController.createInquiry));
+  app.post(`${prefix}/orders/guest-checkout`, asyncHandler(orderController.createGuestCheckout));
+  app.get(`${prefix}/orders`, authenticate, asyncHandler(orderController.listOrders));
+  app.get(`${prefix}/orders/:id`, authenticate, asyncHandler(orderController.getOrder));
+  app.post(`${prefix}/orders/verify`, asyncHandler(orderController.verifyPayment));
 
-// Public endpoint to get active pricing
-router.get('/pricing/active', asyncHandler(pricingController.getActivePricing));
+  // CLEAN BACKEND FLOW ROUTES
+  app.get(`${prefix}/admin/documents`, authenticate, adminOnly, asyncHandler(documentController.getAllDocuments));
+  app.post(`${prefix}/admin/upload-document`, authenticate, adminOnly, upload.single('file'), asyncHandler(documentController.adminUploadDocument));
+  app.post(`${prefix}/admin/documents/upload`, authenticate, adminOnly, upload.single('file'), asyncHandler(documentController.uploadDocument));
+  app.delete(`${prefix}/admin/documents/:documentId`, authenticate, adminOnly, asyncHandler(documentController.deleteDocument));
+  app.patch(`${prefix}/admin/documents/:documentId/archive`, authenticate, adminOnly, asyncHandler(documentController.archiveDocument));
+  app.get(`${prefix}/admin/documents/stats`, authenticate, adminOnly, asyncHandler(documentController.getDocumentStats));
 
-// ────────────────────────────────────────────────────────────────────
-// SERVICES (PUBLIC)
-// ────────────────────────────────────────────────────────────────────
-router.get('/services', asyncHandler(serviceController.listServices));
-router.get('/services/:id', asyncHandler(serviceController.getService));
+  app.get(`${prefix}/documents`, authenticate, asyncHandler(documentController.getGroupedDocuments));
+  app.get(`${prefix}/documents/download/:filename`, authenticate, asyncHandler(documentController.downloadDocument));
 
-// Admin service management
-router.post('/admin/services', authenticate, adminOnly, asyncHandler(serviceController.createService));
-router.put('/admin/services/:id', authenticate, adminOnly, asyncHandler(serviceController.updateService));
-router.delete('/admin/services/:id', authenticate, adminOnly, asyncHandler(serviceController.deleteService));
+  app.get(`${prefix}/dashboard/wallet`, authenticate, asyncHandler(referralController.getReferralInfo));
+  app.put(`${prefix}/admin/update-filing-status`, authenticate, adminOnly, asyncHandler(adminController.updateFilingStatus));
 
-// ────────────────────────────────────────────────────────────────────
-// ORDERS / CHECKOUT
-// ────────────────────────────────────────────────────────────────────
-// ORDERS / CHECKOUT (Razorpay Integration)
-// ────────────────────────────────────────────────────────────────────
-router.post('/orders', authenticate, asyncHandler(orderController.createOrder));
-router.post('/orders/create-inquiry', asyncHandler(orderController.createInquiry));
-router.post('/orders/guest-checkout', asyncHandler(orderController.createGuestCheckout));
-router.get('/orders', authenticate, asyncHandler(orderController.listOrders));
-router.get('/orders/:id', authenticate, asyncHandler(orderController.getOrder));
-router.post('/orders/verify', asyncHandler(orderController.verifyPayment));
+  app.get(`${prefix}/admin/tickets`, authenticate, adminOnly, asyncHandler(ticketController.getAllTickets));
+  app.get(`${prefix}/admin/tickets/:id`, authenticate, adminOnly, asyncHandler(ticketController.getTicket));
+  app.put(`${prefix}/admin/tickets/:id`, authenticate, adminOnly, asyncHandler(ticketController.updateTicket));
+  app.delete(`${prefix}/admin/tickets/:id`, authenticate, adminOnly, asyncHandler(ticketController.deleteTicket));
+  app.get(`${prefix}/admin/referrals`, authenticate, adminOnly, asyncHandler(referralController.getAllReferrals));
 
+  // NEWS ROUTES
+  app.get(`${prefix}/news`, asyncHandler(newsController.getNews));
+  app.post(`${prefix}/admin/news`, authenticate, adminOnly, asyncHandler(newsController.createNews));
+  app.delete(`${prefix}/admin/news/:id`, authenticate, adminOnly, asyncHandler(newsController.deleteNews));
 
-// ────────────────────────────────────────────────────────────────────
-// CLEAN BACKEND FLOW ROUTES
-// ────────────────────────────────────────────────────────────────────
-// FLOW 1: ADMIN UPLOADS DOCUMENT
-router.post('/admin/upload-document', authenticate, adminOnly, upload.single('file'), asyncHandler(documentController.adminUploadDocument));
-router.post('/admin/documents/upload', authenticate, adminOnly, upload.single('file'), asyncHandler(documentController.adminUploadDocument));
+  app.get(`${prefix}/locations`, asyncHandler(locationController.listLocations));
+  app.get(`${prefix}/admin/locations`, authenticate, adminOnly, asyncHandler(locationController.adminListLocations));
+  app.post(`${prefix}/admin/locations`, authenticate, adminOnly, asyncHandler(locationController.createLocation));
+  app.put(`${prefix}/admin/locations/:id`, authenticate, adminOnly, asyncHandler(locationController.updateLocation));
+  app.delete(`${prefix}/admin/locations/:id`, authenticate, adminOnly, asyncHandler(locationController.deleteLocation));
 
+  app.get(`${prefix}/due-dates`, asyncHandler(dueDatesController.getDueDates));
+  app.get(`${prefix}/due-dates/gst`, asyncHandler(dueDatesController.getGSTDueDates));
+  app.get(`${prefix}/due-dates/itr`, asyncHandler(dueDatesController.getITRDueDates));
 
-// FLOW 2: USER OPENS DOCUMENT PAGE (Grouped by Category & FY)
-router.get('/documents', authenticate, asyncHandler(documentController.getGroupedDocuments));
-
-// WALLET & POINTS
-router.get('/dashboard/wallet', authenticate, asyncHandler(referralController.getReferralInfo));
-
-// FLOW 3: ADMIN UPDATES FILING STATUS
-router.put('/admin/update-filing-status', authenticate, adminOnly, asyncHandler(adminController.updateFilingStatus));
-
-// ────────────────────────────────────────────────────────────────────
-// ADMIN: SUPPORT & REDEMPTION TICKETS
-// ────────────────────────────────────────────────────────────────────
-router.get('/admin/tickets', authenticate, adminOnly, asyncHandler(ticketController.getAllTickets));
-router.get('/admin/tickets/:id', authenticate, adminOnly, asyncHandler(ticketController.getTicket));
-router.put('/admin/tickets/:id', authenticate, adminOnly, asyncHandler(ticketController.updateTicket));
-router.delete('/admin/tickets/:id', authenticate, adminOnly, asyncHandler(ticketController.deleteTicket));
-router.get('/admin/referrals', authenticate, adminOnly, asyncHandler(referralController.getAllReferrals));
-
-
-// DOCUMENT MANAGEMENT ROUTES (Existing)
-// ────────────────────────────────────────────────────────────────────
-// NEWS & UPDATES ROUTES (PUBLIC)
-// ────────────────────────────────────────────────────────────────────
-// Get GST news and updates
-router.get('/news', (req, res) => {
-  const MOCK_NEWS = [
-    {
-      id: '1',
-      title: 'GSTR-1 Filing Due Extended',
-      description: 'GST returns filing deadline for March 2026 extended by 5 days to April 16',
-      date: '2026-03-28',
-      category: 'announcement',
-      source: 'GST Portal',
-      url: 'https://gst.gov.in',
-    },
-    {
-      id: '2',
-      title: 'New ITC Rate Changes Announced',
-      description: 'Input Tax Credit (ITC) rules updated for specific sectors. Check GST portal for details.',
-      date: '2026-03-25',
-      category: 'update',
-      source: 'CBIC',
-      url: 'https://gst.gov.in',
-    },
-    {
-      id: '3',
-      title: 'Portal Maintenance Notice',
-      description: 'GST Portal will be under maintenance on March 30 (10 PM - 6 AM). No filings can be submitted.',
-      date: '2026-03-23',
-      category: 'alert',
-      source: 'GST Support',
-    },
-    {
-      id: '4',
-      title: 'GSTR-9 Annual Return Filing Extended',
-      description: 'Annual GST return filing deadline extended to June 30, 2026 for all taxpayers',
-      date: '2026-03-20',
-      category: 'news',
-      source: 'Government',
-    },
-    {
-      id: '5',
-      title: 'E-Commerce Rules Updated',
-      description: 'New compliance requirements for e-commerce platforms effective from April 1, 2026',
-      date: '2026-03-18',
-      category: 'announcement',
-      source: 'GST Portal',
-      url: 'https://gst.gov.in',
-    },
-  ];
-
-  try {
-    const limit = parseInt(req.query.limit || '5');
-    const category = req.query.category;
-
-    let news = [...MOCK_NEWS];
-
-    // Filter by category if provided
-    if (category && ['update', 'news', 'announcement', 'alert'].includes(category)) {
-      news = news.filter((item) => item.category === category);
-    }
-
-    // Sort by date (newest first)
-    news.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    // Limit results
-    const limited = news.slice(0, limit);
-
-    res.json({
-      success: true,
-      data: {
-        news: limited,
-        total: limited.length,
-      },
+  app.all(`${prefix}/*`, (req, res) => {
+    console.log(`⚠️  404 API Fallback: ${req.method} ${req.originalUrl}`);
+    res.status(404).json({
+      error: true,
+      message: `API endpoint not found: ${req.originalUrl}`,
     });
-  } catch (error) {
-    console.error('Error fetching news:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch news',
-    });
-  }
-});
-
-// ────────────────────────────────────────────────────────────────────
-// ────────────────────────────────────────────────────────────────────
-// LOCATION ROUTES
-// ────────────────────────────────────────────────────────────────────
-router.get('/locations', asyncHandler(locationController.listLocations));
-router.get('/admin/locations', authenticate, adminOnly, asyncHandler(locationController.adminListLocations));
-router.post('/admin/locations', authenticate, adminOnly, asyncHandler(locationController.createLocation));
-router.put('/admin/locations/:id', authenticate, adminOnly, asyncHandler(locationController.updateLocation));
-router.delete('/admin/locations/:id', authenticate, adminOnly, asyncHandler(locationController.deleteLocation));
-
-// DUE DATES ROUTES (PUBLIC)
-// ────────────────────────────────────────────────────────────────────
-// Get all due dates (GST and ITR)
-router.get('/due-dates', asyncHandler(dueDatesController.getDueDates));
-
-// Get only GST due dates
-router.get('/due-dates/gst', asyncHandler(dueDatesController.getGSTDueDates));
-
-// Get only ITR due dates
-router.get('/due-dates/itr', asyncHandler(dueDatesController.getITRDueDates));
-
-
-// ────────────────────────────────────────────────────────────────────
-// FALLBACK ROUTE FOR UNHANDLED API REQUESTS
-// ────────────────────────────────────────────────────────────────────
-router.all('*', (req, res) => {
-  res.status(404).json({
-    error: true,
-    message: 'API endpoint not found',
   });
-});
-
-module.exports = router;
+};

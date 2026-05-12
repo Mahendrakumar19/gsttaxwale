@@ -5,27 +5,25 @@ import StickyReferralButton from '../components/StickyReferralButton';
 import ImageSlider from '../components/ImageSlider';
 import NewsSection from '../components/NewsSection';
 import DueDatesSection from '../components/DueDatesSection';
+import api from '@/lib/api';
 
 export default function HomePage() {
   // No auto-redirect so logged-in users can browse home page
-  React.useEffect(() => {
-    // Analytics or other home-page specific initialization
-  }, []);
 
   return (
     <>
       {/* Hero Section */}
-      <section className="relative px-4 pt-16 pb-24 bg-white overflow-hidden">
+      <section className="relative px-4 pt-2 pb-8 bg-white overflow-hidden">
         <div className="max-w-[1400px] mx-auto">
-          <div className="mb-16 text-center">
-            <h1 className="mb-6 text-5xl md:text-7xl font-black leading-tight text-gray-900 tracking-tighter">
+          <div className="mb-2 text-center">
+            <h1 className="mb-0.5 text-2xl md:text-3xl lg:text-4xl font-black leading-tight text-gray-900 tracking-tighter">
               Complete Tax & <span className="text-blue-600">Compliance</span> Solutions
             </h1>
-            <p className="max-w-3xl mx-auto mb-12 text-lg text-gray-600 md:text-xl font-medium">
+            <p className="max-w-2xl mx-auto mb-2 text-sm md:text-base text-gray-600 font-medium">
               Professional GST filing, income tax returns, and business compliance services delivered by expert CAs.
             </p>
             {/* Image Slider */}
-            <ImageSlider autoPlay={true} interval={6000} />
+            <ImageSlider autoPlay={true} interval={6000} showCounter={false} />
           </div>
         </div>
       </section>

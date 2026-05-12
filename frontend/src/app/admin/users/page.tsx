@@ -135,50 +135,52 @@ export default function AdminUsersPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/admin" className="text-xl font-bold text-blue-600 hover:text-blue-700">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+          <Link href="/admin" className="text-lg sm:text-xl font-bold text-blue-600 hover:text-blue-700">
             ← Admin Dashboard
           </Link>
         </div>
       </div>
 
+
       {/* Content */}
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="mb-8 flex justify-between items-start">
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+        <div className="mb-8 flex flex-col md:flex-row justify-between items-start gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
               <Users size={32} className="text-blue-600" />
               Manage Users
             </h1>
-            <p className="text-gray-900">Total Users: {users.length}</p>
+            <p className="text-gray-700 font-medium">Total Users: {users.length}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 w-full md:w-auto">
             <button
               onClick={handleExportUsers}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium text-sm"
               title="Export as CSV"
             >
-              <Download size={20} />
+              <Download size={18} />
               CSV
             </button>
             <button
               onClick={handleExportUsersExcel}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm"
               title="Export as Excel"
             >
-              <Download size={20} />
+              <Download size={18} />
               Excel
             </button>
             <Link
               href="/admin/users/create"
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm"
             >
-              <Plus size={20} />
+              <Plus size={18} />
               Create User
             </Link>
           </div>
         </div>
+
 
         {/* Search */}
         <div className="mb-6">
@@ -201,18 +203,19 @@ export default function AdminUsersPage() {
             <p className="text-gray-900">No users found</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-sm">
+            <table className="w-full min-w-[800px]">
               <thead>
-                <tr className="bg-white border-b border-gray-200">
-                  <th className="px-6 py-3 text-left text-gray-900 font-bold">Name</th>
-                  <th className="px-6 py-3 text-left text-gray-900 font-bold">Email</th>
-                  <th className="px-6 py-3 text-left text-gray-900 font-bold">Phone</th>
-                  <th className="px-6 py-3 text-left text-gray-900 font-bold">Status</th>
-                  <th className="px-6 py-3 text-left text-gray-900 font-bold">Joined</th>
-                  <th className="px-6 py-3 text-center text-gray-900 font-bold">Actions</th>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Joined</th>
+                  <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
+
               <tbody className="space-y-2 divide-y divide-gray-200">
                 {filteredUsers.map((user) => (
                   <tr key={user.id} className="bg-white border border-gray-200 hover:bg-gray-50 transition">

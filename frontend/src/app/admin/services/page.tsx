@@ -16,8 +16,8 @@ export default function AdminServices() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    price: 0,
-    discountedPrice: 0,
+    price: '',
+    discountedPrice: '',
     features: '',
   });
 
@@ -45,7 +45,7 @@ export default function AdminServices() {
   }
 
   const resetForm = () => {
-    setFormData({ title: '', description: '', price: 0, discountedPrice: 0, features: '' });
+    setFormData({ title: '', description: '', price: '', discountedPrice: '', features: '' });
     setIsEditing(false);
     setEditingId(null);
     setShowForm(false);
@@ -55,8 +55,8 @@ export default function AdminServices() {
     setFormData({
       title: service.title,
       description: service.description,
-      price: service.price,
-      discountedPrice: service.discountedPrice || 0,
+      price: String(service.price || ''),
+      discountedPrice: String(service.discountedPrice || ''),
       features: Array.isArray(service.features) ? service.features.join(', ') : 
                 (typeof service.features === 'string' ? service.features : ''),
     });
@@ -145,7 +145,7 @@ export default function AdminServices() {
               <h2 className="text-xl font-bold text-black">{isEditing ? 'Edit Service' : 'Create New Service'}</h2>
               <button
                 onClick={resetForm}
-                className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition cursor-full transition cursor-pointer"
+                className="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -184,7 +184,7 @@ export default function AdminServices() {
                       type="number"
                       placeholder="5000"
                       value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       className="w-full pl-8 pr-4 py-3 bg-white border border-gray-300 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition font-mono"
                       required
                     />
@@ -199,7 +199,7 @@ export default function AdminServices() {
                       type="number"
                       placeholder="3999"
                       value={formData.discountedPrice}
-                      onChange={(e) => setFormData({ ...formData, discountedPrice: Number(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, discountedPrice: e.target.value })}
                       className="w-full pl-8 pr-4 py-3 bg-white border border-gray-300 rounded-lg text-black placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition font-mono"
                     />
                   </div>

@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Plus, Edit, Trash2, X, User, Phone, Mail, Hash, Tag, Download } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, User, Phone, Mail, Hash, Tag, Download, Key } from 'lucide-react';
 import { adminAuth } from '@/lib/adminAuth';
 import api from '@/lib/api';
 import * as XLSX from 'xlsx';
@@ -47,6 +47,10 @@ export default function CustomersPage() {
   const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', password: '', pan: '', dateOfBirth: '' });
   const [previewCode, setPreviewCode] = useState('');
   const [previewRef, setPreviewRef] = useState('');
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resettingUser, setResettingUser] = useState<Customer | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -123,6 +127,23 @@ export default function CustomersPage() {
         console.error('Failed to delete customer:', err);
         alert('Failed to delete customer');
       }
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resettingUser || !newPassword) return;
+    setResetLoading(true);
+    try {
+      await api.post(`/api/admin/users/${resettingUser.id}/reset-password`, { password: newPassword });
+      alert('Password reset successfully');
+      setShowResetModal(false);
+      setNewPassword('');
+      setResettingUser(null);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to reset password');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -374,6 +395,16 @@ export default function CustomersPage() {
                       <button className="p-2 text-blue-600 hover:bg-blue-50 rounded transition" title="Edit">
                         <Edit size={16} />
                       </button>
+                      <button 
+                        onClick={() => {
+                          setResettingUser(customer);
+                          setShowResetModal(true);
+                        }}
+                        className="p-2 text-amber-600 hover:bg-amber-50 rounded transition" 
+                        title="Reset Password"
+                      >
+                        <Key size={16} />
+                      </button>
                       <button
                         onClick={() => handleDelete(customer.id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded transition"
@@ -580,6 +611,54 @@ export default function CustomersPage() {
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium disabled:opacity-50"
                 >
                   {creating ? 'Creating...' : 'Create Customer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Reset Password Modal */}
+      {showResetModal && resettingUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4 py-6">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">Reset Password</h2>
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleResetPassword} className="p-6 space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-4">
+                  Set a new password for <span className="font-bold text-gray-900">{resettingUser.name}</span> ({resettingUser.email})
+                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <input
+                  type="text"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  required
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowResetModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetLoading || !newPassword}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium disabled:opacity-50"
+                >
+                  {resetLoading ? 'Resetting...' : 'Update Password'}
                 </button>
               </div>
             </form>

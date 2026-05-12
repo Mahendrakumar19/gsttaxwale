@@ -1,5 +1,6 @@
 const db = require('../utils/db');
 const { successResponse, errorResponse } = require('../utils/helpers');
+const ReferralService = require('../services/referralService');
 
 /**
  * Generate unique referral code: GTW + first 3 of name + last 3 of mobile + 3 random
@@ -29,9 +30,11 @@ async function generatePublicReferral(req, res) {
     }
 
     let referralCode;
+    let userId;
 
     if (user) {
       // User exists, get their code or generate one
+      userId = user.id;
       if (user.referral_code) {
         referralCode = user.referral_code;
       } else {
@@ -43,7 +46,7 @@ async function generatePublicReferral(req, res) {
       referralCode = generateCode(name, phone);
       const dummyPassword = 'TEMP_' + Math.random().toString(36).slice(-8);
       
-      await db.create('User', {
+      const newUser = await db.create('User', {
         name,
         email,
         phone,
@@ -55,7 +58,14 @@ async function generatePublicReferral(req, res) {
         createdAt: new Date(),
         updatedAt: new Date()
       });
+      userId = newUser.id;
     }
+
+    // 3. Track Event: Referral Code Generated
+    await ReferralService.trackEvent(userId, null, 'click', { 
+      action: 'generate_public_code',
+      source: 'contact_page'
+    });
 
     return res.status(200).json(
       successResponse({ referralCode }, 'Referral code generated successfully!')

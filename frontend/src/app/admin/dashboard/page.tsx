@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { adminAuth } from '@/lib/adminAuth';
-import { Users, FileText, ShoppingCart, Ticket, Gift, BarChart3, TrendingUp, Activity, Layout, MapPin } from 'lucide-react';
+import { Users, FileText, ShoppingCart, Ticket, Gift, BarChart3, TrendingUp, Activity, Layout, MapPin, Eye } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -18,6 +18,7 @@ export default function AdminDashboard() {
     clients: 0,
     documents: 0,
     tickets: 0,
+    visitors: 0,
   });
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -53,6 +54,7 @@ export default function AdminDashboard() {
           clients: data.totalUsers || 0,
           documents: data.totalDocuments || 0,
           tickets: data.totalTickets || 0,
+          visitors: data.totalVisitors || 0,
         });
       } catch (err) {
         console.error('Failed to load analytics:', err);
@@ -157,6 +159,16 @@ export default function AdminDashboard() {
                 <p className="text-3xl font-bold text-orange-900 mt-1">{stats.totalUsers}</p>
               </div>
               <Users className="text-orange-400" size={24} />
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200 rounded-lg p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-pink-600 text-sm font-medium">Total Visitors</p>
+                <p className="text-3xl font-bold text-pink-900 mt-1">{stats.visitors}</p>
+              </div>
+              <Eye className="text-pink-400" size={24} />
             </div>
           </div>
         </div>

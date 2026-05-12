@@ -66,43 +66,49 @@ export default function DocumentsTab() {
     { id: 'OTHER', label: 'Others', color: 'text-purple-600', iconColor: 'bg-purple-50' },
   ];
 
-  const DocumentRow = ({ doc }: { doc: any }) => (
-    <div className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
-      <div className="flex items-center gap-4">
-        <div className="w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shadow-sm border border-red-100">
-           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-             <polyline points="14 2 14 8 20 8"></polyline>
-             <line x1="9" y1="15" x2="12" y2="15"></line>
-             <line x1="9" y1="11" x2="15" y2="11"></line>
-             <line x1="9" y1="19" x2="15" y2="19"></line>
-           </svg>
+  const DocumentRow = ({ doc }: { doc: any }) => {
+    const token = typeof window !== 'undefined' ? sessionStorage.getItem('token') : '';
+    const fileUrlWithToken = doc.fileUrl ? `${doc.fileUrl}${doc.fileUrl.includes('?') ? '&' : '?'}token=${token}` : '#';
+
+    return (
+      <div className="flex items-center justify-between p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center shadow-sm border border-red-100">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+               <polyline points="14 2 14 8 20 8"></polyline>
+               <line x1="9" y1="15" x2="12" y2="15"></line>
+               <line x1="9" y1="11" x2="15" y2="11"></line>
+               <line x1="9" y1="19" x2="15" y2="19"></line>
+             </svg>
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-gray-800 leading-tight">{doc.originalName || doc.filename}</h4>
+            <p className="text-[11px] text-gray-400 mt-0.5">Uploaded: {new Date(doc.uploadedAt || doc.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+          </div>
         </div>
-        <div>
-          <h4 className="text-sm font-bold text-gray-800 leading-tight">{doc.originalName || doc.filename}</h4>
-          <p className="text-[11px] text-gray-400 mt-0.5">Uploaded: {new Date(doc.uploadedAt || doc.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+        
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => window.open(fileUrlWithToken, '_blank')}
+            className="flex items-center gap-2 px-3 py-1.5 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold hover:bg-blue-50 transition"
+          >
+            <Eye size={14} />
+            View
+          </button>
+          <a 
+            href={fileUrlWithToken} 
+            download 
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[11px] font-bold hover:bg-blue-700 transition shadow-sm"
+          >
+            <Download size={14} />
+            Download
+          </a>
         </div>
       </div>
-      
-      <div className="flex items-center gap-2">
-        <button 
-          onClick={() => window.open(doc.fileUrl, '_blank')}
-          className="flex items-center gap-2 px-3 py-1.5 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold hover:bg-blue-50 transition"
-        >
-          <Eye size={14} />
-          View
-        </button>
-        <a 
-          href={doc.fileUrl} 
-          download 
-          className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[11px] font-bold hover:bg-blue-700 transition shadow-sm"
-        >
-          <Download size={14} />
-          Download
-        </a>
-      </div>
-    </div>
-  );
+    );
+  };
+
 
   return (
     <div className="max-w-4xl mx-auto pb-12">

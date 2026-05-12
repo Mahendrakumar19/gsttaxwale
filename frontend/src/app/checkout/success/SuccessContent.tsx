@@ -22,7 +22,7 @@ export default function SuccessContent() {
       try {
         const token = localStorage.getItem('authToken');
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders/${orderId}`,
+          `${process.env.NEXT_PUBLIC_API_URL || ''}/api/orders/${orderId}`,
           { headers: token ? { Authorization: `Bearer ${token}` } : {} }
         );
         

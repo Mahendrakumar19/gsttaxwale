@@ -1,5 +1,6 @@
 const express = require("express");
-const cors = require("cors");
+const cors = require("cors"); // Restarting to pick up .env changes
+
 const path = require("path");
 const http = require("http");
 const fs = require("fs");
@@ -95,6 +96,7 @@ if (IS_PRODUCTION) {
 }
 
 if (IS_PRODUCTION) {
+
   app.use(morgan("combined"));
 }
 
@@ -117,9 +119,20 @@ app.use((req, res, next) => {
 // START SERVER AFTER NEXT.JS PREPARE
 // ─────────────────────────────────────────────────────────────────────────
 nextApp.prepare().then(() => {
-  console.log("✅ Next.js frontend prepared (Mode: " + NODE_ENV.toUpperCase() + ")");
+  console.log("✅ Next.js frontend prepared");
 
-  // 1. Static Files (Move up to ensure they are caught before wildcard routes)
+  // 🚀 Backend API Routes (MOUNT FIRST)
+  try {
+    const mountApi = require(path.join(__dirname, "backend/src/routes/api"));
+    mountApi(app);
+    console.log("✅ Backend API routes mounted via function");
+  } catch (error) {
+    console.error("❌ Failed to mount API routes:", error.message);
+  }
+
+
+  // 1. Static Files
+
   if (fs.existsSync(path.join(BACKEND_DIR, "uploads"))) {
     app.use("/uploads", express.static(path.join(BACKEND_DIR, "uploads")));
   }
@@ -135,10 +148,16 @@ nextApp.prepare().then(() => {
     }
   }
 
-  // Public folder
+  // 1. Next.js Static & Internal Routes (HIGHEST PRIORITY)
+  app.all('/_next*', (req, res) => {
+    return nextHandler(req, res);
+  });
+
+  // 2. Public Folder
   if (fs.existsSync(path.join(FRONTEND_DIR, "public"))) {
     app.use(express.static(path.join(FRONTEND_DIR, "public")));
   }
+
 
   // 2. Health Checks
   app.get("/health", (req, res) => {
@@ -149,19 +168,14 @@ nextApp.prepare().then(() => {
     res.json({ status: "OK", api: "active" });
   });
 
-  // 3. Backend API Routes (Must be before Next.js catch-all)
-  try {
-    const apiRoutes = require("./backend/src/routes/api");
-    app.use("/api", apiRoutes);
-    console.log("✅ Backend API routes mounted");
-  } catch (error) {
-    console.warn("⚠️  Backend routes not available:", error.message);
-  }
+  // 3. API Routes (already mounted via mountApi above)
 
-  // 4. Next.js Handler (Catch everything else - handles /_next in dev and all pages)
+  // 4. Next.js Handler (Catch everything else)
   app.all("*", (req, res) => {
     return nextHandler(req, res);
   });
+
+
 
   // Error handler
   app.use((err, req, res, next) => {

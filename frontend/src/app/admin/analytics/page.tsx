@@ -17,9 +17,9 @@ export default function AdminAnalytics() {
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const [ordersRes, usersRes, servicesRes] = await Promise.all([
-        axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/orders`, config).catch(() => ({ data: { data: { orders: [] } } })),
-        axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/admin/users`, config).catch(() => ({ data: { data: { users: [] } } })),
-        axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com'}/api/services`, config).catch(() => ({ data: { data: { services: [] } } })),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/orders`, config).catch(() => ({ data: { data: { orders: [] } } })),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/admin/users`, config).catch(() => ({ data: { data: { users: [] } } })),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/services`, config).catch(() => ({ data: { data: { services: [] } } })),
       ]);
 
       const orders = ordersRes.data.data?.orders || [];

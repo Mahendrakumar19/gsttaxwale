@@ -36,7 +36,7 @@ async function sendOTPEmail(email, otp) {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '587', 10),
-      secure: process.env.SMTP_SECURE === 'true',
+      secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465',
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -65,7 +65,7 @@ async function sendOTPEmail(email, otp) {
     await transporter.sendMail(mailOptions);
     return true;
   } catch (err) {
-    console.error('sendOTPEmail error', err);
+    console.error('❌ sendOTPEmail error:', err);
     return false;
   }
 }
@@ -75,7 +75,7 @@ async function sendUserCreatedEmail(email, password, referenceNumber) {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '587', 10),
-      secure: process.env.SMTP_SECURE === 'true',
+      secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465',
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,

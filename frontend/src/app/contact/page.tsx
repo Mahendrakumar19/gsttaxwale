@@ -93,9 +93,6 @@ export default function ContactPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {locations.map((loc) => (
                 <div key={loc.id} className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
-                  <div className="bg-blue-600 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 text-white transform group-hover:scale-110 transition-transform duration-300">
-                    <MapPin className="w-7 h-7" />
-                  </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-4">{loc.name}</h3>
                   <div className="space-y-4 mb-8">
                     <p className="text-gray-600 text-sm leading-relaxed">

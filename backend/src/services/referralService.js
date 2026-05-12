@@ -1,161 +1,140 @@
-// Referral Service - Manages referral codes and tracking (JS version)
-const prisma = require('../utils/prisma');
-const { v4: uuidv4 } = require('uuid');
+const db = require('../utils/db');
+const WalletService = require('./walletService');
 
 /**
- * Generate unique referral code for user
+ * ReferralService - Dynamic rules engine and event tracking
  */
-async function generateReferralCode(userId) {
-  try {
-    // 1. Get user details for code generation
-    const user = await prisma.user.findUnique({
-      where: { id: parseInt(userId) },
-      select: { name: true, phone: true }
-    });
-
-    if (!user) throw new Error('User not found');
-
-    // 2. Generate custom code: GTW + first 3 of name + last 3 of mobile
-    const namePart = (user.name || 'USR').substring(0, 3).toUpperCase().padEnd(3, 'X');
-    const phonePart = (user.phone || '000').slice(-3).padStart(3, '0');
-    const code = `GTW${namePart}${phonePart}`;
-
-    const link = `${process.env.FRONTEND_URL}/?ref=${code}`;
-
-    // 3. Create or Update referral code
-    const referralCode = await prisma.referralCode.upsert({
-      where: { userId: parseInt(userId) },
-      update: { code, link },
-      create: {
-        userId: parseInt(userId),
-        code: code,
-        link,
-        isActive: true,
-      },
-    });
-
-    return referralCode;
-  } catch (error) {
-    throw new Error(`Failed to generate referral code: ${error.message}`);
-  }
-}
-
-/**
- * Get user's referral code
- */
-async function getUserReferralCode(userId) {
-  try {
-    let referralCode = await prisma.referralCode.findUnique({
-      where: { userId: parseInt(userId) },
-    });
-
-    if (!referralCode) {
-      referralCode = await generateReferralCode(userId);
+class ReferralService {
+  /**
+   * Track a referral event (click, signup, etc.)
+   */
+  static async trackEvent(referrerId, refereeId, eventType, metadata = {}) {
+    try {
+      return await db.create('referral_events', {
+        referrer_id: referrerId,
+        referee_id: refereeId,
+        event_type: eventType,
+        metadata: JSON.stringify(metadata),
+        created_at: new Date()
+      });
+    } catch (error) {
+      console.error('❌ Track Event Error:', error);
     }
-
-    return referralCode;
-  } catch (error) {
-    throw new Error(`Failed to get referral code: ${error.message}`);
   }
-}
 
-/**
- * Validate and track referral from code
- */
-async function trackReferralFromCode(referralCode, newUserId) {
-  try {
-    // Find referral code
-    const codeRecord = await prisma.referralCode.findUnique({
-      where: { code: referralCode },
-    });
+  /**
+   * Process reward for a new signup
+   */
+  static async processSignupReward(referrerId, refereeId) {
+    try {
+      // 1. Fetch active signup rules
+      const rules = await db.query(
+        'SELECT * FROM referral_rules WHERE trigger_type = "signup" AND is_active = TRUE LIMIT 1'
+      );
 
-    if (!codeRecord || !codeRecord.isActive) {
-      throw new Error('Invalid or expired referral code');
+      if (rules.length === 0) return null;
+      const rule = rules[0];
+
+      let rewardAmount = 0;
+      if (rule.reward_type === 'fixed') {
+        rewardAmount = parseFloat(rule.reward_value);
+      }
+
+      if (rewardAmount > 0) {
+        // 2. Credit to referrer
+        await WalletService.credit(
+          referrerId, 
+          rewardAmount, 
+          'referral_signup', 
+          refereeId, 
+          `Reward for referring new user (ID: ${refereeId})`
+        );
+
+        // 3. Track event
+        await this.trackEvent(referrerId, refereeId, 'reward_generated', { 
+          ruleId: rule.id, 
+          amount: rewardAmount, 
+          trigger: 'signup' 
+        });
+      }
+
+      return rewardAmount;
+    } catch (error) {
+      console.error('❌ Process Signup Reward Error:', error);
     }
+  }
 
-    // Check if same user
-    if (codeRecord.userId === parseInt(newUserId)) {
-      throw new Error('Cannot use own referral code');
+  /**
+   * Process reward for a purchase
+   */
+  static async processPurchaseReward(referrerId, refereeId, orderId, amount, serviceId = null) {
+    try {
+      // 1. Fetch relevant purchase rules
+      // Priority: Service-specific rule > Global rule
+      let rules = await db.query(
+        'SELECT * FROM referral_rules WHERE trigger_type = "purchase" AND is_active = TRUE AND service_id = ? AND min_purchase_amount <= ? ORDER BY service_id DESC LIMIT 1',
+        [serviceId, amount]
+      );
+
+      if (rules.length === 0) {
+        rules = await db.query(
+          'SELECT * FROM referral_rules WHERE trigger_type = "purchase" AND is_active = TRUE AND service_id IS NULL AND min_purchase_amount <= ? LIMIT 1',
+          [amount]
+        );
+      }
+
+      if (rules.length === 0) return null;
+      const rule = rules[0];
+
+      let rewardAmount = 0;
+      if (rule.reward_type === 'fixed') {
+        rewardAmount = parseFloat(rule.reward_value);
+      } else if (rule.reward_type === 'percentage') {
+        rewardAmount = (amount * parseFloat(rule.reward_value)) / 100;
+      }
+
+      // Cap the reward if max_reward is set
+      if (rule.max_reward && rewardAmount > rule.max_reward) {
+        rewardAmount = rule.max_reward;
+      }
+
+      if (rewardAmount > 0) {
+        // 2. Credit to referrer
+        await WalletService.credit(
+          referrerId, 
+          rewardAmount, 
+          'referral_purchase', 
+          orderId, 
+          `Reward for purchase by referred user (Order: ${orderId})`
+        );
+
+        // 3. Track event
+        await this.trackEvent(referrerId, refereeId, 'reward_generated', { 
+          ruleId: rule.id, 
+          amount: rewardAmount, 
+          trigger: 'purchase',
+          orderId
+        });
+      }
+
+      return rewardAmount;
+    } catch (error) {
+      console.error('❌ Process Purchase Reward Error:', error);
     }
+  }
 
-    // Create referral tracking record
-    const referral = await prisma.referral.create({
-      data: {
-        referrerId: codeRecord.userId,
-        refereeId: parseInt(newUserId),
-        refereeEmail: '',
-        commissionPercent: 10,
-        referralStatus: 'pending',
-      },
-    });
-
-    return referral;
-  } catch (error) {
-    throw new Error(`Failed to track referral: ${error.message}`);
+  /**
+   * Get active redemption settings
+   */
+  static async getRedemptionSettings() {
+    try {
+      const settings = await db.query('SELECT * FROM wallet_settings LIMIT 1');
+      return settings[0] || null;
+    } catch (error) {
+      console.error('❌ Get Redemption Settings Error:', error);
+      return null;
+    }
   }
 }
 
-/**
- * Get referral stats for user
- */
-async function getReferralStats(userId) {
-  try {
-    const referrals = await prisma.referral.findMany({
-      where: { referrerId: parseInt(userId) },
-    });
-
-    const completedReferrals = referrals.filter((r) => r.referralStatus === 'completed');
-    const totalCommission = completedReferrals.reduce((sum, r) => sum + (r.commissionAmount || 0), 0);
-    const pendingCount = referrals.filter((r) => r.referralStatus === 'pending').length;
-    const activeCount = referrals.filter((r) => r.referralStatus === 'active').length;
-
-    return {
-      totalReferrals: referrals.length,
-      completedReferrals: completedReferrals.length,
-      pendingReferrals: pendingCount,
-      activeReferrals: activeCount,
-      totalCommission,
-      referrals: referrals.map((r) => ({
-        id: r.id,
-        refereeEmail: r.refereeEmail,
-        status: r.referralStatus,
-        commission: r.commissionAmount,
-        createdAt: r.createdAt,
-      })),
-    };
-  } catch (error) {
-    throw new Error(`Failed to get referral stats: ${error.message}`);
-  }
-}
-
-/**
- * Get all referrals (admin)
- */
-async function getAllReferrals(filter = {}) {
-  try {
-    const referrals = await prisma.referral.findMany({
-      where: {
-        ...(filter.status && { referralStatus: filter.status }),
-      },
-      take: filter.limit || 50,
-      skip: filter.offset || 0,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        referrer: { select: { id: true, email: true, name: true } },
-        referee: { select: { id: true, email: true, name: true } },
-      },
-    });
-
-    return referrals;
-  } catch (error) {
-    throw new Error(`Failed to get referrals: ${error.message}`);
-  }
-}
-
-module.exports = {
-  generateReferralCode,
-  getUserReferralCode,
-  trackReferralFromCode,
-  getReferralStats,
-  getAllReferrals,
-};
+module.exports = ReferralService;

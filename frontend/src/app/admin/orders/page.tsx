@@ -67,15 +67,15 @@ export default function AdminOrders() {
   return (
     <div className="min-h-screen bg-white text-gray-900">
       {/* Top Navigation */}
-      <nav className="glassmorphic sticky top-0 z-50 border-b border-slate-600/30 shadow-lg">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/admin/dashboard" className="flex items-center gap-2 text-gradient-text hover:opacity-80 transition">
+      <nav className="glassmorphic sticky top-0 z-50 border-b border-slate-600/30 shadow-lg bg-white/80 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Link href="/admin/dashboard" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition font-medium">
             <span>←</span>
-            <span>Back to Dashboard</span>
+            <span>Dashboard</span>
           </Link>
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-gray-900">Customer Orders</h1>
-            <div className={`text-xs px-3 py-1 rounded-full font-medium flex items-center gap-2 ${refreshing ? 'bg-blue-500/30 text-blue-200 animate-pulse' : 'bg-green-500/30 text-green-200'}`}>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Customer Orders</h1>
+            <div className={`text-[10px] sm:text-xs px-3 py-1 rounded-full font-medium flex items-center gap-2 ${refreshing ? 'bg-blue-500/30 text-blue-800 animate-pulse' : 'bg-green-500/30 text-green-800'}`}>
               <span className={`w-2 h-2 rounded-full ${refreshing ? 'bg-blue-400' : 'bg-green-400'}`}></span>
               {refreshing ? 'Syncing…' : 'Live'}
             </div>
@@ -85,29 +85,31 @@ export default function AdminOrders() {
               adminAuth.clearAdmin();
               router.push('/admin');
             }}
-            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg hover:shadow-red-600/50"
+            className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg"
           >
             Logout
           </button>
         </div>
       </nav>
 
+
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[900px]">
               <thead>
-                <tr className="border-b border-gray-200 bg-white">
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Order ID</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Service</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Amount</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Status</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Customer</th>
-                  <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Date</th>
-                  <th className="text-right px-6 py-4 text-sm font-semibold text-gray-900">Actions</th>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Order ID</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Service</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Customer</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="text-right px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
+
               <tbody>
                 {orders.map((o) => (
                   <tr key={o.id} className="border-b border-gray-200 hover:bg-gray-50 transition">

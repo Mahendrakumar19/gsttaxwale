@@ -107,7 +107,8 @@ async function getUserServices(req, res) {
 async function getUserDocumentsGrouped(req, res) {
   const userId = req.userId;
   try {
-    const documents = await db.query('SELECT * FROM Document WHERE userId = ? ORDER BY financial_year DESC, uploadedAt DESC', [userId]);
+    const documents = await db.query('SELECT * FROM Document WHERE userId = ? ORDER BY financialYear DESC, uploadedAt DESC', [userId]);
+
     res.status(200).json(successResponse({ documents }));
   } catch (error) {
     res.status(500).json(errorResponse(error.message));

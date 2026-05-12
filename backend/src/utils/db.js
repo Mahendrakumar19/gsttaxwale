@@ -28,7 +28,7 @@ async function query(sql, values = []) {
 // Find one record
 async function findOne(table, where = {}) {
   const keys = Object.keys(where);
-  const whereClause = keys.map(key => `${key} = ?`).join(' AND ');
+  const whereClause = keys.map(key => `\`${key}\` = ?`).join(' AND ');
   const values = keys.map(key => where[key]);
   
   const sql = `SELECT * FROM ${table} WHERE ${whereClause} LIMIT 1`;
@@ -39,7 +39,7 @@ async function findOne(table, where = {}) {
 // Find all records
 async function findMany(table, where = {}, limit = null) {
   const keys = Object.keys(where);
-  const whereClause = keys.length > 0 ? `WHERE ${keys.map(key => `${key} = ?`).join(' AND ')}` : '';
+  const whereClause = keys.length > 0 ? `WHERE ${keys.map(key => `\`${key}\` = ?`).join(' AND ')}` : '';
   const values = keys.map(key => where[key]);
   
   let sql = `SELECT * FROM ${table} ${whereClause}`;
@@ -54,7 +54,7 @@ async function create(table, data) {
   const values = keys.map(key => data[key]);
   const placeholders = keys.map(() => '?').join(',');
   
-  const sql = `INSERT INTO ${table} (${keys.join(',')}) VALUES (${placeholders})`;
+  const sql = `INSERT INTO ${table} (${keys.map(k => `\`${k}\``).join(',')}) VALUES (${placeholders})`;
   const result = await query(sql, values);
   
   // Return the created record with auto-generated id
@@ -65,11 +65,11 @@ async function create(table, data) {
 async function update(table, data, where = {}) {
   const updateKeys = Object.keys(data);
   const updateValues = updateKeys.map(key => data[key]);
-  const updateClause = updateKeys.map(key => `${key} = ?`).join(',');
+  const updateClause = updateKeys.map(key => `\`${key}\` = ?`).join(',');
   
   const whereKeys = Object.keys(where);
   const whereValues = whereKeys.map(key => where[key]);
-  const whereClause = whereKeys.map(key => `${key} = ?`).join(' AND ');
+  const whereClause = whereKeys.map(key => `\`${key}\` = ?`).join(' AND ');
   
   const sql = `UPDATE ${table} SET ${updateClause} WHERE ${whereClause}`;
   const allValues = [...updateValues, ...whereValues];
@@ -81,7 +81,7 @@ async function update(table, data, where = {}) {
 async function deleteRecord(table, where = {}) {
   const keys = Object.keys(where);
   const values = keys.map(key => where[key]);
-  const whereClause = keys.map(key => `${key} = ?`).join(' AND ');
+  const whereClause = keys.map(key => `\`${key}\` = ?`).join(' AND ');
   
   const sql = `DELETE FROM ${table} WHERE ${whereClause}`;
   await query(sql, values);

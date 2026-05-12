@@ -20,12 +20,22 @@ export default function RootLayoutClient({
   useEffect(() => {
     setMounted(true);
     
-    // Referral Tracking
+    // Visitor Tracking
+    const hasCounted = sessionStorage.getItem('v_counted');
+    if (!hasCounted) {
+      fetch('/api/stats/visitor', { method: 'POST' })
+        .then(() => sessionStorage.setItem('v_counted', 'true'))
+        .catch(err => console.error('Visitor tracking failed', err));
+    }
+    
+    // Referral Tracking Persistence (Phase 5)
     const searchParams = new URLSearchParams(window.location.search);
     const refCode = searchParams.get('ref');
     if (refCode) {
-      sessionStorage.setItem('referralCode', refCode);
-      console.log('🔗 Referral code tracked:', refCode);
+      localStorage.setItem('referralCode', refCode);
+      // Set a cookie for 30 days
+      document.cookie = `referralCode=${refCode}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
+      console.log('🔗 Referral code tracked persistently:', refCode);
     }
     
     // Synchronization: Ensure sessionStorage has latest auth from localStorage

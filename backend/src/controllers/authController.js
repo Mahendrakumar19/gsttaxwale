@@ -6,6 +6,8 @@ const authService = require('../services/authService');
 const db = require('../utils/db');
 const { v4: uuidv4 } = require('uuid');
 const { successResponse, errorResponse } = require('../utils/helpers');
+const configUtil = require('../utils/config');
+
 
 // ────────────────────────────────────────────────────────────────────
 // LOGIN - Authenticate user with email and password
@@ -102,6 +104,18 @@ async function sendOTP(req, res) {
       });
     }
 
+    // Check if OTP is enabled in system settings
+    const isOtpEnabled = await configUtil.getSetting('ENABLE_OTP', true);
+    
+    if (!isOtpEnabled) {
+      console.log(`ℹ️ OTP is disabled. Skipping for: ${email}`);
+      return res.status(200).json({
+        success: true,
+        message: 'OTP disabled, you can proceed with any code',
+        otpDisabled: true
+      });
+    }
+
     // Generate and send OTP
     const otp = authService.generateOTP();
     const sent = await authService.sendOTPEmail(email, otp);
@@ -112,6 +126,7 @@ async function sendOTP(req, res) {
         message: 'Failed to send OTP email',
       });
     }
+
 
     // Store OTP in database
     await db.create('OTP', {
@@ -148,6 +163,17 @@ async function verifyOTP(req, res) {
         message: 'User ID and OTP code are required',
       });
     }
+
+    // Check if OTP is enabled
+    const isOtpEnabled = await configUtil.getSetting('ENABLE_OTP', true);
+    if (!isOtpEnabled) {
+      return res.status(200).json({
+        success: true,
+        message: 'OTP verified (disabled)',
+        verified: true
+      });
+    }
+
 
     // Verify OTP
     const isValid = await authService.verifyOTP(userId, code);
@@ -733,7 +759,19 @@ async function sendServicePurchaseOTP(req, res) {
   }
 
   try {
+    // Check if OTP is enabled
+    const isOtpEnabled = await configUtil.getSetting('ENABLE_OTP', true);
+    if (!isOtpEnabled) {
+      return res.status(200).json(
+        successResponse('OTP is disabled, you can proceed', {
+          email,
+          otpDisabled: true
+        })
+      );
+    }
+
     // Generate OTP
+
     const otp = authService.generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
@@ -765,7 +803,7 @@ async function sendServicePurchaseOTP(req, res) {
   } catch (error) {
     console.error('❌ Send service purchase OTP error:', error);
     return res.status(500).json(
-      errorResponse('Failed to send OTP. Please try again.')
+      errorResponse(`Failed to send OTP: ${error.message}`)
     );
   }
 }
@@ -783,7 +821,23 @@ async function verifyServicePurchaseOTP(req, res) {
   }
 
   try {
+    // Check if OTP is enabled
+    const isOtpEnabled = await configUtil.getSetting('ENABLE_OTP', true);
+    if (!isOtpEnabled) {
+      const tempToken = authService.generateToken('temp_' + email);
+      return res.status(200).json(
+        successResponse('OTP verified (disabled)', {
+          verified: true,
+          email,
+          phone,
+          tempToken,
+          canProceedToCheckout: true,
+        })
+      );
+    }
+
     // Check OTP in database - search by email only for verification
+
     const otpRecords = await db.query(
       `SELECT id, code, expires_at FROM otp_codes 
        WHERE email = ? 

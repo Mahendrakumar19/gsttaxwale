@@ -8,20 +8,33 @@ const db = require('../utils/db');
 async function authenticate(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
+    let token = '';
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.query.token) {
+      token = req.query.token;
+    }
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: 'Missing or invalid authorization header'
       });
     }
 
-    const token = authHeader.substring(7);
     
     try {
       const decoded = jwt.verify(token, config.jwt.secret);
       req.userId = decoded.userId;
       
+      // If it's a temporary guest user (no DB lookup needed yet)
+      if (typeof decoded.userId === 'string' && decoded.userId.startsWith('temp_')) {
+        req.userRole = 'guest';
+        req.userEmail = decoded.userId.replace('temp_', '');
+        return next();
+      }
+
       // Fetch user role from database
       try {
         const user = await db.findOne('User', { id: decoded.userId });

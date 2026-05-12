@@ -4,6 +4,10 @@
 
 const db = require('../utils/db');
 const { successResponse, errorResponse } = require('../utils/helpers');
+const configUtil = require('../utils/config');
+
+const WalletService = require('../services/walletService');
+const ReferralService = require('../services/referralService');
 
 /**
  * Get user's referral information
@@ -21,37 +25,35 @@ async function getReferralInfo(req, res) {
       return res.status(404).json(errorResponse('User not found'));
     }
 
+    // Get ledger-based balance (source of truth)
+    const ledgerBalance = await WalletService.getBalance(userId);
+
     // Get count of referrals where this user is the referrer
     const [referralCount] = await db.query(
       'SELECT COUNT(*) as count FROM Referral WHERE referrerEmail = ?',
       [user.email]
     );
 
-    // Get total redeemed points by checking 'redemption' tickets for this user
-    // This assumes processed tickets indicate redemption completion
-    const prisma = require('../utils/prisma');
-    const redemptionTickets = await prisma.ticket.findMany({
-      where: {
-        userId: userId,
-        category: 'redemption'
-      }
-    });
+    // Get total redeemed points from ledger
+    const redemptionResult = await db.query(
+      "SELECT SUM(points) as total FROM wallet_transactions WHERE user_id = ? AND type = 'debit' AND source = 'redemption' AND status = 'approved'",
+      [userId]
+    );
+    const totalRedeemed = redemptionResult[0].total || 0;
 
-    const totalRedeemed = redemptionTickets.reduce((sum, ticket) => {
-      // Extract points from description "Redemption Request: ... wants to redeem 200 points."
-      const match = ticket.description.match(/redeem (\d+) points/);
-      return sum + (match ? parseInt(match[1]) : 0);
-    }, 0);
+    const isEnabled = await configUtil.getSetting('ENABLE_REFERRAL', true);
 
     return res.status(200).json(
       successResponse('Referral information retrieved', {
+        enabled: isEnabled,
         referralCode: user.referral_code,
-        balance: user.points_wallet || 0,
+        balance: ledgerBalance,
         pointsRedeemed: totalRedeemed,
         totalReferrals: referralCount.count || 0,
-        earned: (user.points_wallet || 0) + totalRedeemed
+        earned: ledgerBalance + totalRedeemed
       })
     );
+
   } catch (error) {
     console.error('❌ Error fetching referral info:', error);
     return res.status(500).json(errorResponse('Failed to fetch referral information: ' + error.message));
@@ -70,12 +72,18 @@ async function createReferral(req, res) {
       return res.status(400).json(errorResponse('Referee email is required'));
     }
 
-    // Create referral record
+    // Create referral record in existing table for compatibility
     const [result] = await db.query(
-      `INSERT INTO referrals (referrer_id, referred_email, status)
-       VALUES (?, ?, 'pending')`,
-      [userId, refereeEmail]
+      `INSERT INTO Referral (referrerEmail, refereeEmail, status, createdAt, updatedAt)
+       SELECT email, ?, 'pending', NOW(), NOW() FROM User WHERE id = ?`,
+      [refereeEmail, userId]
     );
+
+    // Track Event
+    await ReferralService.trackEvent(userId, null, 'signup', { 
+      action: 'manual_referral_create',
+      refereeEmail 
+    });
 
     console.log(`✅ Referral created: ${refereeEmail} referred by user ${userId}`);
 
@@ -99,7 +107,7 @@ async function getReferralLink(req, res) {
     const userId = req.user.id;
 
     const [user] = await db.query(
-      'SELECT referral_code FROM users WHERE id = ?',
+      'SELECT referral_code FROM User WHERE id = ?',
       [userId]
     );
 
@@ -107,7 +115,7 @@ async function getReferralLink(req, res) {
       return res.status(404).json(errorResponse('User not found'));
     }
 
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const baseUrl = process.env.FRONTEND_URL || 'https://gsttaxwale.com';
     const referralLink = `${baseUrl}/signup?ref=${user.referral_code}`;
 
     return res.status(200).json(
@@ -134,7 +142,7 @@ async function registerReferral(req, res) {
     }
 
     const [referrer] = await db.query(
-      'SELECT id FROM users WHERE referral_code = ?',
+      'SELECT id, email FROM User WHERE referral_code = ?',
       [referralCode]
     );
 
@@ -144,12 +152,20 @@ async function registerReferral(req, res) {
       );
     }
 
+    // Insert into existing Referral table
     await db.query(
-      `INSERT INTO referrals (referrer_id, referred_email, status)
-       VALUES (?, ?, 'pending')
-       ON DUPLICATE KEY UPDATE status = 'pending'`,
-      [referrer.id, email]
+      `INSERT INTO Referral (referrerEmail, refereeEmail, status, createdAt, updatedAt)
+       VALUES (?, ?, 'pending', NOW(), NOW())
+       ON DUPLICATE KEY UPDATE status = 'pending', updatedAt = NOW()`,
+      [referrer.email, email]
     );
+
+    // Track Event
+    await ReferralService.trackEvent(referrer.id, null, 'click', { 
+      action: 'signup_link_used',
+      refereeEmail: email,
+      referralCode 
+    });
 
     console.log(`✅ Referral registered: ${email} referred by code ${referralCode}`);
 
@@ -169,36 +185,41 @@ async function registerReferral(req, res) {
  */
 async function trackReferralConversion(req, res) {
   try {
-    const userId = req.user.id;
-    const { referralId } = req.body;
+    const userId = req.user.id; // The referee
+    const { orderId, amount, serviceId } = req.body;
 
-    const [referral] = await db.query(
-      'SELECT referrer_id, reward_points FROM referrals WHERE id = ? AND referred_user_id = ?',
-      [referralId, userId]
-    );
+    // 1. Find the referrer for this referee
+    const [user] = await db.query('SELECT email, referrer_id FROM User WHERE id = ?', [userId]);
+    if (!user) return res.status(404).json(errorResponse('User not found'));
 
-    if (!referral) {
-      return res.status(404).json(errorResponse('Referral not found'));
+    let referrerId = user.referrer_id;
+    
+    // If not in User table, check Referral table
+    if (!referrerId) {
+      const [referral] = await db.query(
+        'SELECT u.id FROM Referral r JOIN User u ON r.referrerEmail = u.email WHERE r.refereeEmail = ? LIMIT 1',
+        [user.email]
+      );
+      if (referral) referrerId = referral.id;
     }
 
-    await db.query(
-      'UPDATE referrals SET status = "converted" WHERE id = ?',
-      [referralId]
-    );
+    if (!referrerId) {
+      return res.status(404).json(errorResponse('No referrer found for this user'));
+    }
 
-    await db.query(
-      'UPDATE users SET referral_points = referral_points + ? WHERE id = ?',
-      [referral.reward_points, referral.referrer_id]
-    );
+    // 2. Process Reward using Rule Engine
+    const rewardAmount = await ReferralService.processPurchaseReward(referrerId, userId, orderId, amount, serviceId);
 
-    console.log(
-      `✅ Referral converted: User ${userId} converted, +${referral.reward_points} points to referrer`
+    // 3. Update status in Referral table
+    await db.query(
+      "UPDATE Referral SET status = 'completed', completedAt = NOW() WHERE refereeEmail = ?",
+      [user.email]
     );
 
     return res.status(200).json(
       successResponse('Referral conversion tracked', {
-        pointsAwarded: referral.reward_points,
-        referrerId: referral.referrer_id,
+        rewardAmount,
+        referrerId
       })
     );
   } catch (error) {
@@ -219,27 +240,18 @@ async function redeemPoints(req, res) {
       return res.status(400).json(errorResponse('Invalid points amount'));
     }
 
-    // 1. Check if user has enough points
-    const [user] = await db.query(
-      `SELECT points_wallet, email, name FROM User WHERE id = ?`,
-      [userId]
-    );
-
-    if (!user || (user.points_wallet || 0) < pointsToRedeem) {
-      return res.status(400).json(
-        errorResponse('Insufficient referral points')
-      );
+    // 1. Check if user has enough points and debit from ledger
+    try {
+      await WalletService.debit(userId, pointsToRedeem, 'redemption', null, 'Points redemption request');
+    } catch (e) {
+      return res.status(400).json(errorResponse(e.message));
     }
 
-    // 2. Deduct points from User table
-    await db.query(
-      'UPDATE User SET points_wallet = points_wallet - ? WHERE id = ?',
-      [pointsToRedeem, userId]
-    );
+    const [user] = await db.query('SELECT name, email FROM User WHERE id = ?', [userId]);
 
-    // 3. Create a Ticket for Admin (using Prisma as confirmed in ticketController)
+    // 2. Create a Ticket for Admin
     const prisma = require('../utils/prisma');
-    await prisma.ticket.create({
+    const ticket = await prisma.ticket.create({
       data: {
         userId: userId,
         subject: 'Points Redemption Request',
@@ -249,12 +261,17 @@ async function redeemPoints(req, res) {
       }
     });
 
+    // 3. Update transaction reference with ticket ID
+    await db.query(
+      "UPDATE wallet_transactions SET reference_id = ? WHERE user_id = ? AND type = 'debit' AND source = 'redemption' ORDER BY created_at DESC LIMIT 1",
+      [ticket.id, userId]
+    );
+
     console.log(`✅ Redemption ticket created: User ${userId} redeemed ${pointsToRedeem} points`);
 
     return res.status(200).json(
       successResponse('Redemption request submitted successfully. Our team will contact you soon.', {
-        pointsRedeemed: pointsToRedeem,
-        remainingPoints: (user.points_wallet || 0) - pointsToRedeem,
+        pointsRedeemed: pointsToRedeem
       })
     );
   } catch (error) {
@@ -270,10 +287,10 @@ async function getRedemptionHistory(req, res) {
   try {
     const userId = req.user.id;
 
-    const [redemptions] = await db.query(
-      `SELECT id, points_used, description, status, created_at
-       FROM redemptions
-       WHERE user_id = ?
+    const redemptions = await db.query(
+      `SELECT id, points as points_used, description, status, created_at
+       FROM wallet_transactions
+       WHERE user_id = ? AND source = 'redemption'
        ORDER BY created_at DESC`,
       [userId]
     );
@@ -297,8 +314,8 @@ async function getAllReferrals(req, res) {
     const referrals = await db.query(`
       SELECT r.*, u1.name as referrerName, u1.email as referrerEmail, u2.name as refereeName, u2.email as refereeEmail
       FROM Referral r
-      LEFT JOIN User u1 ON r.referrerId = u1.id
-      LEFT JOIN User u2 ON r.refereeId = u2.id
+      LEFT JOIN User u1 ON r.referrerEmail = u1.email
+      LEFT JOIN User u2 ON r.refereeEmail = u2.email
       ORDER BY r.createdAt DESC
     `);
 
@@ -306,6 +323,22 @@ async function getAllReferrals(req, res) {
   } catch (error) {
     console.error('❌ Error fetching all referrals:', error);
     return res.status(500).json(errorResponse('Failed to fetch referrals'));
+  }
+}
+
+/**
+ * Wallet History (New API)
+ */
+async function getWalletHistory(req, res) {
+  try {
+    const userId = req.user.id;
+    const history = await WalletService.getTransactionHistory(userId);
+    const balance = await WalletService.getBalance(userId);
+
+    return res.status(200).json(successResponse({ history, balance }, 'Wallet history fetched'));
+  } catch (error) {
+    console.error('❌ Error fetching wallet history:', error);
+    return res.status(500).json(errorResponse('Failed to fetch wallet history'));
   }
 }
 
@@ -318,4 +351,5 @@ module.exports = {
   redeemPoints,
   getRedemptionHistory,
   getAllReferrals,
+  getWalletHistory
 };

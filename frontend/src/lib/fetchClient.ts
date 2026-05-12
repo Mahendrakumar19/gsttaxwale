@@ -3,7 +3,7 @@
  * Replaces axios for client-side use in Next.js 14
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://gsttaxwale.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 interface FetchOptions extends RequestInit {
   headers?: Record<string, string>;
