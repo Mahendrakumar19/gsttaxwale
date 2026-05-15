@@ -11,6 +11,12 @@ export default function DocumentsCenter() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [activeTab, setActiveTab] = useState('ITR');
   const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadForm, setUploadForm] = useState({
+    type: 'GST',
+    files: [] as { file: File, title: string }[],
+  });
 
   const filteredDocs = documents.filter(doc => {
     if (activeTab === 'ITR') return ['ITR', 'FORM16', 'INVESTMENT_PROOF'].includes(doc.type?.toUpperCase());
@@ -45,6 +51,67 @@ export default function DocumentsCenter() {
       setDocuments(documents.filter((d) => d.id !== docId));
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to delete document');
+    }
+  };
+
+  const addFiles = (selectedFiles: FileList | null) => {
+    if (!selectedFiles) return;
+    const newFiles = Array.from(selectedFiles).map(file => ({
+      file,
+      title: file.name.replace(/\.[^/.]+$/, "")
+    }));
+    setUploadForm(prev => ({
+      ...prev,
+      files: [...prev.files, ...newFiles]
+    }));
+  };
+
+  const removeFile = (index: number) => {
+    setUploadForm(prev => ({
+      ...prev,
+      files: prev.files.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateFileTitle = (index: number, title: string) => {
+    setUploadForm(prev => {
+      const newFiles = [...prev.files];
+      newFiles[index].title = title;
+      return { ...prev, files: newFiles };
+    });
+  };
+
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (uploadForm.files.length === 0) {
+      alert('Please select at least one file');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('customerId', 'me'); 
+      formData.append('category', uploadForm.type);
+      formData.append('fiscalYear', selectedYear.toString());
+      
+      uploadForm.files.forEach(f => {
+        formData.append('files', f.file);
+        formData.append('displayTitle', f.title);
+      });
+
+      await api.post('/api/documents/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      fetchDocuments();
+      setShowUploadModal(false);
+      setUploadForm({ type: 'GST', files: [] });
+      alert('Documents uploaded successfully!');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Upload failed');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -89,18 +156,125 @@ export default function DocumentsCenter() {
           <FileUp className="w-5 h-5 text-blue-600" />
           Documents Center
         </h3>
-        <select
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-          className="px-3 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          {[2023, 2024, 2025, 2026].map((year) => (
-            <option key={year} value={year}>
-              FY {year}-{year + 1}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setUploadForm({ ...uploadForm, type: activeTab === 'ITR' ? 'ITR' : (activeTab === 'GST' ? 'GST' : 'Others') });
+              setShowUploadModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+          >
+            <FileUp size={16} />
+            Upload
+          </button>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          >
+            {[2023, 2024, 2025, 2026].map((year) => (
+              <option key={year} value={year}>
+                FY {year}-{year + 1}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <FileUp className="text-blue-600" size={24} />
+                <h2 className="text-xl font-bold text-gray-900">Upload Documents</h2>
+              </div>
+              <button onClick={() => setShowUploadModal(false)} className="text-gray-400 hover:text-gray-600 transition p-1">
+                <XCircle size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpload} className="space-y-5">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['ITR', 'GST', 'Others'].map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setUploadForm({ ...uploadForm, type })}
+                      className={`py-2 text-xs font-bold rounded-lg border transition ${
+                        uploadForm.type === type 
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-md' 
+                          : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Files Selection</label>
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                  {uploadForm.files.map((f, idx) => (
+                    <div key={idx} className="p-3 bg-gray-50 border border-gray-200 rounded-xl relative group">
+                      <button 
+                        type="button" 
+                        onClick={() => removeFile(idx)}
+                        className="absolute top-2 right-2 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <XCircle size={16} />
+                      </button>
+                      <p className="text-[10px] text-gray-400 truncate mb-1 pr-6">{f.file.name}</p>
+                      <input
+                        type="text"
+                        value={f.title}
+                        onChange={(e) => updateFileTitle(idx, e.target.value)}
+                        placeholder="Document Title (e.g. My PAN Card)"
+                        className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                      />
+                    </div>
+                  ))}
+
+                  <div className="relative group">
+                    <input
+                      type="file"
+                      multiple
+                      onChange={(e) => addFiles(e.target.files)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className="py-8 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center group-hover:border-blue-300 group-hover:bg-blue-50/50 transition-all">
+                      <FileUp size={28} className="text-gray-300 group-hover:text-blue-500 mb-2" />
+                      <span className="text-xs font-bold text-gray-400 group-hover:text-blue-600">Click to add files (Select Multiple)</span>
+                      <span className="text-[10px] text-gray-300 mt-1">PDF, JPG, PNG up to 5MB each</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={isUploading || uploadForm.files.length === 0}
+                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-50 font-bold shadow-lg shadow-blue-200"
+                >
+                  {isUploading ? 'UPLOADING...' : `UPLOAD ${uploadForm.files.length} FILE${uploadForm.files.length !== 1 ? 'S' : ''}`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowUploadModal(false)}
+                  className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition font-bold"
+                >
+                  CANCEL
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">

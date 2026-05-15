@@ -13,7 +13,7 @@ export default function HomePage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative px-4 pt-12 pb-8 bg-white overflow-hidden">
+      <section className="relative px-4 pt-20 pb-8 bg-white overflow-hidden">
         <div className="max-w-[1400px] mx-auto">
           <div className="mb-2 text-center">
             <h1 className="mb-0.5 text-2xl md:text-3xl lg:text-4xl font-black leading-tight text-gray-900 tracking-tighter">

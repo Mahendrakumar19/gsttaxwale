@@ -19,9 +19,13 @@ export default function AdminSettings() {
 
   // Categorized UI sections
   const [activeTab, setActiveTab] = useState('general');
+  const [sliders, setSliders] = useState<any[]>([]);
+  const [sliderLoading, setSliderLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchSettings();
+    fetchSliders();
   }, []);
 
   const fetchSettings = async () => {
@@ -36,6 +40,59 @@ export default function AdminSettings() {
       setMessage({ type: 'error', text: 'Failed to load system settings' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSliders = async () => {
+    setSliderLoading(true);
+    try {
+      const res = await api.get('/api/sliders');
+      setSliders(res.data.data?.sliders || []);
+    } catch (err) {
+      console.error('Failed to fetch sliders:', err);
+    } finally {
+      setSliderLoading(false);
+    }
+  };
+
+  const handleSliderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      await api.post('/api/admin/sliders', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setMessage({ type: 'success', text: 'New banner uploaded successfully' });
+      fetchSliders();
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to upload banner' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleToggleSlider = async (id: number, active: boolean) => {
+    try {
+      await api.put(`/api/admin/sliders/${id}/toggle`, { active });
+      setSliders(prev => prev.map(s => s.id === id ? { ...s, isActive: active } : s));
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to update slider status' });
+    }
+  };
+
+  const handleDeleteSlider = async (id: number) => {
+    if (!confirm('Permanently remove this banner image?')) return;
+    try {
+      await api.delete(`/api/admin/sliders/${id}`);
+      setSliders(prev => prev.filter(s => s.id !== id));
+      setMessage({ type: 'success', text: 'Banner purged' });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to delete banner' });
     }
   };
 
@@ -96,13 +153,13 @@ export default function AdminSettings() {
 
   const tabs = [
     { id: 'general', label: 'Branding', icon: <ImageIcon size={18} /> },
+    { id: 'hero', label: 'Hero', icon: <Zap size={18} /> },
     { id: 'security', label: 'Security', icon: <Shield size={18} /> },
-    { id: 'features', label: 'Features', icon: <Zap size={18} /> },
     { id: 'payments', label: 'Payments', icon: <CreditCard size={18} /> },
   ];
 
   return (
-    <div className="px-6 py-10 max-w-5xl mx-auto animate-in fade-in duration-700">
+    <div className="px-6 py-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -196,6 +253,59 @@ export default function AdminSettings() {
           </div>
         )}
 
+        {activeTab === 'hero' && (
+          <div className="bg-white border border-slate-200 rounded-[2.5rem] p-10 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500">
+             <div className="flex items-center justify-between mb-8">
+               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
+                 <div className="p-2 bg-orange-50 text-orange-600 rounded-xl"><Zap size={20} /></div>
+                 Homepage Hero Banners
+               </h2>
+               <div className="relative">
+                 <input 
+                   type="file" 
+                   accept="image/*" 
+                   onChange={handleSliderUpload} 
+                   className="absolute inset-0 opacity-0 cursor-pointer"
+                   disabled={uploading}
+                 />
+                 <button className={`px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all ${uploading ? 'opacity-50 animate-pulse' : 'hover:bg-blue-700'}`}>
+                   {uploading ? 'UPLOADING...' : 'ADD NEW BANNER'}
+                 </button>
+               </div>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               {sliders.map((slider) => (
+                 <div key={slider.id} className="relative group rounded-[2rem] overflow-hidden border border-slate-200 aspect-[16/9]">
+                    <img src={slider.imageUrl} alt="Banner" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
+                       <div className="flex items-center justify-between gap-3">
+                          <button 
+                            onClick={() => handleToggleSlider(slider.id, !slider.isActive)}
+                            className={`flex-1 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${slider.isActive ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-300'}`}
+                          >
+                             {slider.isActive ? 'ACTIVE' : 'INACTIVE'}
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteSlider(slider.id)}
+                            className="p-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition"
+                          >
+                             <Trash2 size={14} />
+                          </button>
+                       </div>
+                    </div>
+                    {!slider.isActive && <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex items-center justify-center"><span className="px-3 py-1 bg-white/20 text-white rounded-full text-[9px] font-black uppercase tracking-widest">Disabled</span></div>}
+                 </div>
+               ))}
+               {sliders.length === 0 && !sliderLoading && (
+                 <div className="col-span-full py-20 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
+                    <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No banners configured</p>
+                 </div>
+               )}
+             </div>
+          </div>
+        )}
+
         {activeTab === 'security' && (
           <div className="bg-white border border-slate-200 rounded-[2.5rem] p-10 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500">
             <h2 className="text-xl font-black text-slate-900 mb-8 uppercase tracking-tight flex items-center gap-3">
@@ -220,39 +330,6 @@ export default function AdminSettings() {
                   >
                     <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-all shadow-md ${
                       getVal(item.key, true) ? 'translate-x-7' : 'translate-x-1'
-                    }`} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'features' && (
-          <div className="bg-white border border-slate-200 rounded-[2.5rem] p-10 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <h2 className="text-xl font-black text-slate-900 mb-8 uppercase tracking-tight flex items-center gap-3">
-              <div className="p-2 bg-orange-50 text-orange-600 rounded-xl"><Zap size={20} /></div>
-              Platform Features
-            </h2>
-            <div className="space-y-6">
-              {[
-                { key: 'ENABLE_REFERRAL', label: 'Referral System', desc: 'Allow users to refer and earn rewards', color: 'bg-blue-600' },
-                { key: 'ENABLE_WHATSAPP', label: 'WhatsApp Alerts', desc: 'Send automated status updates via WhatsApp', color: 'bg-green-500' },
-                { key: 'MAINTENANCE_MODE', label: 'Maintenance Mode', desc: 'Temporarily disable public access for updates', color: 'bg-red-600' },
-              ].map(item => (
-                <div key={item.key} className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                  <div>
-                    <h3 className="font-black text-slate-900 uppercase tracking-tight text-sm">{item.label}</h3>
-                    <p className="text-xs text-slate-500 font-medium">{item.desc}</p>
-                  </div>
-                  <button
-                    onClick={() => handleToggle(item.key, getVal(item.key, false))}
-                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all ${
-                      getVal(item.key, false) ? item.color : 'bg-slate-300'
-                    }`}
-                  >
-                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-all shadow-md ${
-                      getVal(item.key, false) ? 'translate-x-7' : 'translate-x-1'
                     }`} />
                   </button>
                 </div>
@@ -301,6 +378,19 @@ export default function AdminSettings() {
           </div>
         )}
       </div>
+
+      <div className="mt-16 text-center">
+        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Synchronized with Backend Engine v2.0</p>
+      </div>
+    </div>
+  );
+}
+
+function Trash2({ size }: { size: number }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+  );
+}
 
       <div className="mt-16 text-center">
         <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Synchronized with Backend Engine v2.0</p>

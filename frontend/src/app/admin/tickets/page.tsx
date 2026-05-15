@@ -50,131 +50,129 @@ export default function AdminTickets() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 pt-20 pb-12">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <MessageSquare className="text-blue-600" size={28} />
-            <h1 className="text-3xl font-bold text-gray-900">Support Tickets</h1>
+    <div className="px-6 py-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-black rounded-full uppercase tracking-widest">Support Operations</span>
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
           </div>
-          <p className="text-gray-600">Manage customer support tickets</p>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Ticket Terminal</h1>
+          <p className="text-slate-500 font-medium mt-1">Monitor and resolve system-wide support inquiries</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="text-2xl font-bold text-blue-600 mb-1">{stats.open}</div>
-            <div className="text-gray-600 text-sm">Open Tickets</div>
-          </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <div className="text-2xl font-bold text-purple-600 mb-1">{stats.inProgress}</div>
-            <div className="text-gray-600 text-sm">In Progress</div>
-          </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="text-2xl font-bold text-green-600 mb-1">{stats.resolved}</div>
-            <div className="text-gray-600 text-sm">Resolved</div>
-          </div>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="text-2xl font-bold text-red-600 mb-1">{stats.urgent}</div>
-            <div className="text-gray-600 text-sm">Urgent</div>
-          </div>
-        </div>
+        <button 
+          onClick={loadTickets}
+          className="flex items-center justify-center gap-3 bg-white border border-slate-200 text-slate-900 px-6 py-4 rounded-[1.5rem] font-black transition-all shadow-sm hover:bg-slate-50 active:scale-95 uppercase tracking-widest text-[10px]"
+        >
+          {refreshing ? <div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" /> : <Filter size={16} />}
+          Synchronize Data
+        </button>
+      </div>
 
-        {/* Filter */}
-        <div className="mb-6 flex gap-2 flex-wrap">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              filter === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            All Tickets
-          </button>
-          <button
-            onClick={() => setFilter('open')}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              filter === 'open'
-                ? 'bg-blue-100 text-blue-600'
-                : 'bg-gray-100 text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Open
-          </button>
-          <button
-            onClick={() => setFilter('in-progress')}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              filter === 'in-progress'
-                ? 'bg-blue-100 text-blue-600'
-                : 'bg-gray-100 text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            In Progress
-          </button>
-          <button
-            onClick={() => setFilter('resolved')}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              filter === 'resolved'
-                ? 'bg-amber-600 text-white'
-                : 'bg-slate-700/30 text-slate-400 hover:text-white'
-            }`}
-          >
-            Resolved
-          </button>
+      {/* Analytics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-12">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm">
+           <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Awaiting Response</p>
+           <p className="text-3xl font-black text-slate-900">{stats.open}</p>
         </div>
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm">
+           <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">In Process</p>
+           <p className="text-3xl font-black text-slate-900">{stats.inProgress}</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm">
+           <p className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">Success Status</p>
+           <p className="text-3xl font-black text-slate-900">{stats.resolved}</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm">
+           <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Priority Alert</p>
+           <p className="text-3xl font-black text-slate-900">{stats.urgent}</p>
+        </div>
+      </div>
 
-        {/* Tickets List */}
-        {loading ? (
-          <div className="text-center py-12 text-slate-400">Loading tickets...</div>
-        ) : filteredTickets.length === 0 ? (
-          <div className="text-center py-12 text-slate-400">No tickets found</div>
-        ) : (
-          <div className="space-y-3">
-            {filteredTickets.map((ticket: any) => (
-              <Link key={ticket.id} href={`/admin/tickets/${ticket.id}`}>
-                <div className="bg-slate-800/30 border border-slate-700/30 rounded-xl p-6 hover:bg-slate-700/30 transition cursor-pointer">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-gray-900 font-semibold text-lg mb-1">{ticket.subject}</h3>
-                      <div className="flex items-center gap-4 text-gray-600 text-sm">
-                        <div className="flex items-center gap-1">
-                          <User size={14} />
-                          {ticket.user?.name}
-                        </div>
-                        <div>{new Date(ticket.createdAt).toLocaleDateString()}</div>
-                        <div>{ticket.category}</div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-                        ticket.priority === 'urgent' 
-                          ? 'bg-red-900/30 text-red-400' 
-                          : ticket.priority === 'high'
-                          ? 'bg-orange-900/30 text-orange-400'
-                          : 'bg-blue-900/30 text-blue-400'
-                      }`}>
-                        {ticket.priority}
-                      </span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        ticket.status === 'resolved' || ticket.status === 'closed'
-                          ? 'bg-green-900/30 text-green-400'
-                          : ticket.status === 'in-progress'
-                          ? 'bg-purple-900/30 text-purple-400'
-                          : 'bg-yellow-900/30 text-yellow-400'
-                      }`}>
-                        {ticket.status}
-                      </span>
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap gap-2 mb-10 bg-slate-100 p-2 rounded-[2rem] w-fit">
+        {[
+          { id: 'all', label: 'All Records' },
+          { id: 'open', label: 'Open' },
+          { id: 'in-progress', label: 'Processing' },
+          { id: 'resolved', label: 'Resolved' }
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setFilter(t.id)}
+            className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${
+              filter === t.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tickets List */}
+      {loading ? (
+        <div className="flex items-center justify-center py-24">
+           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : filteredTickets.length === 0 ? (
+        <div className="bg-white rounded-[2.5rem] border border-slate-200 p-24 text-center">
+          <div className="w-20 h-20 bg-slate-100 text-slate-300 rounded-[2rem] flex items-center justify-center mx-auto mb-6">🎫</div>
+          <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">Archive Empty</h3>
+          <p className="text-slate-500 font-medium">No tickets match the current selection</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6">
+          {filteredTickets.map((ticket: any) => (
+            <Link key={ticket.id} href={`/admin/tickets/${ticket.id}`}>
+              <div className="bg-white rounded-[2.5rem] border border-slate-200 p-10 hover:shadow-xl transition-all group relative overflow-hidden flex flex-col md:flex-row gap-10">
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-4 mb-6">
+                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.15em] border ${
+                      ticket.priority === 'urgent' ? 'bg-red-50 border-red-100 text-red-600' :
+                      ticket.priority === 'high' ? 'bg-orange-50 border-orange-100 text-orange-600' :
+                      'bg-blue-50 border-blue-100 text-blue-600'
+                    }`}>
+                      {ticket.priority} Priority
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.15em] border ${
+                      ticket.status === 'resolved' ? 'bg-green-50 border-green-100 text-green-700' :
+                      ticket.status === 'in-progress' ? 'bg-purple-50 border-purple-100 text-purple-700' :
+                      'bg-blue-50 border-blue-100 text-blue-700'
+                    }`}>
+                      {ticket.status}
+                    </span>
+                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                       <Calendar size={12} />
+                       {new Date(ticket.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                     </div>
                   </div>
-                  <p className="text-gray-700 text-sm line-clamp-2">{ticket.description}</p>
+
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase mb-2 group-hover:text-blue-600 transition-colors leading-tight">{ticket.subject}</h3>
+                  <p className="text-slate-500 font-medium text-base line-clamp-2 mb-0">{ticket.description}</p>
                 </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+
+                <div className="md:w-64 flex flex-col justify-center border-t md:border-t-0 md:border-l border-slate-100 pt-6 md:pt-0 md:pl-10">
+                   <div className="flex items-center gap-4 mb-4">
+                      <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-blue-600 font-black">
+                         {ticket.user?.name?.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Assigned Entity</p>
+                         <p className="text-sm font-black text-slate-900 uppercase">{ticket.user?.name}</p>
+                      </div>
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{ticket.category}</span>
+                   </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -148,25 +148,6 @@ export default function ImageSlider({
         </button>
       </div>
 
-      {/* Indicators Bar */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-4 w-full px-8">
-        <div className="flex gap-4 items-center">
-          {images.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className="group py-2"
-            >
-              <div className={`h-1.5 rounded-full transition-all duration-500 ${
-                index === currentIndex 
-                  ? 'bg-blue-600 w-12' 
-                  : 'bg-white/30 w-6 group-hover:bg-white/50'
-              }`} />
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Slide Counter Overlay */}
       {showCounter && images.length > 0 && (
         <div className="absolute top-8 right-8 px-4 py-2 bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl text-xs font-black tracking-widest">

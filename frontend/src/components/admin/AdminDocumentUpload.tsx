@@ -47,8 +47,7 @@ export default function AdminDocumentUpload() {
     customerPan: '',
     fiscalYear: 'FY2025-26',
     category: 'gst',
-    displayTitle: '',
-    file: null as File | null,
+    files: [] as { file: File, title: string }[],
   });
 
 
@@ -100,13 +99,34 @@ export default function AdminDocumentUpload() {
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    if (file && file.size > 50 * 1024 * 1024) {
-      setError('File size must be less than 50MB');
-      return;
-    }
-    setFormData({ ...formData, file });
+    const selectedFiles = e.target.files;
+    if (!selectedFiles) return;
+
+    const newFiles = Array.from(selectedFiles).map(file => ({
+      file,
+      title: file.name.replace(/\.[^/.]+$/, "")
+    }));
+
+    setFormData(prev => ({
+      ...prev,
+      files: [...prev.files, ...newFiles]
+    }));
     setError('');
+  };
+
+  const removeFile = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      files: prev.files.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateFileTitle = (index: number, title: string) => {
+    setFormData(prev => {
+      const newFiles = [...prev.files];
+      newFiles[index].title = title;
+      return { ...prev, files: newFiles };
+    });
   };
 
   const handleUpload = async (e: React.FormEvent) => {
@@ -114,8 +134,8 @@ export default function AdminDocumentUpload() {
     setError('');
     setSuccess('');
 
-    if (!formData.customerId || !formData.file) {
-      setError('Please select a customer and file');
+    if (!formData.customerId || formData.files.length === 0) {
+      setError('Please select a customer and at least one file');
       return;
     }
 
@@ -128,35 +148,30 @@ export default function AdminDocumentUpload() {
       uploadFormData.append('customerPan', formData.customerPan);
       uploadFormData.append('fiscalYear', formData.fiscalYear);
       uploadFormData.append('category', formData.category);
-      uploadFormData.append('displayTitle', formData.displayTitle);
-      uploadFormData.append('file', formData.file);
-
+      
+      formData.files.forEach(f => {
+        uploadFormData.append('files', f.file);
+        uploadFormData.append('displayTitle', f.title);
+      });
 
       await api.post('/api/admin/documents/upload', uploadFormData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-
-      setSuccess(`Document uploaded successfully for ${formData.customerName}`);
+      setSuccess(`${formData.files.length} document(s) uploaded successfully for ${formData.customerName}`);
       setFormData({
         customerId: '',
         customerName: '',
         customerPan: '',
         fiscalYear: 'FY2025-26',
         category: 'gst',
-        displayTitle: '',
-        file: null,
+        files: [],
       });
-
-      
-      // Reset file input
-      const fileInput = document.getElementById('file-input') as HTMLInputElement;
-      if (fileInput) fileInput.value = '';
 
       // Refresh documents list
       await fetchDocuments();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to upload document');
+      setError(err.response?.data?.message || 'Failed to upload documents');
     } finally {
       setUploading(false);
     }
@@ -320,71 +335,71 @@ export default function AdminDocumentUpload() {
               </select>
             </div>
 
-            {/* Display Title */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Document Display Title (Optional - defaults to filename)
-              </label>
-              <div className="relative">
-                <FileText className="absolute left-3 top-3 text-gray-400" size={18} />
-                <input
-                  type="text"
-                  placeholder="e.g. GST Registration Certificate"
-                  value={formData.displayTitle}
-                  onChange={(e) => setFormData({ ...formData, displayTitle: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 bg-white"
-                />
+          {/* File Upload List */}
+          {formData.files.length > 0 && (
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-700">Documents to Upload</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {formData.files.map((f, idx) => (
+                  <div key={idx} className="bg-gray-50 border border-gray-200 rounded-lg p-4 relative group">
+                    <button 
+                      type="button" 
+                      onClick={() => removeFile(idx)}
+                      className="absolute top-2 right-2 text-red-500 hover:text-red-700 transition"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText size={14} className="text-gray-400" />
+                      <span className="text-[10px] text-gray-500 truncate max-w-[150px]">{f.file.name}</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={f.title}
+                      onChange={(e) => updateFileTitle(idx, e.target.value)}
+                      placeholder="Display Title"
+                      className="w-full px-3 py-1.5 bg-white border border-gray-300 rounded text-sm text-gray-900 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                ))}
               </div>
-            </div>
-          </div>
-
-
-          {/* Selected Customer Info */}
-          {formData.customerId && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-900">
-                <strong>Selected Customer:</strong> {formData.customerName} (PAN: {formData.customerPan})
-              </p>
             </div>
           )}
 
-          {/* File Upload */}
+          {/* File Upload Dropzone */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select File to Upload (Max 50MB)
+              Select Files to Upload (Multiple Supported)
             </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition">
-              <Upload className="mx-auto text-gray-400 mb-2" size={32} />
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition group cursor-pointer relative">
               <input
                 id="file-input"
                 type="file"
+                multiple
                 onChange={handleFileChange}
-                className="hidden"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
               />
-              <label htmlFor="file-input" className="cursor-pointer">
-                <p className="text-gray-600">
-                  {formData.file ? (
-                    <span className="text-green-600 font-semibold">{formData.file.name}</span>
-                  ) : (
-                    <>
-                      <span className="text-blue-600 font-semibold">Click to upload</span>
-                      <span className="text-gray-600"> or drag and drop</span>
-                    </>
-                  )}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">PDF, Word, Excel, or Image files up to 50MB</p>
-              </label>
+              <Upload className="mx-auto text-gray-400 group-hover:text-blue-500 mb-2 transition" size={32} />
+              <p className="text-gray-600">
+                <span className="text-blue-600 font-semibold">Click to upload</span>
+                <span className="text-gray-600"> or drag and drop</span>
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Select multiple files at once</p>
             </div>
           </div>
 
           <button
             type="submit"
-            disabled={uploading || !formData.customerId || !formData.file}
+            disabled={uploading || !formData.customerId || formData.files.length === 0}
             className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition font-semibold flex items-center justify-center gap-2"
           >
-            <Upload className="w-4 h-4" />
-            {uploading ? 'Uploading...' : 'Upload Document'}
+            {uploading ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : (
+              <Upload className="w-4 h-4" />
+            )}
+            {uploading ? 'Uploading...' : `Upload ${formData.files.length} Document${formData.files.length !== 1 ? 's' : ''}`}
           </button>
         </form>
       </div>

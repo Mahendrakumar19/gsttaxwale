@@ -49,8 +49,10 @@ exports.uploadDocument = async (req, res) => {
     }
 
     const uploadedDocuments = [];
+    const titles = Array.isArray(displayTitle) ? displayTitle : [displayTitle];
 
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const uniqueFilename = `${Date.now()}_${Math.floor(Math.random() * 1000)}_${file.originalname}`;
       const finalPath = path.join(categoryDir, uniqueFilename);
 
@@ -58,7 +60,8 @@ exports.uploadDocument = async (req, res) => {
       fs.copyFileSync(file.path, finalPath);
       fs.unlinkSync(file.path);
 
-      const finalDisplayName = displayTitle || file.originalname;
+      // Use specific title if provided, otherwise fallback to original filename
+      const finalDisplayName = titles[i] || displayTitle || file.originalname;
       
       const result = await db.query(`
         INSERT INTO Document (userId, fileUrl, fileSize, filename, uploadedBy, category, financialYear, originalName, documentType, visible, mimeType, uploadedAt)

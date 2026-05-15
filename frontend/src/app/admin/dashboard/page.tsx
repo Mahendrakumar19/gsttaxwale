@@ -112,111 +112,131 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="w-full">
+    <div className="px-6 py-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-6">
-        <div className="mb-4">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-700 mt-1">Welcome back, {adminUser?.name || 'Administrator'}</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-black rounded-full uppercase tracking-widest">Real-time Analytics</span>
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Dashboard Overview</h1>
+          <p className="text-slate-500 font-medium mt-1">Welcome back, <span className="text-blue-600 font-bold">{adminUser?.name || 'Administrator'}</span></p>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <TrendingUp size={80} />
+          </div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Services</p>
+          <p className="text-4xl font-black text-slate-900">{stats.services}</p>
+          <div className="mt-4 flex items-center gap-2 text-green-600 font-bold text-xs uppercase">
+            <BarChart3 size={14} />
+            <span>Active Portfolio</span>
+          </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-blue-600 text-sm font-medium">Total Services</p>
-                <p className="text-3xl font-bold text-blue-900 mt-1">{stats.services}</p>
-              </div>
-              <TrendingUp className="text-blue-400" size={24} />
-            </div>
+        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Activity size={80} />
           </div>
-
-          <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-green-600 text-sm font-medium">Total Orders</p>
-                <p className="text-3xl font-bold text-green-900 mt-1">{stats.orders}</p>
-              </div>
-              <Activity className="text-green-400" size={24} />
-            </div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Orders</p>
+          <p className="text-4xl font-black text-slate-900">{stats.orders}</p>
+          <div className="mt-4 flex items-center gap-2 text-blue-600 font-bold text-xs uppercase">
+            <ShoppingCart size={14} />
+            <span>Processed</span>
           </div>
+        </div>
 
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-purple-600 text-sm font-medium">Total Revenue</p>
-                <p className="text-2xl font-bold text-purple-900 mt-1">₹{(stats.totalRevenue / 1000).toFixed(0)}K</p>
-              </div>
-              <BarChart3 className="text-purple-400" size={24} />
-            </div>
+        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <BarChart3 size={80} />
           </div>
-
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-orange-600 text-sm font-medium">Total Users</p>
-                <p className="text-3xl font-bold text-orange-900 mt-1">{stats.totalUsers}</p>
-              </div>
-              <Users className="text-orange-400" size={24} />
-            </div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Revenue</p>
+          <p className="text-4xl font-black text-slate-900">₹{(stats.totalRevenue / 1000).toFixed(0)}K</p>
+          <div className="mt-4 flex items-center gap-2 text-purple-600 font-bold text-xs uppercase">
+            <Activity size={14} />
+            <span>Growth Curve</span>
           </div>
+        </div>
 
-          <div className="bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200 rounded-lg p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-pink-600 text-sm font-medium">Total Visitors</p>
-                <p className="text-3xl font-bold text-pink-900 mt-1">{stats.visitors}</p>
-              </div>
-              <Eye className="text-pink-400" size={24} />
-            </div>
+        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Users size={80} />
+          </div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Users</p>
+          <p className="text-4xl font-black text-slate-900">{stats.totalUsers}</p>
+          <div className="mt-4 flex items-center gap-2 text-orange-600 font-bold text-xs uppercase">
+            <Users size={14} />
+            <span>Engagement</span>
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="px-8 py-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="mb-12">
+        <h2 className="text-xl font-black text-slate-900 mb-8 uppercase tracking-tight flex items-center gap-3">
+          <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><Zap size={20} /></div>
+          Operational Access
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {quickActions.map((action) => (
             <Link
               key={action.href}
               href={action.href}
-              className="bg-white border border-gray-200 rounded-lg p-6 hover:border-blue-400 hover:shadow-lg transition group"
+              className="bg-slate-50 border border-slate-100 rounded-[2rem] p-6 hover:bg-white hover:border-blue-400 hover:shadow-xl transition-all group"
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-lg bg-${action.color}-100`}>
-                  <action.icon className={`text-${action.color}-600`} size={24} />
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-white rounded-2xl shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <action.icon size={24} />
                 </div>
-                <span className={`text-2xl font-bold text-${action.color}-600`}>{action.count}</span>
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-slate-100 group-hover:bg-blue-50 transition-colors">
+                   <span className="text-[10px] font-black text-blue-600">{action.count}</span>
+                </div>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">{action.label}</h3>
-              <p className="text-sm text-gray-700">{action.desc}</p>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-1">{action.label}</h3>
+              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{action.desc}</p>
             </Link>
           ))}
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="px-8 py-8">
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">System Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="border-l-4 border-blue-500 pl-4">
-              <p className="text-gray-900 text-sm">Admin Name</p>
-              <p className="text-lg font-semibold text-gray-900">{adminUser?.name || 'Administrator'}</p>
+      {/* System Information */}
+      <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] rounded-full -mr-32 -mt-32" />
+        <div className="relative z-10">
+          <h2 className="text-xl font-black mb-8 uppercase tracking-tight flex items-center gap-3">
+            <div className="p-2 bg-white/10 text-white rounded-xl"><Shield size={20} /></div>
+            Core Authentication
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Admin Name</p>
+              <p className="text-lg font-bold">{adminUser?.name || 'Administrator'}</p>
             </div>
-            <div className="border-l-4 border-green-500 pl-4">
-              <p className="text-gray-900 text-sm">Admin Email</p>
-              <p className="text-lg font-semibold text-gray-900">{adminUser?.email || 'admin@example.com'}</p>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Master Identity</p>
+              <p className="text-lg font-bold">{adminUser?.email || 'admin@gsttaxwale.com'}</p>
             </div>
-            <div className="border-l-4 border-purple-500 pl-4">
-              <p className="text-gray-900 text-sm">Role</p>
-              <p className="text-lg font-semibold text-gray-900">Administrator</p>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Authorization Level</p>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-400" />
+                <p className="text-lg font-bold uppercase tracking-widest text-xs">Full System Access</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <div className="mt-16 text-center">
+        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Platform Engine v2.0 • Build ID: GST-ADMIN-PRO</p>
+      </div>
     </div>
+  );
+}
   );
 }

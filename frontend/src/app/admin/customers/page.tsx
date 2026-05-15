@@ -293,206 +293,213 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="w-full">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
-            <p className="text-gray-700 mt-1">Manage all registered customers</p>
+    <div className="px-6 py-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-black rounded-full uppercase tracking-widest">User Directory</span>
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={exportToExcel}
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
-            >
-              <Download size={20} />
-              Export to Excel
-            </button>
-            <button 
-              onClick={() => router.push('/admin/customers/create')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              <Plus size={18} />
-              <span>Add Customer</span>
-            </button>
-          </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Customer Database</h1>
+          <p className="text-slate-500 font-medium mt-1">Manage registration records, identification, and loyalty codes</p>
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-4 flex-wrap">
-          <div className="flex-1 min-w-xs relative">
-            <Search size={20} className="absolute left-3 top-3 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, email, phone, ref no, or referral code..."
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 text-gray-900 bg-white"
-            />
-          </div>
-          <select
-            value={filterStatus}
-            onChange={(e) => { setFilterStatus(e.target.value as any); setCurrentPage(1); }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+        <div className="flex items-center gap-3">
+          <button
+            onClick={exportToExcel}
+            className="flex items-center justify-center gap-3 bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-[1.5rem] font-black transition-all shadow-xl hover:-translate-y-1 active:scale-95 uppercase tracking-widest text-[10px]"
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
+            <Download size={16} />
+            Export Dataset
+          </button>
+          <button 
+            onClick={() => router.push('/admin/customers/create')}
+            className="flex items-center justify-center gap-3 bg-slate-900 hover:bg-blue-600 text-white px-6 py-4 rounded-[1.5rem] font-black transition-all shadow-xl hover:-translate-y-1 active:scale-95 uppercase tracking-widest text-[10px]"
+          >
+            <Plus size={16} />
+            Register Customer
+          </button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="px-8 py-6 grid grid-cols-3 gap-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-blue-600 text-sm font-medium">Total Customers</p>
-          <p className="text-3xl font-bold text-blue-900 mt-1">{customers.length}</p>
+      {/* Search and Filters */}
+      <div className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm mb-12 flex flex-col md:flex-row gap-6">
+        <div className="flex-1 relative group">
+          <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+          <input
+            type="text"
+            placeholder="Search by name, identity, phone, or reference..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-900 font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition"
+          />
         </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-green-600 text-sm font-medium">Active</p>
-          <p className="text-3xl font-bold text-green-900 mt-1">
-            {customers.filter((c) => c.status === 'active').length}
-          </p>
+        <select
+          value={filterStatus}
+          onChange={(e) => { setFilterStatus(e.target.value as any); setCurrentPage(1); }}
+          className="px-8 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-900 font-black uppercase tracking-widest text-[10px] focus:ring-4 focus:ring-blue-500/10 outline-none transition cursor-pointer"
+        >
+          <option value="all">Filter: All Status</option>
+          <option value="active">Filter: Active</option>
+          <option value="inactive">Filter: Inactive</option>
+        </select>
+      </div>
+
+      {/* Quick Analytics */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm flex items-center gap-6">
+           <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+              <User size={28} />
+           </div>
+           <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Users</p>
+              <p className="text-3xl font-black text-slate-900">{customers.length}</p>
+           </div>
         </div>
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <p className="text-purple-600 text-sm font-medium">With Referral Codes</p>
-          <p className="text-3xl font-bold text-purple-900 mt-1">
-            {customers.filter((c) => c.referralCode && c.referralCode !== '—').length}
-          </p>
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm flex items-center gap-6">
+           <div className="w-14 h-14 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center shadow-sm">
+              <span className="w-4 h-4 bg-green-500 rounded-full animate-pulse" />
+           </div>
+           <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Active Now</p>
+              <p className="text-3xl font-black text-slate-900">{customers.filter((c) => c.status === 'active').length}</p>
+           </div>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm flex items-center gap-6">
+           <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shadow-sm">
+              <Tag size={28} />
+           </div>
+           <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Referral Tier</p>
+              <p className="text-3xl font-black text-slate-900">{customers.filter((c) => c.referralCode && c.referralCode !== '—').length}</p>
+           </div>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="px-8 py-2">
-        <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
-          <table className="w-full min-w-max">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email / Phone</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ref. Number</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">PAN Number</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">DOB</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Referral Code</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Orders</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+      <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden mb-12">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="text-left px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Identified Entity</th>
+                <th className="text-left px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Communication Channel</th>
+                <th className="text-left px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Auth / Identity</th>
+                <th className="text-left px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Referral Engine</th>
+                <th className="text-left px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Activity Status</th>
+                <th className="text-right px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Control</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {paginatedCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
-                    No customers found
+                  <td colSpan={6} className="px-8 py-24 text-center">
+                    <div className="w-20 h-20 bg-slate-100 text-slate-300 rounded-[2rem] flex items-center justify-center mx-auto mb-6">👥</div>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">Registry Empty</h3>
+                    <p className="text-slate-500 font-medium">No customer entities match the current filters</p>
                   </td>
                 </tr>
               ) : (
                 paginatedCustomers.map((customer) => (
-                  <tr key={customer.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User size={14} className="text-blue-600" />
+                  <tr key={customer.id} className="hover:bg-blue-50/20 transition-all group">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl shadow-sm flex items-center justify-center text-blue-600 group-hover:rotate-6 transition-transform font-black">
+                          {customer.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-semibold text-gray-900 text-sm">{customer.name}</span>
+                        <div>
+                          <p className="font-black text-slate-900 tracking-tight leading-none mb-1 uppercase text-sm">{customer.name}</p>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Ref: {customer.referenceNumber}</span>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-1 text-xs text-gray-700">
-                          <Mail size={11} className="text-gray-400" />
+                    <td className="px-8 py-6">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                          <Mail size={12} className="text-slate-400" />
                           {customer.email}
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Phone size={11} className="text-gray-400" />
+                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          <Phone size={10} className="text-slate-300" />
                           {customer.phone}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1">
-                        <Hash size={12} className="text-gray-400" />
-                        <span className="text-sm font-mono text-gray-700">{customer.referenceNumber}</span>
+                    <td className="px-8 py-6">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">PAN:</span>
+                           <span className="text-xs font-black text-slate-900 font-mono tracking-tighter">{customer.pan}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">DOB:</span>
+                           <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{customer.dateOfBirth ? new Date(customer.dateOfBirth).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—'}</span>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm font-mono text-gray-700 font-bold">{customer.pan}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm text-gray-700">
-                          {customer.dateOfBirth ? new Date(customer.dateOfBirth).toLocaleDateString('en-IN') : '—'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-2">
                         <Tag size={12} className="text-purple-400" />
-                        <span className="text-sm font-mono text-purple-700 font-medium">{customer.referralCode}</span>
+                        <span className="text-xs font-black text-purple-700 font-mono uppercase tracking-tighter bg-purple-50 px-2 py-0.5 rounded border border-purple-100">{customer.referralCode}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold">
-                        {customer.totalOrders}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                    <td className="px-8 py-6">
+                      <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border w-fit ${
                         customer.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                          ? 'bg-green-50 border-green-100 text-green-700'
+                          : 'bg-slate-50 border-slate-100 text-slate-400'
                       }`}>
-                        {customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
-                      </span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${customer.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">{customer.status}</span>
+                      </div>
                     </td>
-                    <td className="px-4 py-4 flex gap-1">
-                      <button 
-                        onClick={() => {
-                          setEditingCustomer(customer);
-                          setNewUser({
-                            name: customer.name,
-                            email: customer.email,
-                            phone: customer.phone || '',
-                            pan: customer.pan || '',
-                            aadhaar: customer.aadhaar || '',
-                            doorNo: customer.doorNo || '',
-                            buildingName: customer.buildingName || '',
-                            street: customer.street || '',
-                            area: customer.area || '',
-                            city: customer.city || '',
-                            state: customer.state || '',
-                            pincode: customer.pincode || '',
-                            referral_code: customer.referralCode || '',
-                            password: '', // Password is not editable here
-                            dateOfBirth: customer.dateOfBirth || ''
-                          });
-                          setShowEditModal(true);
-                        }}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded transition" 
-                        title="Edit"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button 
-                        onClick={() => {
-                          setResettingUser(customer);
-                          setShowResetModal(true);
-                        }}
-                        className="p-2 text-amber-600 hover:bg-amber-50 rounded transition" 
-                        title="Reset Password"
-                      >
-                        <Key size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(customer.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded transition"
-                        title="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                    <td className="px-8 py-6">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => {
+                            setEditingCustomer(customer);
+                            setNewUser({
+                              name: customer.name,
+                              email: customer.email,
+                              phone: customer.phone || '',
+                              pan: customer.pan || '',
+                              aadhaar: customer.aadhaar || '',
+                              doorNo: customer.doorNo || '',
+                              buildingName: customer.buildingName || '',
+                              street: customer.street || '',
+                              area: customer.area || '',
+                              city: customer.city || '',
+                              state: customer.state || '',
+                              pincode: customer.pincode || '',
+                              referral_code: customer.referralCode || '',
+                              password: '', 
+                              dateOfBirth: customer.dateOfBirth || ''
+                            });
+                            setShowEditModal(true);
+                          }}
+                          className="p-3 bg-white text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl shadow-sm border border-slate-100 transition active:scale-95" 
+                          title="Modify Record"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setResettingUser(customer);
+                            setShowResetModal(true);
+                          }}
+                          className="p-3 bg-white text-amber-600 hover:bg-amber-600 hover:text-white rounded-xl shadow-sm border border-slate-100 transition active:scale-95" 
+                          title="Auth Reset"
+                        >
+                          <Key size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(customer.id)}
+                          className="p-3 bg-white text-red-500 hover:bg-red-600 hover:text-white rounded-xl shadow-sm border border-slate-100 transition active:scale-95"
+                          title="Purge Identity"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

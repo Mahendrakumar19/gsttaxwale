@@ -82,73 +82,114 @@ export default function RootAdminLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50/50">
       {/* Top Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-[100]">
+        <div className="flex items-center justify-between px-6 py-3">
+          <div className="flex items-center gap-6">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition text-gray-900"
+              className="p-2.5 hover:bg-slate-100 rounded-xl transition-all text-slate-900 active:scale-95"
             >
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <Link href="/admin/dashboard" className="flex items-center gap-2">
-              <img src="/gsttaxwale_logo.svg" alt="GST Admin" className="h-10 w-auto" />
+            <Link href="/admin/dashboard" className="flex items-center gap-3 group">
+              <div className="p-1.5 bg-blue-600 rounded-lg group-hover:rotate-6 transition-transform">
+                <LayoutDashboard className="text-white" size={20} />
+              </div>
+              <span className="text-lg font-black text-slate-900 uppercase tracking-tighter">GST Admin <span className="text-blue-600">PRO</span></span>
             </Link>
-            <div className="hidden sm:flex items-center gap-6 ml-8">
-              <Link href="/" className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition font-medium">
-                <Home size={18} />
-                <span>Home</span>
-              </Link>
-              <Link href="/contact" className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition font-medium">
-                <Phone size={18} />
-                <span>Contact</span>
-              </Link>
-            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">{adminUser?.name || 'Admin'}</p>
-              <p className="text-xs text-gray-700">Administrator</p>
+
+          <div className="flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-4 border-r border-slate-100 pr-6 mr-2">
+               <Link href="/" className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition">View Site</Link>
+               <Link href="/contact" className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition">Support</Link>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium"
-            >
-              <LogOut size={16} />
-              Logout
-            </button>
+            
+            <div className="flex items-center gap-3">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{adminUser?.name || 'Administrator'}</p>
+                <div className="flex items-center justify-end gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Master Auth</p>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-2.5 bg-slate-900 text-white rounded-xl hover:bg-red-600 transition-all shadow-sm active:scale-95"
+                title="Secure Logout"
+              >
+                <LogOut size={18} />
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex min-h-[calc(100-73px)]">
         {/* Sidebar */}
         <aside
           className={`${
-            sidebarOpen ? 'w-64' : 'w-0'
-          } bg-white border-r border-gray-200 text-gray-900 transition-all duration-300 overflow-hidden`}
+            sidebarOpen ? 'w-72' : 'w-0'
+          } bg-white border-r border-slate-100 transition-all duration-500 ease-in-out overflow-hidden z-40 sticky top-[73px] h-[calc(100vh-73px)]`}
         >
-          <nav className="p-6 space-y-2">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition text-sm font-medium text-gray-900"
-              >
-                <item.icon size={18} />
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </nav>
+          <div className="p-6 h-full flex flex-col">
+            <div className="mb-6">
+              <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Core Systems</p>
+              <nav className="space-y-1.5">
+                {menuItems.slice(0, 5).map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-slate-50 hover:text-blue-600 transition-all text-sm font-black text-slate-900 uppercase tracking-tight group"
+                  >
+                    <div className="p-2 bg-slate-50 rounded-xl group-hover:bg-blue-50 transition-colors">
+                      <item.icon size={18} className="group-hover:scale-110 transition-transform" />
+                    </div>
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            <div className="flex-1">
+              <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Operations</p>
+              <nav className="space-y-1.5">
+                {menuItems.slice(5).map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl hover:bg-slate-50 hover:text-blue-600 transition-all text-sm font-black text-slate-900 uppercase tracking-tight group"
+                  >
+                    <div className="p-2 bg-slate-50 rounded-xl group-hover:bg-blue-50 transition-colors">
+                      <item.icon size={18} className="group-hover:scale-110 transition-transform" />
+                    </div>
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            <div className="mt-auto pt-6 border-t border-slate-50">
+               <div className="p-4 bg-blue-600 rounded-[2rem] text-white relative overflow-hidden group cursor-help">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 blur-2xl rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700" />
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">System Health</p>
+                  <p className="text-sm font-black uppercase tracking-tight">Status: Nominal</p>
+               </div>
+            </div>
+          </div>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1">
-          {children}
+        <main className="flex-1 bg-slate-50/50 min-h-screen">
+          <div className="animate-in fade-in slide-in-from-right-4 duration-700">
+            {children}
+          </div>
         </main>
       </div>
     </div>
+  );
+}
   );
 }
