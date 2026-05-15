@@ -1,5 +1,3 @@
-// Prisma Schema for Income Tax Return Filing Platform
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,114 +7,99 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ════════════════════════════════════════════════════════════════════
-// USERS TABLE - Core user authentication & profile
-// ════════════════════════════════════════════════════════════════════
 model User {
-  id            Int      @id @default(autoincrement())
-  email         String   @unique
-  password      String?
-  name          String
-  pan           String?  @unique // Permanent Account Number
-  aadhaar       String?  @unique // Aadhaar Number
-  phone         String?
-  dateOfBirth   DateTime?
-  gender        String? // M, F, Others
-  firstName     String?
-  middleName    String?
-  lastName      String?
-  fatherName    String?
-  doorNo        String?
-  buildingName  String?
-  street        String?
-  area          String?
-  address       String? // Combined or legacy
-  city          String?
-  state         String?
-  pincode       String?
-  country       String?  @default("India")
-  bankDetails   Json?    // Array of bank objects [{accountNo, ifsc, type, bankName}]
-  role          String   @default("user") // user, ca, admin
-  status        String   @default("active") // active, inactive, suspended
-  emailVerified Boolean  @default(false)
-  
-  // Password reset fields
-  resetToken    String?   @unique // Token for password reset
-  resetTokenExpires DateTime?
-  lastPasswordChange DateTime?
-  
-  // Admin user creation
-  reference_number String? @unique // Auto-generated unique identifier
-  referral_code    String? @unique // Auto-generated: gtw+first3(name)+last3(phone)
-  created_by_admin Boolean @default(false) // Track if user was created by admin
-  points_wallet    Int     @default(0) // Points balance for user
-  
-  // New fields
-  walletId      String?   @unique
-  referralCodeId String? @unique
-  preferEmailReminders Boolean @default(true)
-  preferredFilingType String? // gst, itr, combined
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  taxFilings      TaxFiling[]
-  incomes         Income[]
-  deductions      Deduction[]
-  documents       Document[]
-  payments        Payment[]
-  caAssignments   CAAssignment[]
-  assignedAsCA    CAAssignment[] @relation("CAUser")
-  otp             OTP?
-  tickets         Ticket[]
-  inquiryLogs     InquiryLog[]
-  referralsGiven  Referral[] @relation("referred_by")
-  referralsReceived Referral[] @relation("referred_to")
-  consultationsUser Consultation[] @relation("consultation_user")
-  consultationsAdmin Consultation[] @relation("consultation_admin")
-  wallet          Wallet?
-  referralCode    ReferralCode?
-  passwordResets  PasswordReset[]
-  pointsHistory   PointsHistory[]
-  redeemRequests  RedeemRequest[]
+  id                   Int             @id @default(autoincrement())
+  email                String          @unique
+  password             String?
+  name                 String
+  pan                  String?         @unique
+  phone                String?
+  role                 String          @default("user")
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  dateOfBirth          DateTime?
+  gender               String?
+  address              String?
+  city                 String?
+  state                String?
+  pincode              String?
+  reference_number     String?         @unique
+  referral_code        String?         @unique
+  created_by_admin     Boolean         @default(false)
+  points_wallet        Int             @default(0)
+  status               String          @default("active")
+  emailVerified        Boolean         @default(false)
+  resetToken           String?         @unique
+  resetTokenExpires    DateTime?
+  lastPasswordChange   DateTime?
+  walletId             String?         @unique
+  referralCodeId       String?         @unique
+  preferEmailReminders Boolean         @default(true)
+  preferredFilingType  String?
+  aadhaar              String?         @unique
+  firstName            String?
+  middleName           String?
+  lastName             String?
+  fatherName           String?
+  doorNo               String?
+  buildingName         String?
+  street               String?
+  area                 String?
+  country              String?         @default("India")
+  bankDetails          String?         @db.LongText
+  referrer_id          Int?
+  filingStatus         String?         @default("pending")
+  assignedAsCA         CAAssignment[]  @relation("CAUser")
+  caAssignments        CAAssignment[]
+  consultationsAdmin   Consultation[]  @relation("consultation_admin")
+  consultationsUser    Consultation[]  @relation("consultation_user")
+  deductions           Deduction[]
+  documents            Document[]
+  gstProfile           GstProfile?
+  incomes              Income[]
+  inquiryLogs          InquiryLog[]
+  otp                  OTP?
+  passwordResets       PasswordReset[]
+  payments             Payment[]
+  pointsHistory        PointsHistory[]
+  redeemRequests       RedeemRequest[]
+  referralsReceived    Referral[]      @relation("referred_to")
+  referralsGiven       Referral[]      @relation("referred_by")
+  referralCode         ReferralCode?
+  SupportTicket        SupportTicket[]
+  taxFilings           TaxFiling[]
+  User                 User?           @relation("UserToUser", fields: [referrer_id], references: [id])
+  other_User           User[]          @relation("UserToUser")
+  wallet               Wallet?
 
   @@index([pan])
   @@index([email])
   @@index([resetToken])
-
-  gstProfile GstProfile?
+  @@index([referrer_id])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// GST PROFILE - Professional GST details per user
-// ════════════════════════════════════════════════════════════════════
 model GstProfile {
-  id               Int      @id @default(autoincrement())
-  userId           Int      @unique
-  gstin            String?  @unique
+  id               Int       @id @default(autoincrement())
+  userId           Int       @unique
+  gstin            String?   @unique
   businessName     String?
   legalName        String?
   registrationDate DateTime?
   state            String?
-  complianceStatus String?  @default("active") // active, late, suspended, cancelled
+  complianceStatus String?   @default("active")
   lastFilingDate   DateTime?
   nextDueDate      DateTime?
-  turnoverLastYear Float?   @default(0)
-  category         String?  // regular, composition, exempt
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  turnoverLastYear Float?    @default(0)
+  category         String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([gstin])
   @@index([userId])
   @@index([complianceStatus])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// OTP TABLE - Email OTP verification
-// ════════════════════════════════════════════════════════════════════
 model OTP {
   id        Int      @id @default(autoincrement())
   userId    Int      @unique
@@ -124,203 +107,145 @@ model OTP {
   expiresAt DateTime
   verified  Boolean  @default(false)
   createdAt DateTime @default(now())
-
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// TAX FILINGS TABLE - Main tax return filing records
-// ════════════════════════════════════════════════════════════════════
 model TaxFiling {
-  id                Int      @id @default(autoincrement())
+  id                Int           @id @default(autoincrement())
   userId            Int
-  assessmentYear    Int      // e.g., 2023, 2024
-  filingYear        Int      // Financial year
-  itrType           String   @default("ITR1") // ITR1, ITR2, ITR3, etc.
-  regime            String   @default("old") // old, new
-  status            String   @default("draft") // draft, submitted, filed, refunded
-  
-  // Admin filing status tracking
-  filingStatusAdmin String?  // GST/ITR status updated by admin
-  lastUpdatedBy     String?  // Admin user ID
-  adminNotes        String?  @db.Text
+  assessmentYear    Int
+  filingYear        Int
+  itrType           String        @default("ITR1")
+  regime            String        @default("old")
+  status            String        @default("draft")
+  filingStatusAdmin String?
+  lastUpdatedBy     String?
+  adminNotes        String?       @db.Text
   deadlineDate      DateTime?
-  reminderSent      Boolean  @default(false)
-  
-  // Tax calculations
-  grossSalary       Float    @default(0)
-  businessIncome    Float    @default(0)
-  capitalGains      Float    @default(0)
-  otherIncome       Float    @default(0)
-  totalIncome       Float    @default(0)
-  
-  totalDeductions   Float    @default(0)
-  taxableIncome     Float    @default(0)
-  incomeTax         Float    @default(0)
-  surcharge         Float    @default(0)
-  cess              Float    @default(0)
-  totalTax          Float    @default(0)
-  
-  rebate            Float    @default(0)
-  totalTaxPayable   Float    @default(0)
-  taxPaid           Float    @default(0)
-  refund            Float    @default(0)
-  
-  // Additional info
-  caRequired        Boolean  @default(false)
+  reminderSent      Boolean       @default(false)
+  grossSalary       Float         @default(0)
+  businessIncome    Float         @default(0)
+  capitalGains      Float         @default(0)
+  otherIncome       Float         @default(0)
+  totalIncome       Float         @default(0)
+  totalDeductions   Float         @default(0)
+  taxableIncome     Float         @default(0)
+  incomeTax         Float         @default(0)
+  surcharge         Float         @default(0)
+  cess              Float         @default(0)
+  totalTax          Float         @default(0)
+  rebate            Float         @default(0)
+  totalTaxPayable   Float         @default(0)
+  taxPaid           Float         @default(0)
+  refund            Float         @default(0)
+  caRequired        Boolean       @default(false)
   caId              String?
   remarks           String?
   submittedAt       DateTime?
   filedAt           DateTime?
   refundedAt        DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  // Relations
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
   caAssignment      CAAssignment?
-  incomes           Income[]
   deductions        Deduction[]
+  incomes           Income[]
   payments          Payment[]
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, assessmentYear])
   @@index([userId])
   @@index([assessmentYear])
   @@index([status])
   @@index([filingStatusAdmin])
-  @@unique([userId, assessmentYear])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// INCOME TABLE - Various income sources
-// ════════════════════════════════════════════════════════════════════
 model Income {
-  id                Int      @id @default(autoincrement())
+  id                Int       @id @default(autoincrement())
   userId            Int
   taxFilingId       Int
-  
-  // Salary Income
-  salaryIncome      Float    @default(0)
-  basicPay          Float    @default(0)
-  ta                Float    @default(0) // Travel Allowance
-  da                Float    @default(0) // Dearness Allowance
-  hra               Float    @default(0) // House Rent Allowance
-  medicalAllowance  Float    @default(0)
-  otherAllowances   Float    @default(0)
-  
-  // House Property Income
-  propertyType      String? // self-occupied, let-out, etc.
-  grossRentalIncome Float    @default(0)
-  municipalTaxes    Float    @default(0)
-  interestOnLoan    Float    @default(0)
-  repairs           Float    @default(0)
-  
-  // Business Income
-  businessIncome    Float    @default(0)
-  businessExpenses  Float    @default(0)
-  
-  // Capital Gains
-  capitalGains      Float    @default(0)
-  gainType          String? // short-term, long-term
-  
-  // Other Income
-  otherIncome       Float    @default(0)
+  salaryIncome      Float     @default(0)
+  basicPay          Float     @default(0)
+  ta                Float     @default(0)
+  da                Float     @default(0)
+  hra               Float     @default(0)
+  medicalAllowance  Float     @default(0)
+  otherAllowances   Float     @default(0)
+  propertyType      String?
+  grossRentalIncome Float     @default(0)
+  municipalTaxes    Float     @default(0)
+  interestOnLoan    Float     @default(0)
+  repairs           Float     @default(0)
+  businessIncome    Float     @default(0)
+  businessExpenses  Float     @default(0)
+  capitalGains      Float     @default(0)
+  gainType          String?
+  otherIncome       Float     @default(0)
   otherIncomeSource String?
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  // Relations
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
   taxFiling         TaxFiling @relation(fields: [taxFilingId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, taxFilingId])
   @@index([userId])
   @@index([taxFilingId])
-  @@unique([userId, taxFilingId])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// DEDUCTIONS TABLE - Tax deductions under various sections
-// ════════════════════════════════════════════════════════════════════
 model Deduction {
-  id                  Int      @id @default(autoincrement())
-  userId              Int
-  taxFilingId         Int
-  
-  // Section 80C - General Savings
-  section80C          Float    @default(0)
-  providentFund       Float    @default(0)
-  lifeInsurancePremium Float   @default(0)
-  nsc                 Float    @default(0) // National Savings Certificate
-  tuitionFees         Float    @default(0)
-  fixedDeposit        Float    @default(0)
-  
-  // Section 80D - Medical Insurance
-  section80D          Float    @default(0)
-  medicalInsurance    Float    @default(0)
-  parentalMedInsurance Float   @default(0)
-  seniorCitizenInsurance Float  @default(0)
-  
-  // Section 80CCD - Pension
-  section80CCD        Float    @default(0)
-  pensionContribution Float    @default(0)
-  nps                 Float    @default(0)
-  
-  // Section 80E - Education Loan
-  section80E          Float    @default(0)
-  educationLoanInterest Float   @default(0)
-  
-  // Section 80G - Donations
-  section80G          Float    @default(0)
-  donations           Float    @default(0)
-  
-  // Section 24 - HRA
-  section24HRA        Float    @default(0)
-  rentPaid            Float    @default(0)
-  salary              Float    @default(0)
-  
-  // Other deductions
-  standardDeduction   Float    @default(0) // New regime
-  
-  totalDeductions     Float    @default(0)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                     Int       @id @default(autoincrement())
+  userId                 Int
+  taxFilingId            Int
+  section80C             Float     @default(0)
+  providentFund          Float     @default(0)
+  lifeInsurancePremium   Float     @default(0)
+  nsc                    Float     @default(0)
+  tuitionFees            Float     @default(0)
+  fixedDeposit           Float     @default(0)
+  section80D             Float     @default(0)
+  medicalInsurance       Float     @default(0)
+  parentalMedInsurance   Float     @default(0)
+  seniorCitizenInsurance Float     @default(0)
+  section80CCD           Float     @default(0)
+  pensionContribution    Float     @default(0)
+  nps                    Float     @default(0)
+  section80E             Float     @default(0)
+  educationLoanInterest  Float     @default(0)
+  section80G             Float     @default(0)
+  donations              Float     @default(0)
+  section24HRA           Float     @default(0)
+  rentPaid               Float     @default(0)
+  salary                 Float     @default(0)
+  standardDeduction      Float     @default(0)
+  totalDeductions        Float     @default(0)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  taxFiling              TaxFiling @relation(fields: [taxFilingId], references: [id], onDelete: Cascade)
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  taxFiling           TaxFiling @relation(fields: [taxFilingId], references: [id], onDelete: Cascade)
-
+  @@unique([userId, taxFilingId])
   @@index([userId])
   @@index([taxFilingId])
-  @@unique([userId, taxFilingId])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// PAYMENTS TABLE - Payment records
-// ════════════════════════════════════════════════════════════════════
 model Payment {
-  id              Int      @id @default(autoincrement())
-  userId          Int
-  taxFilingId     Int?
-  
-  amount          Float
-  currency        String   @default("INR")
-  paymentMethod   String   // razorpay, bank-transfer, etc.
-  razorpayOrderId String?
+  id                Int        @id @default(autoincrement())
+  userId            Int
+  taxFilingId       Int?
+  amount            Float
+  currency          String     @default("INR")
+  paymentMethod     String
+  razorpayOrderId   String?
   razorpayPaymentId String?
-  
-  status          String   @default("pending") // pending, completed, failed, refunded
-  paymentType     String   @default("premium") // premium, filing, upgrade
-  description     String?
-  
-  paidAt          DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  taxFiling       TaxFiling? @relation(fields: [taxFilingId], references: [id], onDelete: SetNull)
+  status            String     @default("pending")
+  paymentType       String     @default("premium")
+  description       String?
+  paidAt            DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  taxFiling         TaxFiling? @relation(fields: [taxFilingId], references: [id])
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([taxFilingId])
@@ -328,201 +253,147 @@ model Payment {
   @@index([razorpayOrderId])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// CA ASSIGNMENT TABLE - CA assisted filing
-// ════════════════════════════════════════════════════════════════════
 model CAAssignment {
-  id            Int      @id @default(autoincrement())
-  userId        Int
-  caId          Int
-  taxFilingId   Int?     @unique
-  
-  status        String   @default("requested") // requested, assigned, in-progress, completed, rejected
-  assignedAt    DateTime?
-  completedAt   DateTime?
-  notes         String?
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ca            User     @relation("CAUser", fields: [caId], references: [id], onDelete: Cascade)
-  taxFiling     TaxFiling? @relation(fields: [taxFilingId], references: [id])
+  id          Int        @id @default(autoincrement())
+  userId      Int
+  caId        Int
+  taxFilingId Int?       @unique
+  status      String     @default("requested")
+  assignedAt  DateTime?
+  completedAt DateTime?
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  ca          User       @relation("CAUser", fields: [caId], references: [id], onDelete: Cascade)
+  taxFiling   TaxFiling? @relation(fields: [taxFilingId], references: [id])
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([caId])
   @@index([status])
 }
 
-
-// ────────────────────────────────────────────────────────────────────
-// AUDIT LOG TABLE (For tracking changes)
-// ────────────────────────────────────────────────────────────────────
 model AuditLog {
   id        Int      @id @default(autoincrement())
   userId    Int?
   action    String
-  resource  String // user, report, system
-  details   String?   // JSON stored as text for SQLite
+  resource  String
+  details   String?
   createdAt DateTime @default(now())
 
   @@index([userId])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// SERVICES TABLE - Tax services catalog
-// ════════════════════════════════════════════════════════════════════
 model Service {
-  id          Int      @id @default(autoincrement())
-  slug        String   @unique
-  title       String?
-  description String?
-  price       Float
-  discountedPrice Float    @default(0)
-  features    String   // JSON array stored as text for SQLite
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  orders      Order[]
+  id                  Int      @id @default(autoincrement())
+  slug                String   @unique
+  description         String?  @db.Text
+  price               Float
+  features            String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  discountedPrice     Float    @default(0)
+  title               String?
+  active              Int      @default(1)
+  category            String?
+  discountPrice       Float?   @default(0)
+  documentDescription String?  @db.Text
+  name                String?
+  requiredDocuments   String?  @db.Text
+  requirements        String?  @db.Text
+  shortDescription    String?  @db.Text
+  turnaroundDays      Int?
+  faqs                String?  @db.Text
+  orders              Order[]
 
   @@index([slug])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// ORDERS TABLE - Service orders/purchases
-// ════════════════════════════════════════════════════════════════════
 model Order {
-  id                    Int      @id @default(autoincrement())
-  serviceId             Int?
-  planId                Int?  // Link to plan instead of service
-  customerId            Int
-  amount                Float
-  status                String   @default("pending") // pending, completed, cancelled, failed
-  
-  // Payment fields
-  paymentMethod         String?  
-  razorpayOrderId       String?  @unique
-  razorpayPaymentId     String?  @unique
-  razorpaySignature     String?
-  
-  // Pricing breakdown
-  originalPrice         Float?
-  finalPrice            Float?
-  discountPercent       Int      @default(0)
-  gstAmount             Float    @default(0)
-  
-  // Referral tracking
-  referralId            Int?  // Link to referral if came from referral
-  termsAccepted         Boolean  @default(false)
-  termsAcceptedAt       DateTime?
-  
-  // Payment tracking
-  paidAt                DateTime?
-  paymentVerifiedAt     DateTime?
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  // Relations
-  service               Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  id                Int       @id @default(autoincrement())
+  serviceId         Int?
+  amount            Float
+  status            String    @default("pending")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  paymentMethod     String?
+  discountPercent   Int       @default(0)
+  finalPrice        Float?
+  gstAmount         Float     @default(0)
+  originalPrice     Float?
+  paidAt            DateTime?
+  paymentVerifiedAt DateTime?
+  planId            Int?
+  razorpayOrderId   String?   @unique
+  razorpayPaymentId String?   @unique
+  razorpaySignature String?
+  referralId        Int?
+  termsAccepted     Boolean   @default(false)
+  termsAcceptedAt   DateTime?
+  finalAmount       Float?
+  notes             String?   @db.Text
+  orderNo           String?   @unique
+  paymentDate       DateTime?
+  paymentId         String?
+  paymentStatus     String?   @default("unpaid")
+  userId            Int
+  service           Service?  @relation(fields: [serviceId], references: [id])
 
   @@index([serviceId])
-  @@index([customerId])
   @@index([status])
   @@index([planId])
   @@index([referralId])
   @@index([razorpayOrderId])
+  @@index([orderNo])
+  @@index([userId])
 }
 
-// ────────────────────────────────────────────────────────────────────
-// JOB QUEUE TABLE (For background jobs)
-// ────────────────────────────────────────────────────────────────────
 model Job {
-  id        Int      @id @default(autoincrement())
-  type      String // generate-pdf, send-email, process-report
-  payload   String   // JSON stored as text for SQLite
-  status    String   @default("pending") // pending, processing, completed, failed
-  error     String?
-  attempts  Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int       @id @default(autoincrement())
+  type        String
+  payload     String
+  status      String    @default("pending")
+  error       String?
+  attempts    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   completedAt DateTime?
 }
 
-// ════════════════════════════════════════════════════════════════════
-// TICKET SYSTEM - Support tickets for admin to manage
-// ════════════════════════════════════════════════════════════════════
-model Ticket {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  subject      String
-  description  String   @db.Text
-  category     String   // inquiry, issue, feature-request, etc.
-  priority     String   @default("medium") // low, medium, high, urgent
-  status       String   @default("open") // open, in-progress, resolved, closed
-  assignedTo   String?  // Admin user ID
-  resolution   String?  @db.Text
-  resolvedAt   DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([status])
-  @@index([priority])
-}
-
-// ════════════════════════════════════════════════════════════════════
-// INQUIRY LOG - Log for customer inquiries
-// ════════════════════════════════════════════════════════════════════
 model InquiryLog {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   userId       Int
-  inquiryType  String   // pricing, service, support, consultation
-  content      String   @db.Text
-  contactInfo  String?  // Phone, email, etc.
-  status       String   @default("pending") // pending, contacted, resolved
-  notes        String?  @db.Text
+  inquiryType  String
+  content      String    @db.Text
+  contactInfo  String?
+  status       String    @default("pending")
+  notes        String?   @db.Text
   contactedAt  DateTime?
   followUpDate DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([inquiryType])
   @@index([status])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// REFERRAL SYSTEM - Track referrals with commission
-// ════════════════════════════════════════════════════════════════════
 model Referral {
   id                Int      @id @default(autoincrement())
-  referrerId        Int   // User who referred
-  refereeId         Int?  // User who was referred (can be null if not signed up yet)
-  refereeEmail      String   // Email of referred person
-  refereePhone      String?
-  
-  commissionPercent Float    @default(10) // Commission percentage
-  commissionAmount  Float    @default(0)  // Actual money paid
-  referralStatus    String   @default("pending") // pending, active, completed
-  
-  orderId           Int?  // Link to order if referral resulted in purchase
-  notes             String?  @db.Text
-  
+  refereeEmail      String
+  commissionAmount  Float    @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-
-  // Relations
+  commissionPercent Float    @default(10)
+  notes             String?  @db.Text
+  orderId           Int?
+  refereeId         Int?
+  refereePhone      String?
+  referralStatus    String   @default("pending")
+  referrerId        Int
+  referee           User?    @relation("referred_to", fields: [refereeId], references: [id])
   referrer          User     @relation("referred_by", fields: [referrerId], references: [id], onDelete: Cascade)
-  referee           User?    @relation("referred_to", fields: [refereeId], references: [id], onDelete: SetNull)
 
   @@index([referrerId])
   @@index([refereeId])
@@ -530,66 +401,53 @@ model Referral {
   @@index([orderId])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// CONSULTATION - Consultation details and documents
-// ════════════════════════════════════════════════════════════════════
 model Consultation {
-  id               Int      @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   userId           Int
-  adminId          Int   // Admin who created
+  adminId          Int
   subject          String
-  description      String   @db.Text
-  consultationType String   // tax-planning, compliance, audit, general
-  status           String   @default("assigned") // assigned, in-progress, completed
-  
+  description      String    @db.Text
+  consultationType String
+  status           String    @default("assigned")
   scheduledDate    DateTime?
   completedAt      DateTime?
-  documentUrl      String?  // Link to generated/uploaded document
+  documentUrl      String?
   documentName     String?
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  // Relations
-  user             User     @relation("consultation_user", fields: [userId], references: [id], onDelete: Cascade)
-  admin            User     @relation("consultation_admin", fields: [adminId], references: [id], onDelete: Cascade)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  admin            User      @relation("consultation_admin", fields: [adminId], references: [id], onDelete: Cascade)
+  user             User      @relation("consultation_user", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([adminId])
   @@index([status])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// DOCUMENT MANAGEMENT - Admin uploads PDFs for users to download
-// ════════════════════════════════════════════════════════════════════
 model Document {
-  id               Int      @id @default(autoincrement())
-  userId           Int   // User who will access this document
-  title            String   // Document title (e.g., "Tax Return 2024")
-  description      String?  @db.Text
-  type             String   @default("consultation") // consultation, tax-filing, report, other
-  fileName         String   // Original file name
-  fileSize         Int      // File size in bytes
-  filePath         String   @unique // Path on server
-  fileType         String   @default("application/pdf")
-  downloadUrl      String   // Public download URL
-  downloadCount    Int      @default(0)
-  uploadedBy       Int   // Admin ID who uploaded
-  status           String   @default("active") // active, inactive, archived
-  expiresAt        DateTime? // Optional expiration date
-  category         String?   // gst, itr, aadhaar, pan, form16, invoice, gstr1, gstr2, gstr3b, bank_statement, other
-  year             Int?      // Financial year (legacy)
-  fiscalYear       String?   // Fiscal year in format FY2023-24
-  customerName     String?   // Customer name for admin uploads
-  customerPan      String?   // Customer PAN for admin uploads
-  isAdminUploaded  Boolean   @default(false)
-  uploadMetadata   Json?     // JSON metadata
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  // Relations
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  fileSize        Int       @default(0)
+  uploadedBy      Int?
+  category        String?
+  createdAt       DateTime  @default(now())
+  customerName    String?
+  customerPan     String?
+  description     String?   @db.Text
+  downloadCount   Int       @default(0)
+  downloadUrl     String?
+  expiresAt       DateTime?
+  fileName        String?
+  filePath        String?   @unique
+  fileType        String    @default("application/pdf")
+  fiscalYear      String?
+  isAdminUploaded Boolean   @default(false)
+  status          String    @default("active")
+  title           String?
+  type            String    @default("consultation")
+  updatedAt       DateTime  @updatedAt
+  uploadMetadata  String?   @db.LongText
+  year            Int?
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([type])
@@ -601,176 +459,203 @@ model Document {
   @@index([customerPan])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// WALLET TABLE - Referral earnings wallet
-// ════════════════════════════════════════════════════════════════════
 model Wallet {
-  id              Int      @id @default(autoincrement())
-  userId          Int      @unique
-  balance         Float    @default(0)
-  totalEarned     Float    @default(0)
-  totalWithdrawn  Float    @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions    WalletTransaction[]
+  id             Int                 @id @default(autoincrement())
+  userId         Int                 @unique
+  balance        Float               @default(0)
+  totalEarned    Float               @default(0)
+  totalWithdrawn Float               @default(0)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions   WalletTransaction[]
 
   @@index([userId])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// WALLET TRANSACTION TABLE - Transaction history
-// ════════════════════════════════════════════════════════════════════
 model WalletTransaction {
-  id              Int      @id @default(autoincrement())
-  walletId        Int
-  amount          Float
-  type            String   // credit, debit, withdrawal, reversal
-  description     String   @db.Text
-  referenceId     Int?  // orderId or withdrawalId
-  status          String   @default("pending") // pending, completed, failed
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  wallet          Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  id          Int      @id @default(autoincrement())
+  walletId    Int
+  amount      Float
+  type        String
+  description String   @db.Text
+  referenceId Int?
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
 
   @@index([walletId])
   @@index([referenceId])
   @@index([status])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// REFERRAL CODE TABLE - Unique referral code per user
-// ════════════════════════════════════════════════════════════════════
 model ReferralCode {
-  id              Int      @id @default(autoincrement())
-  userId          Int      @unique
-  code            String   @unique
-  link            String   // Shareable link
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relations
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  code      String   @unique
+  link      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([code])
   @@index([userId])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// PLAN TABLE - Service plans with pricing
-// ════════════════════════════════════════════════════════════════════
 model Plan {
-  id                Int      @id @default(autoincrement())
-  slug              String   @unique
-  name              String   // Basic, Standard, Premium, Business
-  description       String?  @db.Text
-  planType          String   @default("standard") // basic, standard, premium, business
-  originalPrice     Float
-  discountPercent   Int      @default(0)
-  finalPrice        Float
-  gstAmount         Float    @default(0)
-  features          Json     // JSON array of features
-  billingCycle      Int      @default(12) // months
-  cancellationPolicy String? @db.Text
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                 Int      @id @default(autoincrement())
+  slug               String   @unique
+  name               String
+  description        String?  @db.Text
+  planType           String   @default("standard")
+  originalPrice      Float
+  discountPercent    Int      @default(0)
+  finalPrice         Float
+  gstAmount          Float    @default(0)
+  features           String   @db.LongText
+  billingCycle       Int      @default(12)
+  cancellationPolicy String?  @db.Text
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@index([slug])
   @@index([planType])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// PASSWORD RESET TABLE - Security tokens for password reset
-// ════════════════════════════════════════════════════════════════════
 model PasswordReset {
-  id                Int      @id @default(autoincrement())
-  userId            Int
-  token             String   @unique
-  expiresAt         DateTime
-  used              Boolean  @default(false)
-  usedAt            DateTime?
-  createdAt         DateTime @default(now())
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  token     String    @unique
+  expiresAt DateTime
+  used      Boolean   @default(false)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([token])
   @@index([expiresAt])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// POINTS HISTORY TABLE - Track user points transactions
-// ════════════════════════════════════════════════════════════════════
 model PointsHistory {
-  id              Int      @id @default(autoincrement())
-  userId          Int
-  type            String   @default("credit") // credit, debit
-  points          Int      // Number of points transacted
-  reason          String   // service, referral, redeem, manual-adjustment, etc.
-  description     String?  @db.Text // Additional details
-  referenceId     Int?  // Link to referral ID, order ID, etc.
-  createdAt       DateTime @default(now())
-  
-  // Relations
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  type        String   @default("credit")
+  points      Int
+  reason      String
+  description String?  @db.Text
+  referenceId Int?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([createdAt])
   @@index([type])
   @@index([reason])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// REDEEM REQUESTS TABLE - Track user redemption requests
-// ════════════════════════════════════════════════════════════════════
 model RedeemRequest {
-  id                Int      @id @default(autoincrement())
-  userId            Int
-  points_requested  Int
-  status            String   @default("pending") // pending, approved, rejected
-  reason            String?  @db.Text // Admin reason for approval/rejection
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  approvedAt        DateTime?
-  approvedBy        Int?  // Admin user ID
-  
-  // Relations
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id               Int       @id @default(autoincrement())
+  userId           Int
+  points_requested Int
+  status           String    @default("pending")
+  reason           String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  approvedAt       DateTime?
+  approvedBy       Int?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([status])
   @@index([createdAt])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// CMS / PAGE CONTENT MANAGEMENT
-// ════════════════════════════════════════════════════════════════════
 model PageContent {
-  id          Int      @id @default(autoincrement())
-  page        String   // e.g., 'home', 'services', 'contact'
-  section     String   // e.g., 'hero', 'about_us', 'faq'
-  key         String   // Unique key within page/section
-  content     String   @db.Text // Text, HTML or JSON content
-  type        String   @default("text") // text, html, image, json
-  metadata    Json?    // Optional metadata
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  page      String
+  section   String
+  key       String
+  content   String   @db.Text
+  type      String   @default("text")
+  metadata  String?  @db.LongText
+  updatedAt DateTime @updatedAt
 
   @@unique([page, section, key], name: "page_section_key")
   @@index([page])
 }
 
-// ════════════════════════════════════════════════════════════════════
-// SITE SETTINGS - Global configuration
-// ════════════════════════════════════════════════════════════════════
 model SiteSettings {
   id        Int      @id @default(autoincrement())
   key       String   @unique
   value     String   @db.Text
   type      String   @default("text")
   updatedAt DateTime @updatedAt
+}
+
+model SliderImage {
+  id        Int      @id @default(autoincrement())
+  title     String?
+  imageUrl  String
+  link      String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model SupportTicket {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  subject     String
+  description String    @db.Text
+  category    String
+  priority    String    @default("medium")
+  status      String    @default("open")
+  assignedTo  String?
+  resolution  String?   @db.Text
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([priority])
+  @@index([status])
+  @@index([userId])
+}
+
+model Location {
+  id        Int      @id @default(autoincrement())
+  name      String
+  address   String   @db.Text
+  city      String?
+  state     String?
+  pincode   String?
+  email     String?
+  phone     String?
+  mapUrl    String?  @db.Text
+  active    Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([city])
+  @@index([active])
+}
+
+model News {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String   @db.Text
+  category    String?  @default("Update")
+  date        DateTime @default(now())
+  source      String?  @default("GST Tax Wale")
+  url         String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([date])
 }

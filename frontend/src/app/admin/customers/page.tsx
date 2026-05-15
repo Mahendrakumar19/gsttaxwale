@@ -13,6 +13,7 @@ interface Customer {
   phone: string;
   city: string;
   state: string;
+  pincode: string;
   joinDate: string;
   totalOrders: number;
   totalSpent: number;
@@ -20,7 +21,13 @@ interface Customer {
   referenceNumber: string;
   referralCode: string;
   pan: string;
+  aadhaar: string;
   dateOfBirth: string | null;
+  doorNo: string;
+  buildingName: string;
+  street: string;
+  area: string;
+  address: string;
 }
 
 function generateReferralCode(name: string, phone: string): string {
@@ -44,10 +51,16 @@ export default function CustomersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
-  const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', password: '', pan: '', dateOfBirth: '' });
+  const [newUser, setNewUser] = useState({ 
+    name: '', email: '', phone: '', password: '', pan: '', 
+    aadhaar: '', dateOfBirth: '', doorNo: '', buildingName: '', 
+    street: '', area: '', city: '', state: '', pincode: '', referral_code: '' 
+  });
   const [previewCode, setPreviewCode] = useState('');
   const [previewRef, setPreviewRef] = useState('');
   const [showResetModal, setShowResetModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [resettingUser, setResettingUser] = useState<Customer | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
@@ -85,6 +98,7 @@ export default function CustomersPage() {
           phone: user.phone || 'N/A',
           city: user.city || 'N/A',
           state: user.state || 'N/A',
+          pincode: user.pincode || '—',
           joinDate: user.createdAt || new Date().toISOString(),
           totalOrders: user.totalOrders || 0,
           totalSpent: user.totalSpent || 0,
@@ -92,7 +106,13 @@ export default function CustomersPage() {
           referenceNumber: user.reference_number || user.referenceNumber || '—',
           referralCode: user.referral_code || user.referralCode || '—',
           pan: user.pan || '—',
+          aadhaar: user.aadhaar || '—',
           dateOfBirth: user.dateOfBirth || null,
+          doorNo: user.doorNo || '',
+          buildingName: user.buildingName || '',
+          street: user.street || '',
+          area: user.area || '',
+          address: user.address || ''
         }))
       );
     } catch (err) {
@@ -127,6 +147,43 @@ export default function CustomersPage() {
         console.error('Failed to delete customer:', err);
         alert('Failed to delete customer');
       }
+    }
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCustomer) return;
+    setCreating(true);
+    try {
+      await api.put(`/api/admin/users/${editingCustomer.id}`, {
+        name: newUser.name,
+        email: newUser.email,
+        phone: newUser.phone,
+        pan: newUser.pan,
+        aadhaar: newUser.aadhaar,
+        doorNo: newUser.doorNo,
+        buildingName: newUser.buildingName,
+        street: newUser.street,
+        area: newUser.area,
+        city: newUser.city,
+        state: newUser.state,
+        pincode: newUser.pincode,
+        referral_code: newUser.referral_code,
+        status: editingCustomer.status
+      });
+      alert('User updated successfully');
+      setShowEditModal(false);
+      setEditingCustomer(null);
+      setNewUser({ 
+        name: '', email: '', phone: '', password: '', pan: '', 
+        aadhaar: '', dateOfBirth: '', doorNo: '', buildingName: '', 
+        street: '', area: '', city: '', state: '', pincode: '', referral_code: '' 
+      });
+      fetchCustomers();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to update user');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -392,7 +449,31 @@ export default function CustomersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4 flex gap-1">
-                      <button className="p-2 text-blue-600 hover:bg-blue-50 rounded transition" title="Edit">
+                      <button 
+                        onClick={() => {
+                          setEditingCustomer(customer);
+                          setNewUser({
+                            name: customer.name,
+                            email: customer.email,
+                            phone: customer.phone || '',
+                            pan: customer.pan || '',
+                            aadhaar: customer.aadhaar || '',
+                            doorNo: customer.doorNo || '',
+                            buildingName: customer.buildingName || '',
+                            street: customer.street || '',
+                            area: customer.area || '',
+                            city: customer.city || '',
+                            state: customer.state || '',
+                            pincode: customer.pincode || '',
+                            referral_code: customer.referralCode || '',
+                            password: '', // Password is not editable here
+                            dateOfBirth: customer.dateOfBirth || ''
+                          });
+                          setShowEditModal(true);
+                        }}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded transition" 
+                        title="Edit"
+                      >
                         <Edit size={16} />
                       </button>
                       <button 
@@ -659,6 +740,204 @@ export default function CustomersPage() {
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition font-medium disabled:opacity-50"
                 >
                   {resetLoading ? 'Resetting...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Edit Customer Modal */}
+      {showEditModal && editingCustomer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4 py-6">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-slate-50/50">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Edit Customer Profile</h2>
+                <p className="text-slate-500 text-sm font-medium mt-1">Modify comprehensive details for {editingCustomer.name}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingCustomer(null);
+                }}
+                className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateUser} className="p-8 space-y-10">
+              {/* Section: Basic Info */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                  <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center font-bold text-xs">01</div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Personal Details</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                    <input
+                      type="text"
+                      value={newUser.name}
+                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition font-bold text-slate-900"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
+                    <input
+                      type="email"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition font-bold text-slate-900"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+                    <input
+                      type="text"
+                      value={newUser.phone}
+                      onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition font-bold text-slate-900"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Referral Code</label>
+                    <input
+                      type="text"
+                      value={newUser.referral_code}
+                      onChange={(e) => setNewUser({ ...newUser, referral_code: e.target.value })}
+                      className="w-full px-4 py-3 bg-purple-50 border border-purple-100 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition font-bold text-purple-900 uppercase"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section: Identification */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                  <div className="w-8 h-8 bg-green-50 text-green-600 rounded-lg flex items-center justify-center font-bold text-xs">02</div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Identification</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">PAN Number</label>
+                    <input
+                      type="text"
+                      value={newUser.pan}
+                      onChange={(e) => setNewUser({ ...newUser, pan: e.target.value.toUpperCase() })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition font-bold text-slate-900 uppercase"
+                      maxLength={10}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Aadhaar Number</label>
+                    <input
+                      type="text"
+                      value={newUser.aadhaar}
+                      onChange={(e) => setNewUser({ ...newUser, aadhaar: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition font-bold text-slate-900"
+                      maxLength={12}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section: Address */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                  <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center font-bold text-xs">03</div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Billing Address</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Door / Flat No</label>
+                    <input
+                      type="text"
+                      value={newUser.doorNo}
+                      onChange={(e) => setNewUser({ ...newUser, doorNo: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition font-bold text-slate-900"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Building Name</label>
+                    <input
+                      type="text"
+                      value={newUser.buildingName}
+                      onChange={(e) => setNewUser({ ...newUser, buildingName: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition font-bold text-slate-900"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Street</label>
+                    <input
+                      type="text"
+                      value={newUser.street}
+                      onChange={(e) => setNewUser({ ...newUser, street: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition font-bold text-slate-900"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Area / Locality</label>
+                    <input
+                      type="text"
+                      value={newUser.area}
+                      onChange={(e) => setNewUser({ ...newUser, area: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition font-bold text-slate-900"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">City</label>
+                    <input
+                      type="text"
+                      value={newUser.city}
+                      onChange={(e) => setNewUser({ ...newUser, city: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition font-bold text-slate-900"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">State</label>
+                    <input
+                      type="text"
+                      value={newUser.state}
+                      onChange={(e) => setNewUser({ ...newUser, state: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition font-bold text-slate-900"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pincode</label>
+                    <input
+                      type="text"
+                      value={newUser.pincode}
+                      onChange={(e) => setNewUser({ ...newUser, pincode: e.target.value })}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition font-bold text-slate-900"
+                      maxLength={6}
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingCustomer(null);
+                  }}
+                  className="flex-1 px-4 py-4 border border-slate-200 text-slate-600 rounded-2xl hover:bg-slate-50 transition font-black uppercase tracking-widest text-xs"
+                >
+                  Discard Changes
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="flex-1 px-4 py-4 bg-slate-900 hover:bg-blue-600 text-white rounded-2xl transition font-black uppercase tracking-widest text-xs shadow-xl shadow-slate-900/10 disabled:opacity-50"
+                >
+                  {creating ? 'Processing...' : 'Save Profile Details'}
                 </button>
               </div>
             </form>

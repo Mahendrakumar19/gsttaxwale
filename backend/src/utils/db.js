@@ -31,7 +31,7 @@ async function findOne(table, where = {}) {
   const whereClause = keys.map(key => `\`${key}\` = ?`).join(' AND ');
   const values = keys.map(key => where[key]);
   
-  const sql = `SELECT * FROM ${table} WHERE ${whereClause} LIMIT 1`;
+  const sql = `SELECT * FROM \`${table}\` WHERE ${whereClause} LIMIT 1`;
   const results = await query(sql, values);
   return results.length > 0 ? results[0] : null;
 }
@@ -42,7 +42,7 @@ async function findMany(table, where = {}, limit = null) {
   const whereClause = keys.length > 0 ? `WHERE ${keys.map(key => `\`${key}\` = ?`).join(' AND ')}` : '';
   const values = keys.map(key => where[key]);
   
-  let sql = `SELECT * FROM ${table} ${whereClause}`;
+  let sql = `SELECT * FROM \`${table}\` ${whereClause}`;
   if (limit) sql += ` LIMIT ${limit}`;
   
   return await query(sql, values);
@@ -54,7 +54,7 @@ async function create(table, data) {
   const values = keys.map(key => data[key]);
   const placeholders = keys.map(() => '?').join(',');
   
-  const sql = `INSERT INTO ${table} (${keys.map(k => `\`${k}\``).join(',')}) VALUES (${placeholders})`;
+  const sql = `INSERT INTO \`${table}\` (${keys.map(k => `\`${k}\``).join(',')}) VALUES (${placeholders})`;
   const result = await query(sql, values);
   
   // Return the created record with auto-generated id
@@ -71,7 +71,7 @@ async function update(table, data, where = {}) {
   const whereValues = whereKeys.map(key => where[key]);
   const whereClause = whereKeys.map(key => `\`${key}\` = ?`).join(' AND ');
   
-  const sql = `UPDATE ${table} SET ${updateClause} WHERE ${whereClause}`;
+  const sql = `UPDATE \`${table}\` SET ${updateClause} WHERE ${whereClause}`;
   const allValues = [...updateValues, ...whereValues];
   
   await query(sql, allValues);
@@ -83,7 +83,7 @@ async function deleteRecord(table, where = {}) {
   const values = keys.map(key => where[key]);
   const whereClause = keys.map(key => `\`${key}\` = ?`).join(' AND ');
   
-  const sql = `DELETE FROM ${table} WHERE ${whereClause}`;
+  const sql = `DELETE FROM \`${table}\` WHERE ${whereClause}`;
   await query(sql, values);
 }
 

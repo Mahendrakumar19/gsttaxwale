@@ -13,7 +13,7 @@ export default function HomePage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative px-4 pt-2 pb-8 bg-white overflow-hidden">
+      <section className="relative px-4 pt-12 pb-8 bg-white overflow-hidden">
         <div className="max-w-[1400px] mx-auto">
           <div className="mb-2 text-center">
             <h1 className="mb-0.5 text-2xl md:text-3xl lg:text-4xl font-black leading-tight text-gray-900 tracking-tighter">
@@ -23,7 +23,7 @@ export default function HomePage() {
               Professional GST filing, income tax returns, and business compliance services delivered by expert CAs.
             </p>
             {/* Image Slider */}
-            <ImageSlider autoPlay={true} interval={6000} showCounter={false} />
+            <ImageSlider autoPlay={true} interval={5000} showCounter={false} />
           </div>
         </div>
       </section>
@@ -36,8 +36,8 @@ export default function HomePage() {
             {/* News Section - Full Width */}
             <div className="lg:col-span-3">
               <div className="mb-8">
-                <h2 className="mb-2 text-3xl font-bold text-gray-900 md:text-4xl">GST News & Updates</h2>
-                <p className="text-gray-600">Latest news, announcements, and policy updates from GST authorities</p>
+                <h2 className="mb-2 text-3xl font-bold text-gray-900 md:text-4xl">GST & Income Tax News & Updates</h2>
+                <p className="text-gray-600">Latest news, announcements, and policy updates from GST & Income Tax authorities</p>
               </div>
               <NewsSection limit={6} />
             </div>
@@ -92,12 +92,12 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
             <div>
-              <div className="mb-1 text-3xl font-bold text-blue-600">10,000+</div>
+              <div className="mb-1 text-3xl font-bold text-blue-600">1,100+</div>
               <p className="text-xs text-gray-600">Clients Served</p>
             </div>
             <div>
               <div className="mb-1 text-3xl font-bold text-blue-600">15+</div>
-              <p className="text-xs text-gray-600">Expert CAs</p>
+              <p className="text-xs text-gray-600">Expert CAs Team</p>
             </div>
             <div>
               <div className="mb-1 text-3xl font-bold text-blue-600">100%</div>

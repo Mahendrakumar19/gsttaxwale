@@ -17,9 +17,8 @@ export async function generateReferralCode(userId: string) {
 
     if (!user) throw new Error('User not found');
 
-    // 2. Generate custom code: GTW + first 3 of name + last 3 of mobile
-    const namePart = (user.name || 'USR').substring(0, 3).toUpperCase().padEnd(3, 'X');
-    const phonePart = (user.phone || '000').slice(-3).padStart(3, '0');
+    const namePart = (user.name || 'USR').split(' ')[0].toUpperCase();
+    const phonePart = (user.phone || '00000').slice(-5).padStart(5, '0');
     const code = `GTW${namePart}${phonePart}`;
 
     const link = `${process.env.FRONTEND_URL}/?ref=${code}`;

@@ -234,15 +234,19 @@ async function trackReferralConversion(req, res) {
 async function redeemPoints(req, res) {
   try {
     const userId = req.user.id;
-    const { pointsToRedeem } = req.body;
+    const { pointsToRedeem, payoutMethod, payoutDetails } = req.body;
 
-    if (!pointsToRedeem || pointsToRedeem <= 0) {
-      return res.status(400).json(errorResponse('Invalid points amount'));
+    if (!pointsToRedeem || pointsToRedeem < 500) {
+      return res.status(400).json(errorResponse('Minimum redemption amount is 500 points (₹500)'));
+    }
+
+    if (!payoutMethod || !payoutDetails) {
+      return res.status(400).json(errorResponse('Payout method and details (UPI/Bank) are required'));
     }
 
     // 1. Check if user has enough points and debit from ledger
     try {
-      await WalletService.debit(userId, pointsToRedeem, 'redemption', null, 'Points redemption request');
+      await WalletService.debit(userId, pointsToRedeem, 'redemption', null, `Withdrawal request via ${payoutMethod}: ${payoutDetails}`);
     } catch (e) {
       return res.status(400).json(errorResponse(e.message));
     }
@@ -254,8 +258,17 @@ async function redeemPoints(req, res) {
     const ticket = await prisma.ticket.create({
       data: {
         userId: userId,
-        subject: 'Points Redemption Request',
-        description: `Redemption Request: ${user.name} (${user.email}) wants to redeem ${pointsToRedeem} points.`,
+        subject: '💸 Payout Request: ' + user.name,
+        description: `
+PAYOUT REQUEST DETAILS:
+----------------------
+User: ${user.name} (${user.email})
+Amount: ₹${pointsToRedeem}
+Method: ${payoutMethod.toUpperCase()}
+Details: ${payoutDetails}
+
+Please process the payment and update the status of this ticket once completed.
+        `,
         category: 'redemption',
         priority: 'high'
       }

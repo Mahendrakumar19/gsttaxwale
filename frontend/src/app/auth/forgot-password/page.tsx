@@ -1,9 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import api from '@/lib/api';
+import { ShieldCheck, ArrowLeft, Mail, Phone as PhoneIcon, Lock } from 'lucide-react';
+import OTPInput from '@/components/OTPInput';
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -11,15 +9,13 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [userId, setUserId] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [identifier, setIdentifier] = useState(''); // Store the email/phone used
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleSendOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendOTP = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setError('');
 
@@ -30,16 +26,15 @@ export default function ForgotPassword() {
         return;
       }
 
-      const response = await api.post('/api/auth/forgot-password', {
-        email: email || undefined,
-        phone: phone || undefined,
+      const target = email || phone;
+      setIdentifier(target);
+
+      await api.post('/api/auth/send-reset-otp', {
+        identifier: target
       });
 
-      if (response.data.data.userId) {
-        setUserId(response.data.data.userId);
-        setStep('otp');
-        setSuccess('OTP sent successfully. Check your email.');
-      }
+      setStep('otp');
+      setSuccess(`OTP sent successfully to ${target}`);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to send OTP');
     } finally {
@@ -47,29 +42,27 @@ export default function ForgotPassword() {
     }
   };
 
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleVerifyOTP = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      if (!otp) {
-        setError('Please enter OTP');
+      if (!otp || otp.length < 6) {
+        setError('Please enter complete OTP');
         setLoading(false);
         return;
       }
 
-      const response = await api.post('/api/auth/verify-password-otp', {
-        userId,
-        code: otp,
+      await api.post('/api/auth/verify-reset-otp', {
+        identifier,
+        otp,
       });
 
-      if (response.data.success) {
-        setStep('reset');
-        setSuccess('OTP verified. Please set your new password.');
-      }
+      setStep('reset');
+      setSuccess('OTP verified. Please set your new password.');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid OTP');
+      setError(err.response?.data?.message || 'Invalid or expired OTP');
     } finally {
       setLoading(false);
     }
@@ -99,18 +92,16 @@ export default function ForgotPassword() {
         return;
       }
 
-      const response = await api.post('/api/auth/reset-password', {
-        userId,
-        code: otp,
+      await api.post('/api/auth/reset-password', {
+        identifier,
+        otp,
         newPassword,
       });
 
-      if (response.data.success) {
-        setSuccess('Password reset successfully! Redirecting to login...');
-        setTimeout(() => {
-          router.push('/auth/login');
-        }, 2000);
-      }
+      setSuccess('Password reset successfully! Redirecting to login...');
+      setTimeout(() => {
+        router.push('/auth/login');
+      }, 2000);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to reset password');
     } finally {
@@ -182,41 +173,46 @@ export default function ForgotPassword() {
 
           {/* Step 2: OTP */}
           {step === 'otp' && (
-            <form onSubmit={handleVerifyOTP} className="space-y-4">
-              <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">Enter OTP</label>
-                <input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
-                  placeholder="000000"
-                  maxLength={6}
-                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-center text-2xl tracking-widest font-mono"
-                />
-                <p className="text-gray-500 text-xs mt-2">Check your email for the OTP</p>
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
+                  <ShieldCheck size={32} />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Verification Required</h2>
+                <p className="text-slate-500 text-sm font-medium mt-2">
+                  We've sent a 6-digit code to {email || phone}. <br />Please enter it below to continue.
+                </p>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-lg transition"
-              >
-                {loading ? 'Verifying...' : 'Verify OTP'}
-              </button>
+              <div className="py-4">
+                <OTPInput onComplete={(val) => setOtp(val)} disabled={loading} />
+              </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setStep('email');
-                  setOtp('');
-                  setError('');
-                  setSuccess('');
-                }}
-                className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition"
-              >
-                Back
-              </button>
-            </form>
+              <div className="space-y-4">
+                <button
+                  onClick={handleVerifyOTP}
+                  disabled={loading || otp.length < 6}
+                  className="w-full py-4 bg-slate-900 hover:bg-blue-600 disabled:opacity-50 text-white font-black uppercase tracking-widest text-xs rounded-2xl transition shadow-xl shadow-slate-900/10"
+                >
+                  {loading ? 'Verifying Identity...' : 'Confirm Verification'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setStep('email')}
+                  className="w-full py-4 bg-white border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-50 font-black uppercase tracking-widest text-xs rounded-2xl transition"
+                >
+                  Back to Email/Phone
+                </button>
+              </div>
+
+              <div className="text-center">
+                <p className="text-slate-400 text-xs font-medium">
+                  Didn't receive the code?{' '}
+                  <button onClick={handleSendOTP} className="text-blue-600 font-bold hover:underline">Resend OTP</button>
+                </p>
+              </div>
+            </div>
           )}
 
           {/* Step 3: Reset Password */}

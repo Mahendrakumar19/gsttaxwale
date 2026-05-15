@@ -6,8 +6,8 @@ const ReferralService = require('../services/referralService');
  * Generate unique referral code: GTW + first 3 of name + last 3 of mobile + 3 random
  */
 function generateCode(name, phone) {
-  const namePart = (name || 'USR').substring(0, 3).toUpperCase().padEnd(3, 'X');
-  const phonePart = (phone || '000').slice(-3).padStart(3, '0');
+  const namePart = (name || 'USR').split(' ')[0].toUpperCase();
+  const phonePart = (phone || '00000').slice(-5).padStart(5, '0');
   const randomPart = Math.floor(100 + Math.random() * 900);
   return `GTW${namePart}${phonePart}${randomPart}`;
 }

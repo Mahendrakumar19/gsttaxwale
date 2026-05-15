@@ -8,7 +8,7 @@ async function getNews(req, res) {
     const limit = parseInt(req.query.limit) || 10;
     const category = req.query.category;
     
-    let query = 'SELECT * FROM News';
+    let query = 'SELECT * FROM `News`';
     const params = [];
     
     if (category) {
@@ -47,7 +47,7 @@ async function createNews(req, res) {
     }
     
     await db.query(
-      'INSERT INTO News (title, description, category, date, source, url, createdAt, updatedAt) VALUES (?, ?, ?, NOW(), ?, ?, NOW(), NOW())',
+      'INSERT INTO `News` (title, description, category, date, source, url, createdAt, updatedAt) VALUES (?, ?, ?, NOW(), ?, ?, NOW(), NOW())',
       [title, content, category || 'Update', source || 'GST Tax Wale', url || null]
     );
     
@@ -64,7 +64,7 @@ async function createNews(req, res) {
 async function deleteNews(req, res) {
   try {
     const { id } = req.params;
-    await db.query('DELETE FROM News WHERE id = ?', [id]);
+    await db.query('DELETE FROM `News` WHERE id = ?', [id]);
     res.json({ success: true, message: 'News item deleted successfully' });
   } catch (error) {
     console.error('Error deleting news:', error);

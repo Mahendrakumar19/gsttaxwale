@@ -1,132 +1,136 @@
 'use client';
 
 import { useState } from 'react';
-import { Download, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { Download, FileText, ChevronRight, Mail, AlertCircle } from 'lucide-react';
 
 interface ReturnData {
   type: string;
+  icon?: 'mail' | 'alert' | null;
   months: {
-    [key: string]: { status: 'filed' | 'overdue' | 'due' | 'prepare' | '-'; dueDate?: string };
+    [key: string]: { status: 'filed' | 'due' | '-' };
   };
 }
 
 export default function ReturnSummary() {
-  const [hoveredCell, setHoveredCell] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState('new');
 
-  // Focus on the most recent 6 months to keep it concise
-  const months = ['Oct 25', 'Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26'];
+  const months = [
+    'Apr 25', 'May 25', 'Jun 25', 'Jul 25', 'Aug 25', 'Sep 25', 
+    'Oct 25', 'Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26'
+  ];
 
   const returns: ReturnData[] = [
     {
-      type: 'GSTR-1',
+      type: 'GSTR 1',
+      icon: 'mail',
       months: {
-        'Oct 25': { status: 'filed' },
-        'Nov 25': { status: 'filed' },
-        'Dec 25': { status: 'filed' },
-        'Jan 26': { status: 'filed' },
-        'Feb 26': { status: 'filed' },
-        'Mar 26': { status: 'overdue', dueDate: 'Apr 11' },
+        'Apr 25': { status: 'filed' }, 'May 25': { status: 'filed' }, 'Jun 25': { status: 'filed' },
+        'Jul 25': { status: 'filed' }, 'Aug 25': { status: 'filed' }, 'Sep 25': { status: 'filed' },
+        'Oct 25': { status: 'filed' }, 'Nov 25': { status: 'filed' }, 'Dec 25': { status: 'filed' },
+        'Jan 26': { status: 'filed' }, 'Feb 26': { status: 'filed' }, 'Mar 26': { status: 'filed' },
       }
     },
     {
-      type: 'GSTR-3B',
+      type: 'GSTR1A',
       months: {
-        'Oct 25': { status: 'filed' },
-        'Nov 25': { status: 'filed' },
-        'Dec 25': { status: 'filed' },
-        'Jan 26': { status: 'filed' },
-        'Feb 26': { status: 'filed' },
-        'Mar 26': { status: 'due', dueDate: 'Apr 20' },
+        'Apr 25': { status: '-' }, 'May 25': { status: '-' }, 'Jun 25': { status: '-' },
+        'Jul 25': { status: '-' }, 'Aug 25': { status: '-' }, 'Sep 25': { status: '-' },
+        'Oct 25': { status: '-' }, 'Nov 25': { status: '-' }, 'Dec 25': { status: '-' },
+        'Jan 26': { status: '-' }, 'Feb 26': { status: '-' }, 'Mar 26': { status: '-' },
       }
     },
     {
-      type: 'GSTR-9',
+      type: 'GSTR 3B',
       months: {
-        'Oct 25': { status: '-' },
-        'Nov 25': { status: '-' },
-        'Dec 25': { status: '-' },
-        'Jan 26': { status: '-' },
-        'Feb 26': { status: '-' },
-        'Mar 26': { status: 'prepare' },
+        'Apr 25': { status: 'filed' }, 'May 25': { status: 'filed' }, 'Jun 25': { status: 'filed' },
+        'Jul 25': { status: 'filed' }, 'Aug 25': { status: 'filed' }, 'Sep 25': { status: 'filed' },
+        'Oct 25': { status: 'filed' }, 'Nov 25': { status: 'filed' }, 'Dec 25': { status: 'filed' },
+        'Jan 26': { status: 'filed' }, 'Feb 26': { status: 'filed' }, 'Mar 26': { status: 'filed' },
+      }
+    },
+    {
+      type: 'GSTR 9',
+      icon: 'alert',
+      months: {
+        'Apr 25': { status: '-' }, 'May 25': { status: '-' }, 'Jun 25': { status: '-' },
+        'Jul 25': { status: '-' }, 'Aug 25': { status: '-' }, 'Sep 25': { status: '-' },
+        'Oct 25': { status: '-' }, 'Nov 25': { status: '-' }, 'Dec 25': { status: '-' },
+        'Jan 26': { status: '-' }, 'Feb 26': { status: '-' }, 'Mar 26': { status: 'due' },
+      }
+    },
+    {
+      type: 'GSTR 9C',
+      icon: 'alert',
+      months: {
+        'Apr 25': { status: '-' }, 'May 25': { status: '-' }, 'Jun 25': { status: '-' },
+        'Jul 25': { status: '-' }, 'Aug 25': { status: '-' }, 'Sep 25': { status: '-' },
+        'Oct 25': { status: '-' }, 'Nov 25': { status: '-' }, 'Dec 25': { status: '-' },
+        'Jan 26': { status: '-' }, 'Feb 26': { status: '-' }, 'Mar 26': { status: 'due' },
       }
     }
   ];
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'filed': return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-      case 'overdue': return <AlertCircle className="w-4 h-4 text-red-500" />;
-      case 'due': return <Clock className="w-4 h-4 text-amber-500" />;
-      case 'prepare': return <div className="w-3 h-3 rounded-full border-2 border-blue-400 border-t-transparent animate-spin" />;
-      default: return <span className="text-gray-300">-</span>;
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'filed': return 'Filed';
-      case 'overdue': return 'Overdue';
-      case 'due': return 'Due Soon';
-      case 'prepare': return 'Preparing';
-      default: return '-';
-    }
-  };
-
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Return Status</h2>
-          <p className="text-sm text-gray-500">Real-time status of your GST return filings</p>
+    <div className="w-full bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+      {/* Custom Header with line */}
+      <div className="relative px-6 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2 z-10 bg-white pr-4">
+          <h2 className="text-xl font-bold text-slate-800">Return Summary</h2>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm font-bold shadow-sm">
-          <Download size={16} />
-          Download Summary
+        <div className="absolute left-6 right-6 top-1/2 border-t border-slate-200 z-0"></div>
+        <button 
+          onClick={() => setActiveView(activeView === 'new' ? 'old' : 'new')}
+          className="z-10 bg-slate-800 hover:bg-slate-700 text-white px-4 py-1.5 rounded-full text-xs font-bold transition flex items-center gap-2 shadow-lg"
+        >
+          Switch to {activeView === 'new' ? 'Old' : 'New'}
         </button>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto shadow-sm">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-[11px]">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-100">
-              <th className="px-6 py-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Return Type</th>
+            <tr>
+              <th className="px-4 py-4 text-left font-medium text-slate-500 bg-white sticky left-0 z-20 w-32 border-b border-gray-100"></th>
               {months.map(m => (
-                <th key={m} className="px-4 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">{m}</th>
+                <th key={m} className="px-2 py-4 text-center font-semibold text-slate-500 bg-white border-b border-gray-100 min-w-[70px]">
+                  {m}
+                </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
-            {returns.map(ret => (
-              <tr key={ret.type} className="hover:bg-gray-50/50 transition">
-                <td className="px-6 py-5">
-                  <span className="font-bold text-gray-900">{ret.type}</span>
+          <tbody>
+            {returns.map((ret, idx) => (
+              <tr key={ret.type} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
+                <td className="px-4 py-3 font-bold text-slate-600 bg-inherit sticky left-0 z-10 border-b border-gray-100">
+                  <div className="flex items-center gap-1">
+                    {ret.type}
+                    {ret.icon === 'mail' && <Mail size={12} className="text-orange-500" />}
+                    {ret.icon === 'alert' && <AlertCircle size={12} className="text-orange-500" />}
+                  </div>
                 </td>
                 {months.map(m => {
                   const data = ret.months[m];
-                  const isHovered = hoveredCell === `${ret.type}-${m}`;
                   return (
-                    <td 
-                      key={m} 
-                      className="px-4 py-5 text-center relative"
-                      onMouseEnter={() => setHoveredCell(`${ret.type}-${m}`)}
-                      onMouseLeave={() => setHoveredCell(null)}
-                    >
-                      <div className="flex flex-col items-center gap-1">
-                        {getStatusIcon(data.status)}
-                        <span className={`text-[10px] font-bold ${
-                          data.status === 'filed' ? 'text-green-600' :
-                          data.status === 'overdue' ? 'text-red-600' :
-                          data.status === 'due' ? 'text-amber-600' :
-                          'text-gray-400'
-                        }`}>
-                          {getStatusLabel(data.status)}
-                        </span>
-                      </div>
-                      
-                      {isHovered && data.dueDate && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-10 shadow-xl">
-                          Due Date: {data.dueDate}
+                    <td key={m} className="px-1 py-3 text-center border-b border-gray-100">
+                      {data.status === 'filed' && (
+                        <div className="flex items-center justify-center gap-1 group cursor-pointer">
+                          <span className="text-green-600 font-bold">Filed</span>
+                          <div className="relative flex items-center">
+                            {/* PDF Styled Icon */}
+                            <div className="bg-red-500 text-white p-0.5 rounded-[1px] flex items-center justify-center transform group-hover:scale-110 transition shadow-sm">
+                              <FileText size={10} />
+                            </div>
+                            <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5 shadow-sm hidden group-hover:block">
+                              <Download size={8} className="text-blue-600" />
+                            </div>
+                          </div>
                         </div>
+                      )}
+                      {data.status === 'due' && (
+                        <span className="text-orange-500 font-bold">Due</span>
+                      )}
+                      {data.status === '-' && (
+                        <span className="text-slate-300">-</span>
                       )}
                     </td>
                   );
@@ -136,36 +140,22 @@ export default function ReturnSummary() {
           </tbody>
         </table>
       </div>
-
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-green-50 border border-green-100 rounded-xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white shadow-sm">
-            <CheckCircle2 size={24} />
+      
+      {/* Footer info */}
+      <div className="p-4 bg-slate-50 border-t border-gray-100 flex items-center justify-between text-[10px] text-slate-500">
+        <div className="flex gap-4">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            <span>Filed On Time</span>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-green-700">18</p>
-            <p className="text-xs text-green-600 font-medium">Filed On-Time</p>
-          </div>
-        </div>
-        
-        <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white shadow-sm">
-            <AlertCircle size={24} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-red-700">1</p>
-            <p className="text-xs text-red-600 font-medium">Overdue Returns</p>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+            <span>Upcoming / Due</span>
           </div>
         </div>
-
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center gap-4">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-sm">
-            <Clock size={24} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-blue-700">2</p>
-            <p className="text-xs text-blue-600 font-medium">Due Next Week</p>
-          </div>
+        <div className="flex items-center gap-1 italic">
+          <AlertCircle size={12} className="text-slate-400" />
+          <span>Data updated as of today. View detailed report for historical data.</span>
         </div>
       </div>
     </div>

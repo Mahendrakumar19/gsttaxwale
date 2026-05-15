@@ -311,39 +311,31 @@ async function updateProfile(req, res) {
 }
 
 // ────────────────────────────────────────────────────────────────────
-// FORGOT PASSWORD - Send OTP to email or phone
+// SEND RESET OTP - Step 1: Send OTP to email or phone for reset
 // ────────────────────────────────────────────────────────────────────
-async function forgotPassword(req, res) {
+async function sendResetOTP(req, res) {
   try {
     const { email, phone } = req.body;
 
     if (!email && !phone) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email or phone is required',
-      });
+      return res.status(400).json(errorResponse('Email or phone is required'));
     }
 
     // Find user by email or phone
-    let user;
-    if (email) {
-      user = await db.findOne('User', { email });
-    } else if (phone) {
-      user = await db.findOne('User', { phone });
-    }
+    const user = await db.findOne('User', email ? { email } : { phone });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
+      return res.status(404).json(errorResponse('User not found'));
     }
 
-    // Generate OTP
+    // Generate and store OTP
     const otp = authService.generateOTP();
     const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Store OTP
+    // Delete any existing OTP for this user
+    await db.query('DELETE FROM OTP WHERE userId = ?', [user.id]);
+
+    // Create new OTP record
     await db.create('OTP', {
       userId: user.id,
       code: otp,
@@ -351,111 +343,85 @@ async function forgotPassword(req, res) {
       verified: false,
     });
 
-    // Send OTP to email
-    if (user.email) {
-      await authService.sendOTPEmail(user.email, otp);
+    let sent = false;
+    if (email) {
+      sent = await authService.sendOTPEmail(email, otp);
+    } else if (phone) {
+      sent = await authService.sendOTPSMS(phone, otp);
     }
 
-    res.status(200).json({
-      success: true,
-      message: 'OTP sent to registered email',
-      data: {
-        userId: user.id,
-        email: user.email,
-      },
-    });
+    if (!sent) {
+      return res.status(500).json(errorResponse('Failed to send OTP. Please try again.'));
+    }
+
+    res.status(200).json(successResponse({
+      userId: user.id,
+      method: email ? 'email' : 'phone',
+      target: email || phone
+    }, 'OTP sent successfully'));
+
   } catch (error) {
-    console.error('Forgot password error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to process forgot password request',
-      error: error.message,
-    });
+    console.error('Send reset OTP error:', error);
+    res.status(500).json(errorResponse('Failed to send reset OTP'));
   }
 }
 
 // ────────────────────────────────────────────────────────────────────
-// VERIFY PASSWORD RESET OTP - Verify OTP for password reset
+// VERIFY RESET OTP - Step 2: Verify the OTP code
 // ────────────────────────────────────────────────────────────────────
-async function verifyPasswordOTP(req, res) {
+async function verifyResetOTP(req, res) {
   try {
     const { userId, code } = req.body;
 
     if (!userId || !code) {
-      return res.status(400).json({
-        success: false,
-        message: 'User ID and OTP code are required',
-      });
+      return res.status(400).json(errorResponse('User ID and OTP code are required'));
     }
 
     // Find OTP
-    const otpRecord = await db.findOne('OTP', {
-      userId,
-      code,
-    });
+    const otpRecord = await db.findOne('OTP', { userId, code });
 
-    if (!otpRecord || otpRecord.expiresAt < new Date()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid or expired OTP',
-      });
+    if (!otpRecord) {
+      return res.status(401).json(errorResponse('Invalid OTP code'));
+    }
+
+    if (otpRecord.expiresAt < new Date()) {
+      return res.status(401).json(errorResponse('OTP has expired'));
     }
 
     // Mark OTP as verified
-    await db.update('OTP', { id: otpRecord.id }, {
-      verified: true,
-    });
+    await db.update('OTP', { id: otpRecord.id }, { verified: true });
 
-    res.status(200).json({
-      success: true,
-      message: 'OTP verified successfully',
-      data: {
-        userId,
-      },
-    });
+    res.status(200).json(successResponse({ userId, verified: true }, 'OTP verified successfully'));
   } catch (error) {
-    console.error('Verify password OTP error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to verify OTP',
-      error: error.message,
-    });
+    console.error('Verify reset OTP error:', error);
+    res.status(500).json(errorResponse('Failed to verify OTP'));
   }
 }
 
 // ────────────────────────────────────────────────────────────────────
-// RESET PASSWORD - Update user password with verified OTP
+// RESET PASSWORD - Step 3: Update password with verified OTP
 // ────────────────────────────────────────────────────────────────────
 async function resetPassword(req, res) {
   try {
     const { userId, code, newPassword } = req.body;
 
     if (!userId || !code || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: 'User ID, OTP code, and new password are required',
-      });
+      return res.status(400).json(errorResponse('Missing required fields'));
     }
 
     if (newPassword.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'Password must be at least 6 characters',
-      });
+      return res.status(400).json(errorResponse('Password must be at least 6 characters'));
     }
 
-    // Verify OTP
-    const otpRecord = await db.findOne('OTP', {
-      userId,
+    // Verify OTP is still valid and verified
+    const otpRecord = await db.findOne('OTP', { 
+      userId, 
       code,
-      verified: true,
+      verified: true 
     });
 
     if (!otpRecord || otpRecord.expiresAt < new Date()) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid or expired OTP',
-      });
+      return res.status(401).json(errorResponse('Invalid or session expired. Please start again.'));
     }
 
     // Hash new password
@@ -470,20 +436,10 @@ async function resetPassword(req, res) {
     // Delete OTP record
     await db.delete('OTP', { id: otpRecord.id });
 
-    res.status(200).json({
-      success: true,
-      message: 'Password reset successfully',
-      data: {
-        userId,
-      },
-    });
+    res.status(200).json(successResponse(null, 'Password reset successfully. You can now login with your new password.'));
   } catch (error) {
     console.error('Reset password error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to reset password',
-      error: error.message,
-    });
+    res.status(500).json(errorResponse('Failed to reset password'));
   }
 }
 
@@ -584,6 +540,91 @@ async function adminLogin(req, res) {
       message: 'Failed to login as admin',
       error: error.message,
     });
+  }
+}
+
+/**
+ * REGISTER - Create new user account and handle referral
+ */
+async function register(req, res) {
+  try {
+    const { name, email, phone, password, referralCode } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json(errorResponse('Name, email and password are required'));
+    }
+
+    // 1. Check if user already exists
+    const existingUser = await db.findOne('User', { email });
+    if (existingUser) {
+      return res.status(400).json(errorResponse('Email already registered'));
+    }
+
+    if (phone) {
+      const existingPhone = await db.findOne('User', { phone });
+      if (existingPhone) {
+        return res.status(400).json(errorResponse('Phone number already registered'));
+      }
+    }
+
+    // 2. Hash password
+    const hashedPassword = await authService.hashPassword(password);
+
+    // 3. Generate Referral Code for the new user
+    const namePart = name.split(' ')[0].toUpperCase();
+    const phonePart = (phone || '00000').slice(-5).padStart(5, '0');
+    const myReferralCode = `GTW${namePart}${phonePart}`;
+
+    // 4. Create User
+    const newUser = await db.create('User', {
+      name,
+      email,
+      phone,
+      password: hashedPassword,
+      role: 'user',
+      status: 'active',
+      referral_code: myReferralCode,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    // 5. Link Referral if provided
+    if (referralCode) {
+      const referrer = await db.findOne('User', { referral_code: referralCode });
+      if (referrer) {
+        await db.create('Referral', {
+          referrerId: referrer.id,
+          refereeId: newUser.id,
+          refereeEmail: email,
+          refereePhone: phone,
+          commissionPercent: 10,
+          commissionAmount: 0,
+          referralStatus: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        console.log(`🔗 Linked new user ${email} to referrer ${referrer.email}`);
+      }
+    }
+
+    // 6. Generate Token
+    const token = authService.generateToken(newUser.id);
+
+    res.status(201).json(successResponse({
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        phone: newUser.phone,
+        role: newUser.role,
+        referral_code: newUser.referral_code
+      },
+      token
+    }, 'Registration successful'));
+
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json(errorResponse('Failed to register user: ' + error.message));
   }
 }
 
@@ -897,12 +938,13 @@ async function verifyServicePurchaseOTP(req, res) {
 }
 
 module.exports = {
+  register,
   login,
   adminLogin,
   sendOTP,
   verifyOTP,
-  forgotPassword,
-  verifyPasswordOTP,
+  sendResetOTP,
+  verifyResetOTP,
   resetPassword,
   getCurrentUser,
   updateProfile,

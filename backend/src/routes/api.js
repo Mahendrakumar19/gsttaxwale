@@ -37,14 +37,15 @@ module.exports = function(app) {
   app.post(`${prefix}/referrals/generate-public`, asyncHandler(publicReferralController.generatePublicReferral));
   
   // AUTH ROUTES
+  app.post(`${prefix}/auth/register`, asyncHandler(authController.register));
   app.post(`${prefix}/auth/send-service-purchase-otp`, asyncHandler(authController.sendServicePurchaseOTP));
   app.post(`${prefix}/auth/verify-service-purchase-otp`, asyncHandler(authController.verifyServicePurchaseOTP));
   app.post(`${prefix}/auth/login`, asyncHandler(authController.login));
   app.post(`${prefix}/auth/admin-login`, asyncHandler(authController.adminLogin));
   app.post(`${prefix}/auth/send-otp`, asyncHandler(authController.sendOTP));
   app.post(`${prefix}/auth/verify-otp`, asyncHandler(authController.verifyOTP));
-  app.post(`${prefix}/auth/forgot-password`, asyncHandler(authController.forgotPassword));
-  app.post(`${prefix}/auth/verify-password-otp`, asyncHandler(authController.verifyPasswordOTP));
+  app.post(`${prefix}/auth/send-reset-otp`, asyncHandler(authController.sendResetOTP));
+  app.post(`${prefix}/auth/verify-reset-otp`, asyncHandler(authController.verifyResetOTP));
   app.post(`${prefix}/auth/reset-password`, asyncHandler(authController.resetPassword));
   app.post(`${prefix}/auth/logout`, authenticate, asyncHandler(authController.logout));
   app.post(`${prefix}/auth/convert-guest-to-account`, asyncHandler(authController.convertGuestToAccount));
@@ -90,7 +91,7 @@ module.exports = function(app) {
   app.get(`${prefix}/admin/referrals`, authenticate, adminOnly, asyncHandler(referralController.getAllReferrals));
 
   // DOCUMENT ROUTES
-  app.post(`${prefix}/documents/upload`, authenticate, upload.single('file'), asyncHandler(documentController.uploadDocument));
+  app.post(`${prefix}/documents/upload`, authenticate, upload.array('files', 10), asyncHandler(documentController.uploadDocument));
   app.get(`${prefix}/documents/user-list`, authenticate, asyncHandler(documentController.getUserDocuments));
   app.delete(`${prefix}/documents/:documentId`, authenticate, asyncHandler(documentController.deleteDocument));
   app.get(`${prefix}/documents/financial-years`, authenticate, asyncHandler(documentController.getFinancialYears));
@@ -181,8 +182,8 @@ module.exports = function(app) {
 
   // CLEAN BACKEND FLOW ROUTES
   app.get(`${prefix}/admin/documents`, authenticate, adminOnly, asyncHandler(documentController.getAllDocuments));
-  app.post(`${prefix}/admin/upload-document`, authenticate, adminOnly, upload.single('file'), asyncHandler(documentController.adminUploadDocument));
-  app.post(`${prefix}/admin/documents/upload`, authenticate, adminOnly, upload.single('file'), asyncHandler(documentController.uploadDocument));
+  app.post(`${prefix}/admin/upload-document`, authenticate, adminOnly, upload.array('files', 10), asyncHandler(documentController.uploadDocument));
+  app.post(`${prefix}/admin/documents/upload`, authenticate, adminOnly, upload.array('files', 10), asyncHandler(documentController.uploadDocument));
   app.delete(`${prefix}/admin/documents/:documentId`, authenticate, adminOnly, asyncHandler(documentController.deleteDocument));
   app.patch(`${prefix}/admin/documents/:documentId/archive`, authenticate, adminOnly, asyncHandler(documentController.archiveDocument));
   app.get(`${prefix}/admin/documents/stats`, authenticate, adminOnly, asyncHandler(documentController.getDocumentStats));
@@ -213,6 +214,15 @@ module.exports = function(app) {
   app.get(`${prefix}/due-dates`, asyncHandler(dueDatesController.getDueDates));
   app.get(`${prefix}/due-dates/gst`, asyncHandler(dueDatesController.getGSTDueDates));
   app.get(`${prefix}/due-dates/itr`, asyncHandler(dueDatesController.getITRDueDates));
+
+  // SLIDER MANAGEMENT
+  const sliderController = require('../controllers/sliderController');
+  const bannerUpload = multer({ dest: 'uploads/temp' }); // Reuse temp for multer then move in controller
+
+  app.get(`${prefix}/sliders`, asyncHandler(sliderController.getSliders));
+  app.post(`${prefix}/admin/sliders`, authenticate, adminOnly, bannerUpload.single('image'), asyncHandler(sliderController.addSlider));
+  app.put(`${prefix}/admin/sliders/:id/toggle`, authenticate, adminOnly, asyncHandler(sliderController.toggleSlider));
+  app.delete(`${prefix}/admin/sliders/:id`, authenticate, adminOnly, asyncHandler(sliderController.deleteSlider));
 
   app.all(`${prefix}/*`, (req, res) => {
     console.log(`⚠️  404 API Fallback: ${req.method} ${req.originalUrl}`);

@@ -152,12 +152,16 @@ async function createService(req, res) {
 async function updateService(req, res) {
   try {
     const { id } = req.params;
-    const { title, description, price, discountedPrice, features } = req.body;
+    const { 
+      title, description, price, discountedPrice, 
+      features, requirements, turnaroundDays, faqs 
+    } = req.body;
 
     const updateData = {};
     if (title) updateData.name = title;
     if (description) updateData.description = description;
-
+    if (requirements) updateData.requirements = requirements;
+    
     if (price !== undefined) {
       const parsedPrice = Number(price);
       if (!Number.isNaN(parsedPrice)) updateData.price = parsedPrice;
@@ -168,8 +172,17 @@ async function updateService(req, res) {
       if (!Number.isNaN(parsedDiscountPrice)) updateData.discountPrice = parsedDiscountPrice;
     }
 
+    if (turnaroundDays !== undefined) {
+      const parsedDays = Number(turnaroundDays);
+      if (!Number.isNaN(parsedDays)) updateData.turnaroundDays = parsedDays;
+    }
+
     if (features) {
       updateData.features = typeof features === 'string' ? features : JSON.stringify(features);
+    }
+
+    if (faqs) {
+      updateData.faqs = typeof faqs === 'string' ? faqs : JSON.stringify(faqs);
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -190,10 +203,11 @@ async function updateService(req, res) {
       ...updated,
       title: updated.name,
       discountedPrice: updated.discountPrice,
-      features: typeof updated.features === 'string' ? JSON.parse(updated.features) : (updated.features || [])
+      features: typeof updated.features === 'string' ? JSON.parse(updated.features || '[]') : (updated.features || []),
+      faqs: typeof updated.faqs === 'string' ? JSON.parse(updated.faqs || '[]') : (updated.faqs || [])
     };
     
-    res.status(200).json(successResponse({ service: formattedService }, 'Service updated'));
+    res.status(200).json(successResponse({ service: formattedService }, 'Service updated successfully'));
   } catch (err) {
     console.error('Update service error:', err);
     res.status(500).json(errorResponse(err.message));

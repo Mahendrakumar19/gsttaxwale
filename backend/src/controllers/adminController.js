@@ -99,9 +99,9 @@ async function createUser(req, res) {
   try {
     const hashedPassword = await authService.hashPassword(password);
     
-    // Generate Referral Code: GTW + first 3 of name + last 3 of mobile
-    const namePart = (name || 'USR').substring(0, 3).toUpperCase().padEnd(3, 'X');
-    const phonePart = (phone || '000').slice(-3).padStart(3, '0');
+    // Generate Referral Code: GTW + first name + last 5 of mobile
+    const namePart = (name || 'USR').split(' ')[0].toUpperCase();
+    const phonePart = (phone || '00000').slice(-5).padStart(5, '0');
     const referralCode = `GTW${namePart}${phonePart}`;
     
     const refNum = reference_number || `GTW${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 900 + 100)}`;
@@ -134,19 +134,35 @@ async function createUser(req, res) {
 }
 
 /**
- * Update user
+ * Update user (Admin)
  */
 async function updateUser(req, res) {
   const { id } = req.params;
-  const { name, email, phone, pan, status } = req.body;
+  const { 
+    name, email, phone, pan, aadhaar, 
+    doorNo, buildingName, street, area, address, 
+    city, state, pincode, status, role, referral_code 
+  } = req.body;
+
   try {
     await db.query(`
       UPDATE User 
-      SET name = ?, email = ?, phone = ?, pan = ?, status = ?, updatedAt = NOW()
+      SET 
+        name = ?, email = ?, phone = ?, pan = ?, aadhaar = ?,
+        doorNo = ?, buildingName = ?, street = ?, area = ?, address = ?,
+        city = ?, state = ?, pincode = ?, status = ?, role = ?, 
+        referral_code = ?, updatedAt = NOW()
       WHERE id = ?
-    `, [name, email, phone, pan, status, id]);
-    res.status(200).json(successResponse(null, 'User updated'));
+    `, [
+      name, email, phone, pan, aadhaar,
+      doorNo, buildingName, street, area, address,
+      city, state, pincode, status, role, 
+      referral_code, id
+    ]);
+    
+    res.status(200).json(successResponse(null, 'User details updated successfully'));
   } catch (error) {
+    console.error('Update user error:', error);
     res.status(500).json(errorResponse(error.message));
   }
 }

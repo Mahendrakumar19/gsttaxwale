@@ -75,6 +75,7 @@ export default function RootAdminLayout({
     { icon: FileText, label: 'Documents', href: '/admin/documents' },
     { icon: Home, label: 'Services', href: '/admin/services' },
     { icon: MapPin, label: 'Store Locations', href: '/admin/locations' },
+    { icon: Layout, label: 'Slider Management', href: '/admin/slider' },
     { icon: Ticket, label: 'Support Tickets', href: '/admin/tickets' },
     { icon: Gift, label: 'Referrals', href: '/admin/referrals' },
     { icon: Settings, label: 'Settings', href: '/admin/settings' },

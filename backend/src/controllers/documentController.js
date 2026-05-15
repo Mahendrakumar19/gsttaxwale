@@ -4,93 +4,98 @@ const fs = require('fs');
 
 exports.uploadDocument = async (req, res) => {
   try {
-    const { customerId, customerName, customerPan, fiscalYear, category, displayTitle } = req.body;
-    const file = req.file;
+    const { customerId, customerName, customerPan, fiscalYear, category: rawCategory, displayTitle } = req.body;
+    const files = req.files;
 
-    console.log('📂 Document Upload Request (Direct DB):', { 
+    console.log('📂 Multiple Document Upload Request:', { 
       customerId, 
-      customerName, 
-      customerPan, 
       fiscalYear, 
-      category,
-      displayTitle,
-      file: file ? { name: file.originalname, size: file.size } : 'MISSING'
+      category: rawCategory,
+      filesCount: files ? files.length : 0
     });
 
-    if (!file) {
-      return res.status(400).json({ error: 'No file provided' });
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'No files provided' });
     }
 
     if (!customerId) {
-      if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      files.forEach(f => { if (fs.existsSync(f.path)) fs.unlinkSync(f.path); });
       return res.status(400).json({ error: 'Customer ID is required' });
     }
 
     const parsedCustomerId = parseInt(customerId);
     if (isNaN(parsedCustomerId)) {
-      if (file && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      files.forEach(f => { if (fs.existsSync(f.path)) fs.unlinkSync(f.path); });
       return res.status(400).json({ error: 'Invalid Customer ID' });
     }
 
-    // Create organized directory structure: uploads/[customerId]/[fiscalYear]/[category]
+    // Normalize category to GST, ITR, or Others
+    let category = 'Others';
+    if (rawCategory) {
+      const upper = rawCategory.toUpperCase();
+      if (upper === 'GST') category = 'GST';
+      else if (upper === 'ITR') category = 'ITR';
+      else category = 'Others';
+    }
+
+    // Create organized directory structure
     const rootUploadDir = path.resolve(process.cwd(), 'uploads');
     const customerDir = path.join(rootUploadDir, customerId.toString());
     const yearDir = path.join(customerDir, fiscalYear || 'general');
-    const categoryDir = path.join(yearDir, category || 'other');
+    const categoryDir = path.join(yearDir, category.toLowerCase());
     
     if (!fs.existsSync(categoryDir)) {
       fs.mkdirSync(categoryDir, { recursive: true });
     }
 
-    // Create unique filename
-    const uniqueFilename = `${Date.now()}_${file.originalname}`;
-    const finalPath = path.join(categoryDir, uniqueFilename);
+    const uploadedDocuments = [];
 
-    // Use copy + unlink instead of rename for cross-partition safety
-    fs.copyFileSync(file.path, finalPath);
-    fs.unlinkSync(file.path);
+    for (const file of files) {
+      const uniqueFilename = `${Date.now()}_${Math.floor(Math.random() * 1000)}_${file.originalname}`;
+      const finalPath = path.join(categoryDir, uniqueFilename);
 
-    // Save document info to database using the ACTUAL schema columns
-    // Columns: userId, fileUrl, fileSize, filename, uploadedBy, category, financialYear, originalName, documentType, visible, uploadedAt
-    const finalDisplayName = displayTitle || file.originalname;
-    
-    const result = await db.query(`
-      INSERT INTO Document (userId, fileUrl, fileSize, filename, uploadedBy, category, financialYear, originalName, documentType, visible, mimeType, uploadedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, NOW())
-    `, [
-      parsedCustomerId,
-      `/api/documents/download/${uniqueFilename}`,
-      file.size,
-      uniqueFilename,
-      req.userId?.toString() || '1',
-      category || 'Others',
-      fiscalYear || '',
-      finalDisplayName,
-      'admin-upload',
-      file.mimetype
-    ]);
+      // Use copy + unlink
+      fs.copyFileSync(file.path, finalPath);
+      fs.unlinkSync(file.path);
 
+      const finalDisplayName = displayTitle || file.originalname;
+      
+      const result = await db.query(`
+        INSERT INTO Document (userId, fileUrl, fileSize, filename, uploadedBy, category, financialYear, originalName, documentType, visible, mimeType, uploadedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, NOW())
+      `, [
+        parsedCustomerId,
+        `/api/documents/download/${uniqueFilename}`,
+        file.size,
+        uniqueFilename,
+        req.userId?.toString() || '1',
+        category,
+        fiscalYear || '',
+        finalDisplayName,
+        req.userRole === 'admin' ? 'admin-upload' : 'user-upload',
+        file.mimetype
+      ]);
 
+      uploadedDocuments.push({
+        id: result.insertId,
+        fileName: uniqueFilename,
+        originalName: finalDisplayName,
+        category: category,
+        fileSize: file.size
+      });
+    }
 
     res.status(201).json({
       success: true,
-      message: 'Document uploaded successfully',
-      data: {
-        id: result.insertId,
-        fileName: uniqueFilename,
-        customerId: parsedCustomerId,
-        customerName: customerName,
-        customerPan: customerPan,
-        fiscalYear: fiscalYear,
-        category: category,
-        status: 'active',
-        uploadedAt: new Date(),
-        fileSize: file.size,
-      },
+      message: `${uploadedDocuments.length} document(s) uploaded successfully`,
+      data: uploadedDocuments,
     });
   } catch (err) {
-    console.error('❌ Error uploading document:', err);
-    res.status(500).json({ error: 'Failed to upload document: ' + err.message });
+    console.error('❌ Error uploading documents:', err);
+    if (req.files) {
+      req.files.forEach(f => { if (fs.existsSync(f.path)) fs.unlinkSync(f.path); });
+    }
+    res.status(500).json({ error: 'Failed to upload documents: ' + err.message });
   }
 };
 

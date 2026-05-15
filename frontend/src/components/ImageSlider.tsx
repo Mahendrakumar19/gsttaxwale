@@ -32,51 +32,75 @@ const DEFAULT_IMAGES: ImageData[] = [
 ];
 
 export default function ImageSlider({ 
-  images = DEFAULT_IMAGES, 
   autoPlay = true, 
   interval = 5000,
   showCounter = true
 }: ImageSliderProps) {
+  const [images, setImages] = useState<ImageData[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlay, setIsAutoPlay] = useState(autoPlay);
-  const [progress, setProgress] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSliders = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/sliders`);
+        const data = await res.json();
+        if (data.success && data.data.sliders?.length > 0) {
+          const activeSliders = data.data.sliders
+            .filter((s: any) => s.isActive)
+            .map((s: any) => ({
+              src: s.imageUrl,
+              alt: s.alt || 'GST Tax Wale Banner'
+            }));
+          setImages(activeSliders.length > 0 ? activeSliders : DEFAULT_IMAGES);
+        } else {
+          setImages(DEFAULT_IMAGES);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch dynamic sliders, using defaults');
+        setImages(DEFAULT_IMAGES);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSliders();
+  }, []);
 
   const goToNext = useCallback(() => {
+    if (images.length === 0) return;
     setCurrentIndex((prev) => (prev + 1) % images.length);
-    setProgress(0);
   }, [images.length]);
 
   const goToPrevious = () => {
+    if (images.length === 0) return;
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-    setProgress(0);
     setIsAutoPlay(false);
   };
 
   const goToSlide = (index: number) => {
     setCurrentIndex(index);
-    setProgress(0);
     setIsAutoPlay(false);
   };
 
-  // Progress Bar & Auto-play
+  // Auto-play
   useEffect(() => {
     if (!isAutoPlay) return;
 
-    const step = 100; // ms
-    const increment = (step / interval) * 100;
-
     const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          goToNext();
-          return 0;
-        }
-        return prev + increment;
-      });
-    }, step);
+      goToNext();
+    }, interval);
 
     return () => clearInterval(timer);
   }, [isAutoPlay, interval, goToNext]);
+
+  if (loading || images.length === 0) {
+    return (
+      <div className="w-full max-w-[1400px] mx-auto h-[300px] md:h-[400px] lg:h-[450px] bg-slate-900 animate-pulse rounded-[2.5rem] flex items-center justify-center">
+        <div className="text-white/20 font-black tracking-widest text-2xl">LOADING BANNERS...</div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -124,7 +148,7 @@ export default function ImageSlider({
         </button>
       </div>
 
-      {/* Progress & Indicators Bar */}
+      {/* Indicators Bar */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-4 w-full px-8">
         <div className="flex gap-4 items-center">
           {images.map((_, index) => (
@@ -141,18 +165,10 @@ export default function ImageSlider({
             </button>
           ))}
         </div>
-        
-        {/* Progress bar line */}
-        <div className="w-full max-w-md h-1 bg-white/20 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-blue-500 transition-all duration-100 ease-linear"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
       </div>
 
       {/* Slide Counter Overlay */}
-      {showCounter && (
+      {showCounter && images.length > 0 && (
         <div className="absolute top-8 right-8 px-4 py-2 bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl text-xs font-black tracking-widest">
           {String(currentIndex + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}
         </div>

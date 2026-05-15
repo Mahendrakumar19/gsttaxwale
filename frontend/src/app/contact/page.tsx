@@ -4,12 +4,15 @@ import React, { useEffect, useState } from 'react';
 import ContactForm from '../../components/ContactForm';
 import Link from 'next/link';
 import api from '../../lib/api';
-import { MapPin, Mail, Phone, ExternalLink, Loader2 } from 'lucide-react';
+import { MapPin, Mail, Phone, ExternalLink, Loader2, Search, ArrowRight, Copy } from 'lucide-react';
 
 interface Location {
   id: number;
   name: string;
   address: string;
+  city: string;
+  state: string;
+  pincode: string;
   email: string | null;
   phone: string | null;
   mapUrl: string | null;
@@ -18,6 +21,7 @@ interface Location {
 export default function ContactPage() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Referral State
   const [refName, setRefName] = useState('');
@@ -78,45 +82,94 @@ export default function ContactPage() {
       </section> */}
 
       {/* Dynamic Locations Section */}
-      <section className="py-20 px-6 border-t border-gray-200 bg-slate-50">
+      <section className="py-24 px-6 border-t border-gray-200 bg-slate-50">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Offices</h2>
-            <p className="text-gray-600">Visit us at any of our branches for professional assistance</p>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
+            <div className="space-y-2">
+              <h2 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Visit Our Offices</h2>
+              <p className="text-slate-500 font-medium">Find our presence across multiple cities for in-person consultations</p>
+            </div>
+            
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="text" 
+                placeholder="Search city or area..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm text-sm font-bold"
+              />
+            </div>
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-            </div>
-          ) : locations.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {locations.map((loc) => (
-                <div key={loc.id} className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 group">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">{loc.name}</h3>
-                  <div className="space-y-4 mb-8">
-                    <p className="text-gray-600 text-sm leading-relaxed">
-                      {loc.address}
-                    </p>
-                  </div>
-                  
-                  {loc.mapUrl && (
-                    <a 
-                      href={loc.mapUrl}
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors duration-300 text-sm tracking-wide"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      VIEW ON GOOGLE MAPS
-                    </a>
-                  )}
-                </div>
-              ))}
+            <div className="flex justify-center py-20">
+              <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
             </div>
           ) : (
-            <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
-              <p className="text-gray-500 italic">No office locations added yet.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {locations
+                .filter(loc => 
+                  loc.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                  (loc.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (loc.state || '').toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .map((location) => (
+                <div 
+                  key={location.id} 
+                  className="group bg-white border border-slate-100 p-6 rounded-[2rem] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 relative overflow-hidden"
+                >
+                  <div className="relative z-10">
+                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition duration-500">
+                      <MapPin size={24} />
+                    </div>
+                    
+                    <h3 className="text-xl font-black text-slate-900 mb-2 leading-tight uppercase tracking-tight">{location.name}</h3>
+                    <div className="space-y-3">
+                      <p className="text-slate-500 text-sm leading-relaxed font-medium">
+                        {location.address}<br />
+                        <span className="text-slate-900 font-bold">
+                          {location.city ? `${location.city}, ` : ''}
+                          {location.state ? `${location.state} ` : ''}
+                          {location.pincode ? `- ${location.pincode}` : ''}
+                        </span>
+                      </p>
+                    </div>
+
+                    {location.mapUrl && (
+                      <div className="mt-8">
+                        <a 
+                          href={location.mapUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 w-full py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-blue-600 transition-all duration-300 text-[10px] uppercase tracking-widest shadow-lg shadow-slate-900/10 hover:shadow-blue-500/20"
+                        >
+                          <ExternalLink size={14} /> View on Google Maps
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Decorative Elements */}
+                  <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-50/50 rounded-full blur-2xl group-hover:bg-blue-100/50 transition duration-500" />
+                </div>
+              ))}
+              
+              {locations.length > 0 && locations.filter(loc => 
+                  loc.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                  (loc.city || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (loc.state || '').toLowerCase().includes(searchTerm.toLowerCase())
+                ).length === 0 && (
+                <div className="col-span-full py-20 text-center bg-white rounded-[2.5rem] border border-dashed border-slate-200">
+                   <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No locations found matching "{searchTerm}"</p>
+                </div>
+              )}
+
+              {locations.length === 0 && !loading && (
+                <div className="col-span-full py-20 text-center bg-white rounded-[2.5rem] border border-dashed border-slate-200">
+                   <p className="text-gray-500 italic">No office locations added yet.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -173,19 +226,37 @@ export default function ContactPage() {
                 <div className="animate-in zoom-in duration-500">
                   <div className="mb-10 pb-10 border-b border-[#F0F4F8]">
                     <h3 className="text-xl font-bold text-[#002B49] mb-6">Share your Unique Referral Link</h3>
-                    <div className="flex gap-2">
-                      <div className="flex-1 bg-[#F8FAFF] border border-[#E5E9F0] rounded-xl px-4 py-4 font-mono text-sm text-[#4B5E74] overflow-hidden whitespace-nowrap text-ellipsis">
-                        {`https://gsttaxwale.com/?ref=${referralCode}`}
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-2">
+                        <div className="flex-1 bg-[#F8FAFF] border border-[#E5E9F0] rounded-xl px-4 py-4 font-mono text-sm text-[#4B5E74] overflow-hidden whitespace-nowrap text-ellipsis flex items-center justify-between">
+                          <span>{`https://gsttaxwale.com/?ref=${referralCode}`}</span>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(`https://gsttaxwale.com/?ref=${referralCode}`);
+                            alert('Referral link copied!');
+                          }}
+                          className="bg-[#002B49] text-white px-6 py-4 rounded-xl font-bold hover:bg-[#001D32] transition-colors whitespace-nowrap text-xs uppercase tracking-widest"
+                        >
+                          Copy Link
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => {
-                          navigator.clipboard.writeText(`https://gsttaxwale.com/?ref=${referralCode}`);
-                          alert('Referral link copied!');
-                        }}
-                        className="bg-[#002B49] text-white px-6 py-4 rounded-xl font-bold hover:bg-[#001D32] transition-colors whitespace-nowrap"
-                      >
-                        Copy Link
-                      </button>
+                      
+                      <div className="flex items-center justify-between bg-purple-50 border border-purple-100 rounded-xl px-4 py-4">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Referral Code</span>
+                          <span className="font-mono text-lg font-black text-purple-900 tracking-tighter">{referralCode}</span>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(referralCode);
+                            alert('Referral code copied!');
+                          }}
+                          className="flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-purple-700 transition-colors whitespace-nowrap text-xs uppercase tracking-widest"
+                        >
+                          <Copy size={14} /> Copy Code
+                        </button>
+                      </div>
                     </div>
                     <div className="flex gap-4 mt-6">
                       <a 

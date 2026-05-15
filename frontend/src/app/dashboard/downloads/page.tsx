@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import DashboardHeader from '@/components/DashboardHeader';
 import { FileText, Download, Calendar, HardDrive, AlertCircle } from 'lucide-react';
+import ReturnSummary from '@/components/ReturnSummary';
 import axios from 'axios';
 
 export default function YourDocumentsPage() {
@@ -108,6 +109,11 @@ export default function YourDocumentsPage() {
                 <p className="text-slate-300 mt-1">All documents available for you</p>
               </div>
             </div>
+          </div>
+
+          {/* Return Summary Section - Matching User Image Request */}
+          <div className="mb-10">
+            <ReturnSummary />
           </div>
 
           {/* Stats Cards */}
