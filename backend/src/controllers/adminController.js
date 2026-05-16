@@ -120,6 +120,15 @@ async function createUser(req, res) {
 
     const [user] = await db.query('SELECT id, name, email, phone, pan, referral_code, reference_number, dateOfBirth FROM User WHERE id = ?', [result.insertId]);
 
+    // Send Welcome Email
+    try {
+      await authService.sendUserCreatedEmail(email, password, refNum);
+      console.log(`📧 Welcome email sent to ${email}`);
+    } catch (mailError) {
+      console.error('📧 Failed to send welcome email:', mailError);
+      // Don't fail the whole request if email fails, but log it
+    }
+
     res.status(201).json(successResponse({ 
       user,
       credentials: {
@@ -160,6 +169,17 @@ async function updateUser(req, res) {
       referral_code, id
     ]);
     
+    // Send Profile Update Notification
+    try {
+      const [user] = await db.query('SELECT email FROM User WHERE id = ?', [id]);
+      if (user && user.email) {
+        await authService.sendProfileUpdatedEmail(user.email);
+        console.log(`📧 Profile update notification sent to ${user.email}`);
+      }
+    } catch (mailError) {
+      console.error('📧 Failed to send profile update notification:', mailError);
+    }
+
     res.status(200).json(successResponse(null, 'User details updated successfully'));
   } catch (error) {
     console.error('Update user error:', error);
@@ -198,6 +218,17 @@ async function resetPassword(req, res) {
       'UPDATE User SET password = ?, updatedAt = NOW() WHERE id = ?',
       [hashedPassword, id]
     );
+
+    // Send Password Change Notification
+    try {
+      const [user] = await db.query('SELECT email FROM User WHERE id = ?', [id]);
+      if (user && user.email) {
+        await authService.sendPasswordChangedEmail(user.email);
+        console.log(`📧 Password change notification sent to ${user.email}`);
+      }
+    } catch (mailError) {
+      console.error('📧 Failed to send password change notification:', mailError);
+    }
 
     res.status(200).json(successResponse(null, 'Password reset successfully'));
   } catch (error) {

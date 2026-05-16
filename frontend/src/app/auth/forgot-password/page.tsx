@@ -1,7 +1,10 @@
 'use client';
-
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { ShieldCheck, ArrowLeft, Mail, Phone as PhoneIcon, Lock } from 'lucide-react';
 import OTPInput from '@/components/OTPInput';
+import api from '@/lib/api';
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -13,6 +16,8 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSendOTP = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();

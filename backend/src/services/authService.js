@@ -222,6 +222,96 @@ async function sendOTPSMS(phone, otp) {
   }
 }
 
+async function sendPasswordChangedEmail(email) {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587', 10),
+      secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    const fromName = process.env.SMTP_FROM_NAME || 'GST Tax Wale';
+    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+    const mailOptions = {
+      from: `"${fromName}" <${fromEmail}>`,
+      to: email,
+      subject: `Security Alert - Password Changed for ${fromName}`,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">
+          <h2 style="color: #ef4444;">Password Security Update</h2>
+          <p>This is to inform you that the password for your account associated with <strong>${email}</strong> has been recently updated.</p>
+          
+          <div style="background-color: #fef2f2; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+            <p style="margin: 0; color: #b91c1c;"><strong>Security Notice:</strong> If you did not make this change, please contact our support team immediately.</p>
+          </div>
+          
+          <p>You can now log in with your new password at: <a href="https://gsttaxwale.com/auth/login" style="color: #2563eb; font-weight: bold;">gsttaxwale.com/auth/login</a></p>
+          
+          <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+          <p style="font-size: 0.8em; color: #9ca3af; text-align: center;">
+            &copy; ${new Date().getFullYear()} GST Tax Wale. All rights reserved.
+          </p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (err) {
+    console.error('sendPasswordChangedEmail error', err);
+    return false;
+  }
+}
+
+async function sendProfileUpdatedEmail(email) {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587', 10),
+      secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    const fromName = process.env.SMTP_FROM_NAME || 'GST Tax Wale';
+    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+    const mailOptions = {
+      from: `"${fromName}" <${fromEmail}>`,
+      to: email,
+      subject: `Account Profile Updated - ${fromName}`,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">
+          <h2 style="color: #2563eb;">Profile Information Updated</h2>
+          <p>This is to inform you that your account profile information at <strong>${fromName}</strong> has been recently updated by an administrator.</p>
+          
+          <p>If you have any questions regarding these changes, please contact our support team.</p>
+          
+          <p>You can review your updated profile at: <a href="https://gsttaxwale.com/dashboard/profile" style="color: #2563eb; font-weight: bold;">gsttaxwale.com/dashboard/profile</a></p>
+          
+          <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+          <p style="font-size: 0.8em; color: #9ca3af; text-align: center;">
+            &copy; ${new Date().getFullYear()} GST Tax Wale. All rights reserved.
+          </p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (err) {
+    console.error('sendProfileUpdatedEmail error', err);
+    return false;
+  }
+}
+
 module.exports = {
   hashPassword,
   comparePassword,
@@ -238,4 +328,6 @@ module.exports = {
   login,
   getUser,
   sendUserCreatedEmail,
+  sendPasswordChangedEmail,
+  sendProfileUpdatedEmail,
 };

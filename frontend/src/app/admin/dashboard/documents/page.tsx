@@ -124,7 +124,7 @@ export default function DocumentsPage() {
         config
       );
 
-      loadDocuments(token); // Refresh list
+      if (token) loadDocuments(token); // Refresh list
       setShowUploadModal(false);
       setUploadForm({ userId: '', type: 'document', files: [] });
       alert('Documents uploaded successfully!');
@@ -371,7 +371,5 @@ export default function DocumentsPage() {
         </div>
       </div>
     </div>
-  );
-}
   );
 }

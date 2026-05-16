@@ -236,7 +236,7 @@ export default function CreateCustomerPage() {
                     </div>
                     <div className="flex gap-4">
                       <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 text-purple-400 font-bold border border-purple-500/30">3</div>
-                      <p className="text-slate-300 text-sm leading-relaxed">The system will auto-generate a Referral Code and Reference Number for the new user.</p>
+                      <p className="text-slate-300 text-sm leading-relaxed">The system will auto-generate a unique Referral Code and notify the user via email.</p>
                     </div>
                   </div>
                 </div>
@@ -244,7 +244,7 @@ export default function CreateCustomerPage() {
                 <div className="mt-8 pt-8 border-t border-slate-800">
                   <div className="flex items-center gap-3 text-amber-400 bg-amber-400/10 p-4 rounded-xl border border-amber-400/20">
                     <Shield size={24} />
-                    <p className="text-xs font-medium leading-tight">Data entered here is directly stored in the secure MySQL production database.</p>
+                    <p className="text-xs font-medium leading-tight">User details will be sent to the entered email address upon creation.</p>
                   </div>
                 </div>
               </div>
@@ -284,8 +284,9 @@ export default function CreateCustomerPage() {
                   </div>
 
                   <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20">
-                    <p className="text-xs font-bold uppercase opacity-60 mb-1">Reference No.</p>
-                    <p className="text-lg font-mono font-bold">{createdCustomer.user.reference_number}</p>
+                    <p className="text-xs font-bold uppercase opacity-60 mb-1">Customer Identity (Name & Phone)</p>
+                    <p className="text-lg font-black">{createdCustomer.user.name} / {createdCustomer.user.phone}</p>
+                    <p className="text-[10px] opacity-40 mt-2 font-mono">REF: {createdCustomer.user.reference_number}</p>
                   </div>
                 </div>
 

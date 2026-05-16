@@ -30,94 +30,114 @@ export default function AdminAnalyticsDashboard() {
 
   const statCards = [
     {
-      label: 'Total Users',
+      label: 'Network Users',
       value: stats.totalUsers,
       icon: Users,
-      color: 'bg-blue-50 text-blue-600',
-      trend: '+12% from last month',
+      trend: '+12% Variance',
     },
     {
-      label: 'Active Services',
+      label: 'Operational Services',
       value: stats.activeServices,
       icon: Package,
-      color: 'bg-green-50 text-green-600',
-      trend: '+5% this month',
+      trend: '+5% Performance',
     },
     {
-      label: 'Total Revenue',
+      label: 'Gross Revenue',
       value: `₹${stats.totalRevenue.toLocaleString()}`,
       icon: DollarSign,
-      color: 'bg-purple-50 text-purple-600',
-      trend: '+23% YoY',
+      trend: '+23% Growth Index',
     },
     {
-      label: 'Pending Documents',
+      label: 'Compliance Queue',
       value: stats.pendingDocuments,
       icon: FileCheck,
-      color: 'bg-orange-50 text-orange-600',
-      trend: '-3% this week',
+      trend: '-3% Latency',
     },
     {
-      label: 'Completed Cases',
+      label: 'Resolved Units',
       value: stats.completedCases,
       icon: TrendingUp,
-      color: 'bg-emerald-50 text-emerald-600',
-      trend: '+8% this month',
+      trend: '+8% Efficiency',
     },
     {
-      label: 'Avg Filing Time',
+      label: 'Transaction Speed',
       value: stats.avgFilingTime,
       icon: Clock,
-      color: 'bg-indigo-50 text-indigo-600',
-      trend: '↓ improved',
+      trend: 'Optimized',
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in duration-500">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statCards.map((card, index) => {
           const Icon = card.icon;
           return (
-            <div key={index} className="p-6 bg-white rounded-lg shadow">
-              <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg mb-4 ${card.color}`}>
-                <Icon size={24} />
+            <div key={index} className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm group hover:border-slate-900 transition-all">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-2 bg-slate-50 text-slate-400 rounded-lg group-hover:bg-slate-900 group-hover:text-white transition-all">
+                  <Icon size={18} />
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{card.trend}</span>
               </div>
-              <p className="text-sm text-gray-600 mb-1">{card.label}</p>
-              <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-              <p className="text-xs text-gray-500 mt-2">{card.trend}</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{card.label}</p>
+              <p className="text-3xl font-bold text-slate-900 tracking-tight">{card.value}</p>
             </div>
           );
         })}
       </div>
 
-      {/* Charts Placeholder */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="p-6 bg-white rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trend</h3>
-          <div className="h-64 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg flex items-center justify-center">
-            <p className="text-gray-600">Chart placeholder - Connect chart library</p>
+      {/* Analytics Visualization */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+             <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Revenue Trajectory</h3>
+             <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Fiscal FY25</span>
+             </div>
+          </div>
+          <div className="h-72 bg-slate-50/50 border border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2">
+            <div className="p-2 bg-white rounded-lg shadow-sm">
+               <TrendingUp size={20} className="text-slate-300" />
+            </div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data Visualization Offline</p>
           </div>
         </div>
 
-        <div className="p-6 bg-white rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Service Distribution</h3>
-          <div className="h-64 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg flex items-center justify-center">
-            <p className="text-gray-600">Chart placeholder - Connect chart library</p>
+        <div className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+             <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Service Allocation</h3>
+             <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Distribution Index</span>
+             </div>
+          </div>
+          <div className="h-72 bg-slate-50/50 border border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2">
+            <div className="p-2 bg-white rounded-lg shadow-sm">
+               <Package size={20} className="text-slate-300" />
+            </div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Analytic Stream Pending</p>
           </div>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="p-6 bg-white rounded-lg shadow">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+      {/* Audit Log */}
+      <div className="p-8 bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center justify-between mb-8">
+           <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">System Audit Log</h3>
+           <button className="text-[9px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-all">Export Report</button>
+        </div>
         <div className="space-y-3">
           {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-              <p className="text-sm text-gray-700">User activity placeholder {item}</p>
-              <p className="text-xs text-gray-500 ml-auto">2 hours ago</p>
+            <div key={item} className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-xl hover:bg-white hover:border-slate-200 transition-all group">
+              <div className="w-1 h-1 bg-slate-300 rounded-full group-hover:bg-slate-900 transition-all"></div>
+              <p className="text-xs font-bold text-slate-700 tracking-tight">Security log entry sequence ID-X9002{item} — Process initialized</p>
+              <div className="flex items-center gap-1.5 ml-auto text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                 <Clock size={10} />
+                 <span>2h ago</span>
+              </div>
             </div>
           ))}
         </div>

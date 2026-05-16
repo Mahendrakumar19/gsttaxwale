@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { adminAuth } from '@/lib/adminAuth';
-import { Edit2, Trash2, X, Zap, Save } from 'lucide-react';
+import { Edit2, Trash2, X, Zap, Save, Plus, Shield } from 'lucide-react';
 
 export default function AdminServices() {
   const router = useRouter();
@@ -143,26 +143,20 @@ export default function AdminServices() {
 
   if (loading && services.length === 0) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-gray-500 text-lg font-medium tracking-tight">Loading services...</div>
-        </div>
+      <div className="flex flex-col items-center justify-center h-[70vh]">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin mb-4" />
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Querying Service Portfolio...</p>
       </div>
     );
   }
 
   return (
-    <div className="px-6 py-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+    <div className="animate-in fade-in duration-700">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-black rounded-full uppercase tracking-widest">Service Catalog</span>
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Product & Services</h1>
-          <p className="text-slate-500 font-medium mt-1">Configure tax services, pricing structures, and filing requirements</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Portfolio Management</h1>
+          <p className="text-sm text-slate-500 mt-1 font-medium">Configuring institutional tax offerings, fiscal models, and compliance requirements</p>
         </div>
 
         {!showForm && (
@@ -172,200 +166,196 @@ export default function AdminServices() {
               setIsEditing(false);
               resetForm();
             }}
-            className="flex items-center justify-center gap-3 bg-slate-900 hover:bg-blue-600 text-white px-8 py-4 rounded-[1.5rem] font-black transition-all shadow-xl hover:-translate-y-1 active:scale-95 uppercase tracking-widest text-xs"
+            className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-sm active:scale-95 uppercase tracking-widest text-[10px]"
           >
-            <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">+</div>
-            Create New Service
+            <Plus size={14} />
+            Initialize Service
           </button>
         )}
       </div>
 
       {showForm && (
-        <div className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-2xl mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-xl mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="flex justify-between items-center mb-10">
             <div>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">{isEditing ? 'Edit Service' : 'New Service'}</h2>
-              <p className="text-slate-500 font-medium">Configure service details, pricing, and requirements</p>
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">{isEditing ? 'Modify Service Node' : 'Initialize New Offering'}</h2>
+              <p className="text-xs text-slate-500 mt-1 font-medium">Defining structural attributes and capital requirements</p>
             </div>
-            <button onClick={resetForm} className="p-3 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition cursor-pointer">
-              <X size={24} />
+            <button onClick={resetForm} className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all">
+              <X size={20} />
             </button>
           </div>
           
-          <form onSubmit={handleAddService} className="space-y-10">
+          <form onSubmit={handleAddService} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-2 space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Service Title</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Asset Identity</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition"
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-slate-900 transition-all placeholder:text-slate-300"
+                  placeholder="Service Descriptor"
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Classification</label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition"
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-slate-900 transition-all cursor-pointer appearance-none"
                 >
-                  <option value="GST">GST Services</option>
-                  <option value="ITR">Income Tax (ITR)</option>
-                  <option value="BUSINESS">Business Setup</option>
-                  <option value="AUDIT">Audit & Compliance</option>
+                  <option value="GST">GST Compliance</option>
+                  <option value="ITR">Income Asset Management</option>
+                  <option value="BUSINESS">Entity Structuring</option>
+                  <option value="AUDIT">Institutional Audit</option>
                 </select>
               </div>
 
               <div className="md:col-span-3 space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Description</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Service Scope</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-medium focus:ring-4 focus:ring-blue-500/10 outline-none transition"
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-900 transition-all resize-none"
                   rows={4}
+                  placeholder="Define the scope of operational engagement..."
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Base Price (₹)</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Nominal Valuation (₹)</label>
                 <input
                   type="number"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition"
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-slate-900 transition-all"
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Offer Price (₹)</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Settlement Quote (₹)</label>
                 <input
                   type="number"
                   value={formData.discountedPrice}
                   onChange={(e) => setFormData({ ...formData, discountedPrice: e.target.value })}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-black focus:ring-4 focus:ring-blue-500/10 outline-none transition text-green-600"
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-slate-900 transition-all"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Turnaround Days</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Latency (Days)</label>
                 <input
                   type="number"
                   value={formData.turnaroundDays}
                   onChange={(e) => setFormData({ ...formData, turnaroundDays: e.target.value })}
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition"
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-slate-900 transition-all"
                 />
               </div>
 
               <div className="md:col-span-3 space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Documents Required</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Documentation Protocol</label>
                 <textarea
                   value={formData.requirements}
                   onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                  placeholder="e.g., PAN Card, Aadhaar, Bank Statement..."
-                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-medium focus:ring-4 focus:ring-blue-500/10 outline-none transition"
+                  placeholder="List essential evidentiary requirements..."
+                  className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-slate-900 transition-all resize-none"
                   rows={3}
                 />
               </div>
             </div>
 
             <div className="flex gap-4 pt-8 border-t border-slate-100">
-              <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-8 py-5 rounded-2xl font-black transition-all shadow-xl shadow-blue-500/20 uppercase tracking-widest text-xs">
-                {isEditing ? 'COMMIT SERVICE CHANGES' : 'PUBLISH NEW SERVICE'}
+              <button type="submit" className="flex-1 bg-slate-900 hover:bg-slate-800 text-white px-8 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95">
+                {isEditing ? 'Commit Changes' : 'Initialize Portfolio Node'}
               </button>
-              <button type="button" onClick={resetForm} className="px-8 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black transition uppercase tracking-widest text-xs">
-                Abort
+              <button type="button" onClick={resetForm} className="px-8 py-4 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all">
+                Discard
               </button>
             </div>
           </form>
         </div>
       )}
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="text-left px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Service Info</th>
-                <th className="text-left px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Pricing Structure</th>
-                <th className="text-left px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Compliance Docs</th>
-                <th className="text-center px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="text-left px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portfolio Item</th>
+                <th className="text-left px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Capital Model</th>
+                <th className="text-left px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Requirements Matrix</th>
+                <th className="text-right px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Operations</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-50">
               {services.map((s) => (
-                <tr key={s.id} className="hover:bg-blue-50/20 transition-all group">
-                  <td className="px-8 py-6 max-w-md">
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg">{s.category || 'GST'}</span>
-                      <h4 className="font-black text-slate-900 tracking-tight truncate">{s.title || s.name}</h4>
+                <tr key={s.id} className="hover:bg-slate-50/30 transition-colors group">
+                  <td className="px-8 py-5 max-w-md">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="px-2 py-0.5 bg-slate-900 text-white text-[9px] font-bold rounded-lg uppercase tracking-[0.15em]">{s.category || 'GST'}</span>
+                      <h4 className="font-bold text-slate-900 text-sm tracking-tight truncate">{s.title || s.name}</h4>
                     </div>
-                    <p className="text-xs text-slate-400 line-clamp-1 font-medium leading-relaxed">{s.description}</p>
+                    <p className="text-[11px] text-slate-500 line-clamp-1 font-medium">{s.description}</p>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-6 py-5">
                     {inlineEditingId === s.id ? (
-                      <div className="space-y-2 animate-in fade-in duration-300">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Price (₹)</label>
+                      <div className="animate-in fade-in duration-300">
                         <input
                           type="number"
                           value={inlineData.price}
                           onChange={(e) => setInlineData({ ...inlineData, price: e.target.value })}
-                          className="w-full px-4 py-2 bg-white border-2 border-blue-200 rounded-xl text-sm font-black focus:border-blue-500 outline-none transition-all shadow-sm"
+                          className="w-28 px-4 py-2 bg-white border border-slate-900 rounded-xl text-xs font-bold outline-none shadow-sm"
                         />
                       </div>
                     ) : (
                       <div className="flex flex-col">
-                        <span className="text-xl font-black text-slate-900 tracking-tighter">₹{Number(s.price).toLocaleString()}</span>
-                        {s.discountedPrice > 0 && <span className="text-[10px] text-green-600 font-black uppercase tracking-widest mt-0.5">Sale: ₹{Number(s.discountedPrice).toLocaleString()}</span>}
+                        <span className="text-sm font-bold text-slate-900 tracking-tight">₹{Number(s.price).toLocaleString()}</span>
+                        {s.discountedPrice > 0 && <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Settlement: ₹{Number(s.discountedPrice).toLocaleString()}</span>}
                       </div>
                     )}
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-6 py-5">
                     {inlineEditingId === s.id ? (
-                      <div className="space-y-2 animate-in fade-in duration-300">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Required Docs</label>
+                      <div className="animate-in fade-in duration-300">
                         <textarea
                           value={inlineData.requirements}
                           onChange={(e) => setInlineData({ ...inlineData, requirements: e.target.value })}
-                          className="w-full min-w-[250px] px-4 py-2 bg-white border-2 border-blue-200 rounded-xl text-xs font-bold focus:border-blue-500 outline-none transition-all shadow-sm"
+                          className="w-full min-w-[240px] px-4 py-2 bg-white border border-slate-900 rounded-xl text-xs font-medium outline-none shadow-sm"
                           rows={2}
                         />
                       </div>
                     ) : (
                       <div className="max-w-xs">
-                        <p className="text-xs text-slate-500 font-bold line-clamp-2 leading-relaxed">{s.requirements || 'No requirements specified'}</p>
-                        <div className="flex items-center gap-1 mt-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                          <Zap size={10} className="text-blue-500" />
-                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Inline Editable</span>
-                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium line-clamp-2 leading-relaxed">{s.requirements || 'Protocol Undefined'}</p>
                       </div>
                     )}
                   </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center justify-center gap-3">
+                  <td className="px-8 py-5">
+                    <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       {inlineEditingId === s.id ? (
                         <>
-                          <button onClick={() => handleInlineSave(s.id)} className="p-3 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition active:scale-95">
-                            <Save size={18} />
+                          <button onClick={() => handleInlineSave(s.id)} className="p-2.5 bg-slate-900 text-white rounded-xl shadow-lg hover:bg-slate-800 transition active:scale-90">
+                            <Save size={14} />
                           </button>
-                          <button onClick={cancelInlineEdit} className="p-3 bg-slate-100 text-slate-400 rounded-xl hover:bg-slate-200 transition active:scale-95">
-                            <X size={18} />
+                          <button onClick={cancelInlineEdit} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-900 transition active:scale-90">
+                            <X size={14} />
                           </button>
                         </>
                       ) : (
                         <>
-                          <button onClick={() => startInlineEdit(s)} className="p-2.5 bg-slate-50 text-slate-400 hover:bg-blue-600 hover:text-white rounded-xl transition shadow-sm border border-slate-100 group-hover:scale-110 active:scale-95" title="Quick Edit">
-                            <Zap size={18} />
+                          <button onClick={() => startInlineEdit(s)} className="p-2.5 text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all" title="Rapid Modification">
+                            <Zap size={14} />
                           </button>
-                          <button onClick={() => openEditForm(s)} className="p-2.5 bg-slate-50 text-slate-400 hover:bg-slate-900 hover:text-white rounded-xl transition shadow-sm border border-slate-100 group-hover:scale-110 active:scale-95">
-                            <Edit2 size={18} />
+                          <button onClick={() => openEditForm(s)} className="p-2.5 text-slate-300 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all" title="Full Configuration">
+                            <Edit2 size={14} />
                           </button>
-                          <button onClick={() => handleDeleteService(s.id)} className="p-2.5 bg-slate-50 text-red-400 hover:bg-red-600 hover:text-white rounded-xl transition shadow-sm border border-slate-100 group-hover:scale-110 active:scale-95">
-                            <Trash2 size={18} />
+                          <button onClick={() => handleDeleteService(s.id)} className="p-2.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Decommission Node">
+                            <Trash2 size={14} />
                           </button>
                         </>
                       )}
@@ -378,16 +368,16 @@ export default function AdminServices() {
         </div>
 
         {services.length === 0 && (
-          <div className="text-center py-24 bg-slate-50/50">
-            <div className="w-20 h-20 bg-slate-100 text-slate-300 rounded-[2rem] flex items-center justify-center mx-auto mb-6">📦</div>
-            <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">Catalog Empty</h3>
-            <p className="text-slate-500 font-medium">Create your first service to start selling</p>
+          <div className="text-center py-28 bg-slate-50/50">
+            <div className="w-16 h-16 bg-white border border-slate-100 text-slate-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">📦</div>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Portfolio Stream Terminated</h3>
+            <p className="text-xs text-slate-500 mt-1 font-medium">No operational offerings currently registered</p>
           </div>
         )}
       </div>
 
       <div className="mt-16 text-center">
-        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Live Catalog Engine • v2.1.0</p>
+        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.4em]">Portfolio Governance Protocol • v2.1-SECURE</p>
       </div>
     </div>
   );

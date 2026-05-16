@@ -295,6 +295,16 @@ async function updateProfile(req, res) {
       },
     });
 
+    // Send Profile Update Notification
+    try {
+      if (user && user.email) {
+        await authService.sendProfileUpdatedEmail(user.email);
+        console.log(`📧 User-initiated profile update notification sent to ${user.email}`);
+      }
+    } catch (mailError) {
+      console.error('📧 Failed to send user profile update notification:', mailError);
+    }
+
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
@@ -432,6 +442,17 @@ async function resetPassword(req, res) {
       password: hashedPassword,
       lastPasswordChange: new Date(),
     });
+
+    // Send Password Change Notification
+    try {
+      const user = await db.findOne('User', { id: userId });
+      if (user && user.email) {
+        await authService.sendPasswordChangedEmail(user.email);
+        console.log(`📧 User password reset notification sent to ${user.email}`);
+      }
+    } catch (mailError) {
+      console.error('📧 Failed to send password reset notification:', mailError);
+    }
 
     // Delete OTP record
     await db.delete('OTP', { id: otpRecord.id });

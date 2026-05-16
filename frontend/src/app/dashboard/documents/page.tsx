@@ -19,6 +19,8 @@ export default function YourDocumentsPage() {
     type: 'document',
     files: [] as { file: File, title: string }[],
   });
+  const [documents, setDocuments] = useState<any[]>([]);
+
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -143,7 +145,7 @@ export default function YourDocumentsPage() {
         config
       );
 
-      loadDocuments(token); // Refresh list
+      if (token) loadDocuments(token); // Refresh list
       setShowUploadModal(false);
       setUploadForm({ type: 'document', files: [] });
       alert('Documents uploaded successfully!');

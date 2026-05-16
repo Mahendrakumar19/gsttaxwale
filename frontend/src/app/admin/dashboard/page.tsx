@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { adminAuth } from '@/lib/adminAuth';
-import { Users, FileText, ShoppingCart, Ticket, Gift, BarChart3, TrendingUp, Activity, Layout, MapPin, Eye } from 'lucide-react';
+import { Users, FileText, ShoppingCart, Ticket, Gift, BarChart3, TrendingUp, Activity, Layout, MapPin, Eye, Zap, Shield } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -70,8 +70,9 @@ export default function AdminDashboard() {
 
   if (loading || !isAuthenticated) {
     return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <div className="text-gray-900 text-lg">Loading dashboard…</div>
+      <div className="flex flex-col items-center justify-center h-screen bg-white">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin mb-4" />
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Synchronizing Dashboard Intelligence...</p>
       </div>
     );
   }
@@ -79,164 +80,152 @@ export default function AdminDashboard() {
   const quickActions = [
     {
       icon: ShoppingCart,
-      label: 'Orders',
-      desc: 'View and manage orders',
+      label: 'Order Management',
+      desc: 'Verify and process transactions',
       href: '/admin/orders',
-      color: 'green',
       count: stats.orders,
     },
     {
       icon: Activity,
-      label: 'Services',
-      desc: 'Manage tax services',
+      label: 'Service Inventory',
+      desc: 'Configure tax and legal offerings',
       href: '/admin/services',
-      color: 'indigo',
       count: stats.services,
     },
     {
       icon: Gift,
-      label: 'Referrals',
-      desc: 'Track user rewards',
+      label: 'Affiliate Streams',
+      desc: 'Audit referral network rewards',
       href: '/admin/referrals',
-      color: 'pink',
       count: stats.totalUsers,
     },
     {
       icon: Users,
-      label: 'Users',
-      desc: 'Manage customer accounts',
-      href: '/admin/customers',
-      color: 'blue',
+      label: 'Identity Registry',
+      desc: 'Manage customer account security',
+      href: '/admin/users',
       count: stats.totalUsers,
     },
   ];
 
   return (
-    <div className="px-6 py-10 max-w-[1400px] mx-auto animate-in fade-in duration-700">
+    <div className="animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-black rounded-full uppercase tracking-widest">Real-time Analytics</span>
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight uppercase">Dashboard Overview</h1>
-          <p className="text-slate-500 font-medium mt-1">Welcome back, <span className="text-blue-600 font-bold">{adminUser?.name || 'Administrator'}</span></p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Executive Control</h1>
+          <p className="text-sm text-slate-500 mt-1 font-medium">Platform state as of {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        </div>
+        <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+          </span>
+          <span className="uppercase tracking-widest">Network Secure & Active</span>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <TrendingUp size={80} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm group hover:border-slate-900 transition-all">
+          <div className="flex items-center justify-between mb-6">
+            <div className="p-2 bg-slate-50 text-slate-400 rounded-lg group-hover:bg-slate-900 group-hover:text-white transition-all">
+              <TrendingUp size={18} />
+            </div>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Service Units</span>
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Services</p>
-          <p className="text-4xl font-black text-slate-900">{stats.services}</p>
-          <div className="mt-4 flex items-center gap-2 text-green-600 font-bold text-xs uppercase">
-            <BarChart3 size={14} />
-            <span>Active Portfolio</span>
-          </div>
+          <p className="text-3xl font-bold text-slate-900 tracking-tight">{stats.services}</p>
+          <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Active Inventory</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Activity size={80} />
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm group hover:border-slate-900 transition-all">
+          <div className="flex items-center justify-between mb-6">
+            <div className="p-2 bg-slate-50 text-slate-400 rounded-lg group-hover:bg-slate-900 group-hover:text-white transition-all">
+              <ShoppingCart size={18} />
+            </div>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Transaction Flow</span>
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Orders</p>
-          <p className="text-4xl font-black text-slate-900">{stats.orders}</p>
-          <div className="mt-4 flex items-center gap-2 text-blue-600 font-bold text-xs uppercase">
-            <ShoppingCart size={14} />
-            <span>Processed</span>
-          </div>
+          <p className="text-3xl font-bold text-slate-900 tracking-tight">{stats.orders}</p>
+          <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Confirmed Ledger</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <BarChart3 size={80} />
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm group hover:border-slate-900 transition-all">
+          <div className="flex items-center justify-between mb-6">
+            <div className="p-2 bg-slate-50 text-slate-400 rounded-lg group-hover:bg-slate-900 group-hover:text-white transition-all">
+              <BarChart3 size={18} />
+            </div>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Capital Inflow</span>
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Revenue</p>
-          <p className="text-4xl font-black text-slate-900">₹{(stats.totalRevenue / 1000).toFixed(0)}K</p>
-          <div className="mt-4 flex items-center gap-2 text-purple-600 font-bold text-xs uppercase">
-            <Activity size={14} />
-            <span>Growth Curve</span>
-          </div>
+          <p className="text-3xl font-bold text-slate-900 tracking-tight">₹{(stats.totalRevenue / 1000).toFixed(0)}K</p>
+          <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Revenue Velocity</p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Users size={80} />
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm group hover:border-slate-900 transition-all">
+          <div className="flex items-center justify-between mb-6">
+            <div className="p-2 bg-slate-50 text-slate-400 rounded-lg group-hover:bg-slate-900 group-hover:text-white transition-all">
+              <Users size={18} />
+            </div>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Client Base</span>
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Users</p>
-          <p className="text-4xl font-black text-slate-900">{stats.totalUsers}</p>
-          <div className="mt-4 flex items-center gap-2 text-orange-600 font-bold text-xs uppercase">
-            <Users size={14} />
-            <span>Engagement</span>
-          </div>
+          <p className="text-3xl font-bold text-slate-900 tracking-tight">{stats.totalUsers}</p>
+          <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Verified Identity</p>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="mb-12">
-        <h2 className="text-xl font-black text-slate-900 mb-8 uppercase tracking-tight flex items-center gap-3">
-          <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><Zap size={20} /></div>
-          Operational Access
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div>
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Operational Modules</h2>
+          <div className="h-px flex-1 bg-slate-100 ml-8" />
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {quickActions.map((action) => (
             <Link
               key={action.href}
               href={action.href}
-              className="bg-slate-50 border border-slate-100 rounded-[2rem] p-6 hover:bg-white hover:border-blue-400 hover:shadow-xl transition-all group"
+              className="group bg-white border border-slate-200 rounded-2xl p-6 hover:border-slate-900 hover:shadow-xl transition-all"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-white rounded-2xl shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  <action.icon size={24} />
+              <div className="flex items-start justify-between mb-6">
+                <div className="p-3 bg-slate-50 text-slate-400 rounded-xl group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
+                  <action.icon size={20} />
                 </div>
-                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-slate-100 group-hover:bg-blue-50 transition-colors">
-                   <span className="text-[10px] font-black text-blue-600">{action.count}</span>
-                </div>
+                <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-900 transition-colors uppercase tracking-widest">{action.count} units</span>
               </div>
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-1">{action.label}</h3>
-              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{action.desc}</p>
+              <h3 className="text-sm font-bold text-slate-900 mb-2">{action.label}</h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">{action.desc}</p>
             </Link>
           ))}
         </div>
       </div>
 
-      {/* System Information */}
-      <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] rounded-full -mr-32 -mt-32" />
-        <div className="relative z-10">
-          <h2 className="text-xl font-black mb-8 uppercase tracking-tight flex items-center gap-3">
-            <div className="p-2 bg-white/10 text-white rounded-xl"><Shield size={20} /></div>
-            Core Authentication
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="space-y-1">
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Admin Name</p>
-              <p className="text-lg font-bold">{adminUser?.name || 'Administrator'}</p>
+      {/* System Footer */}
+      <div className="mt-16 p-8 bg-slate-900 rounded-2xl text-white shadow-2xl overflow-hidden relative">
+        <div className="absolute right-0 top-0 opacity-10 -translate-y-1/4 translate-x-1/4">
+           <Shield size={240} />
+        </div>
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/10">
+              <Shield size={24} className="text-blue-400" />
             </div>
-            <div className="space-y-1">
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Master Identity</p>
-              <p className="text-lg font-bold">{adminUser?.email || 'admin@gsttaxwale.com'}</p>
+            <div>
+              <p className="text-base font-bold tracking-tight">Infrastructure Encryption Level 4 Active</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Logged in as {adminUser?.email || 'System Administrator'}</p>
             </div>
-            <div className="space-y-1">
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Authorization Level</p>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-green-400" />
-                <p className="text-lg font-bold uppercase tracking-widest text-xs">Full System Access</p>
-              </div>
+          </div>
+          <div className="flex items-center gap-6 text-[10px] font-bold text-white/40 uppercase tracking-widest">
+            <div className="flex items-center gap-2">
+               <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+               <span>Build 4.2.0-STABLE</span>
+            </div>
+            <div className="flex items-center gap-2">
+               <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+               <span>Audit Protocol 100%</span>
             </div>
           </div>
         </div>
       </div>
-
-      <div className="mt-16 text-center">
-        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Platform Engine v2.0 • Build ID: GST-ADMIN-PRO</p>
-      </div>
     </div>
-  );
-}
   );
 }
