@@ -25,6 +25,11 @@ if (!process.env.DB_HOST) process.env.DB_HOST = "194.59.164.75";
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
+// Auto-detect Hostinger production: if no NODE_ENV set but path contains /domains/ it's production
+const isHostingerProd = __dirname.includes('/domains/') || __dirname.includes('\\domains\\');
+if (!process.env.NODE_ENV && isHostingerProd) {
+  process.env.NODE_ENV = 'production';
+}
 const NODE_ENV = process.env.NODE_ENV || "development";
 const IS_PRODUCTION = NODE_ENV === "production";
 const IS_DEVELOPMENT = NODE_ENV === "development";
@@ -38,6 +43,27 @@ const NEXT_BUILD_DIR = path.join(FRONTEND_DIR, ".next");
 // ─────────────────────────────────────────────────────────────────────────
 const app = express();  
 const server = http.createServer(app);
+
+// ─────────────────────────────────────────────────────────────────────────
+// PRE-FLIGHT: Check .next build exists before starting in production
+// ─────────────────────────────────────────────────────────────────────────
+const NEXT_BUILD_ID = path.join(FRONTEND_DIR, ".next", "BUILD_ID");
+if (IS_PRODUCTION && !fs.existsSync(NEXT_BUILD_ID)) {
+  console.error("\n");
+  console.error("╔══════════════════════════════════════════════════════════════╗");
+  console.error("║  ❌ MISSING PRODUCTION BUILD — CANNOT START SERVER           ║");
+  console.error("╠══════════════════════════════════════════════════════════════╣");
+  console.error("║  The frontend/.next directory is missing or incomplete.      ║");
+  console.error("║  You must run 'npm run build' before starting the server.    ║");
+  console.error("║                                                              ║");
+  console.error("║  On Hostinger Terminal:                                      ║");
+  console.error("║    cd /home/u963801592/domains/gsttaxwale.com/nodejs         ║");
+  console.error("║    npm run build                                             ║");
+  console.error("║    npm start                                                 ║");
+  console.error("╚══════════════════════════════════════════════════════════════╝");
+  console.error("\n");
+  process.exit(1);
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // NEXT.JS FRONTEND SETUP

@@ -64,14 +64,14 @@ exports.uploadDocument = async (req, res) => {
       const finalDisplayName = titles[i] || displayTitle || file.originalname;
       
       const result = await db.query(`
-        INSERT INTO Document (userId, fileUrl, fileSize, filename, uploadedBy, category, financialYear, originalName, documentType, visible, mimeType, uploadedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, NOW())
+        INSERT INTO Document (userId, downloadUrl, fileSize, fileName, uploadedBy, category, fiscalYear, title, type, status, fileType, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, NOW())
       `, [
         parsedCustomerId,
         `/api/documents/download/${uniqueFilename}`,
         file.size,
         uniqueFilename,
-        req.userId?.toString() || '1',
+        parseInt(req.userId) || 1,
         category,
         fiscalYear || '',
         finalDisplayName,
@@ -118,7 +118,7 @@ exports.downloadDocument = async (req, res) => {
 
 
     // Find document in database
-    const [document] = await db.query('SELECT * FROM Document WHERE filename = ?', [filename]);
+    const [document] = await db.query('SELECT * FROM Document WHERE fileName = ?', [filename]);
 
     if (!document) {
       return res.status(404).json({ error: 'Document not found in database' });
@@ -131,16 +131,6 @@ exports.downloadDocument = async (req, res) => {
 
     // Check file exists on filesystem
     const rootUploadDir = path.resolve(process.cwd(), 'uploads');
-    
-    // We need to find where the file is. Since we store relative paths in the code usually,
-    // but the DB only has filename, we might need a search or a fixed structure.
-    // However, the uploadDocument function creates: uploads/[customerId]/[financialYear]/[category]/[filename]
-    // Let's search for the file in the uploads directory recursively if needed, 
-    // or rely on a better path storage. 
-    // For now, let's look in the standard place if we can reconstruct it.
-    
-    // Wait, the DB has fileUrl which contains the download path.
-    // Let's find the file by searching the uploads directory for the filename.
     
     const findFile = (dir, target) => {
       const files = fs.readdirSync(dir);
@@ -163,12 +153,12 @@ exports.downloadDocument = async (req, res) => {
     }
 
     // Set response headers
-    const mimeType = document.mimeType || 'application/octet-stream';
+    const mimeType = document.fileType || 'application/octet-stream';
     res.setHeader('Content-Type', mimeType);
     
     // Ensure filename in header has extension if originalName doesn't
-    let downloadName = document.originalName || document.filename;
-    const ext = path.extname(document.filename);
+    let downloadName = document.title || document.fileName;
+    const ext = path.extname(document.fileName);
     if (ext && !downloadName.toLowerCase().endsWith(ext.toLowerCase())) {
       downloadName += ext;
     }
@@ -205,11 +195,11 @@ exports.getUserDocuments = async (req, res) => {
     }
 
     const documents = await db.query(`
-      SELECT id, originalName as title, notes as description, documentType as type, 
-             fileSize, uploadedAt as createdAt, fileUrl as downloadUrl
+      SELECT id, title, description, type, 
+             fileSize, createdAt, downloadUrl
       FROM Document
-      WHERE userId = ? AND visible = 1 AND deletedAt IS NULL
-      ORDER BY uploadedAt DESC
+      WHERE userId = ? AND status = 'active'
+      ORDER BY createdAt DESC
     `, [userId]);
 
     res.json({
@@ -233,7 +223,7 @@ exports.getAllDocuments = async (req, res) => {
       SELECT d.*, u.name as customerName, u.pan as customerPan
       FROM Document d
       LEFT JOIN User u ON d.userId = u.id
-      WHERE d.deletedAt IS NULL
+      WHERE d.status != 'deleted'
     `;
     const params = [];
 
@@ -242,15 +232,15 @@ exports.getAllDocuments = async (req, res) => {
       params.push(category);
     }
     if (fiscalYear) {
-      sql += ` AND d.financialYear = ?`;
+      sql += ` AND d.fiscalYear = ?`;
       params.push(fiscalYear);
     }
     if (search) {
-      sql += ` AND (d.originalName LIKE ? OR u.name LIKE ? OR u.pan LIKE ?)`;
+      sql += ` AND (d.title LIKE ? OR u.name LIKE ? OR u.pan LIKE ?)`;
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    sql += ` ORDER BY d.uploadedAt DESC`;
+    sql += ` ORDER BY d.createdAt DESC`;
 
     const documents = await db.query(sql, params);
 
@@ -259,15 +249,15 @@ exports.getAllDocuments = async (req, res) => {
       data: {
         documents: documents.map(doc => ({
           id: doc.id,
-          fileName: doc.filename,
+          fileName: doc.fileName,
           customerId: doc.userId,
           customerName: doc.customerName,
           customerPan: doc.customerPan,
           category: doc.category,
-          fiscalYear: doc.financialYear,
-          status: doc.visible ? 'active' : 'inactive',
+          fiscalYear: doc.fiscalYear,
+          status: doc.status,
           fileSize: doc.fileSize,
-          uploadedAt: doc.uploadedAt,
+          uploadedAt: doc.createdAt,
         })),
       },
       total: documents.length,
@@ -309,14 +299,14 @@ exports.deleteDocument = async (req, res) => {
       return null;
     };
 
-    const filePath = findFile(rootUploadDir, document.filename);
+    const filePath = findFile(rootUploadDir, document.fileName);
     
     if (filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
 
     // Soft delete from database
-    await db.query('UPDATE Document SET deletedAt = NOW(), visible = 0 WHERE id = ?', [documentId]);
+    await db.query("UPDATE Document SET status = 'deleted' WHERE id = ?", [documentId]);
 
     res.json({
       success: true,
@@ -342,8 +332,8 @@ exports.archiveDocument = async (req, res) => {
       return res.status(404).json({ error: 'Document not found' });
     }
 
-    // Set visible to 0 for archiving
-    await db.query('UPDATE Document SET visible = 0 WHERE id = ?', [documentId]);
+    // Set status to archived
+    await db.query("UPDATE Document SET status = 'archived' WHERE id = ?", [documentId]);
 
     res.json({
       success: true,
@@ -368,7 +358,7 @@ exports.updateDocumentStatus = async (req, res) => {
       return res.status(400).json({ error: 'Invalid status' });
     }
 
-    await db.query('UPDATE Document SET visible = ? WHERE id = ?', [status === 'active' ? 1 : 0, documentId]);
+    await db.query('UPDATE Document SET status = ? WHERE id = ?', [status, documentId]);
 
     res.json({
       success: true,
@@ -381,25 +371,6 @@ exports.updateDocumentStatus = async (req, res) => {
   }
 };
 
-// ════════════════════════════════════════════════════════════════════
-// Archive Document (Admin)
-// ════════════════════════════════════════════════════════════════════
-exports.archiveDocument = async (req, res) => {
-  try {
-    const { documentId } = req.params;
-
-    await db.query("UPDATE Document SET visible = 0, category = 'archived' WHERE id = ?", [documentId]);
-
-    res.json({
-      success: true,
-      message: 'Document archived successfully',
-    });
-
-  } catch (err) {
-    console.error('Error archiving document:', err);
-    res.status(500).json({ error: 'Failed to archive document' });
-  }
-};
 
 // ════════════════════════════════════════════════════════════════════
 // Get Document Statistics (Admin)
@@ -409,9 +380,9 @@ exports.getDocumentStats = async (req, res) => {
     const [stats] = await db.query(`
       SELECT 
         COUNT(*) as totalDocuments,
-        SUM(CASE WHEN visible = 1 THEN 1 ELSE 0 END) as activeDocuments
+        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as activeDocuments
       FROM Document
-      WHERE deletedAt IS NULL
+      WHERE status != 'deleted'
     `);
 
     res.json({
@@ -443,10 +414,9 @@ exports.getGroupedDocuments = async (req, res) => {
     const documents = await db.query(`
       SELECT * FROM Document 
       WHERE userId = ? 
-      AND (financialYear = ? OR financialYear = ?)
-      AND visible = 1 
-      AND deletedAt IS NULL
-      ORDER BY uploadedAt DESC
+      AND (fiscalYear = ? OR fiscalYear = ?)
+      AND status = 'active'
+      ORDER BY createdAt DESC
     `, [userId, fy, `FY${fy}`]);
 
     // Grouping logic: ITR, GST, OTHER (Case-insensitive)
@@ -466,4 +436,3 @@ exports.getGroupedDocuments = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch documents' });
   }
 };
-

@@ -192,10 +192,9 @@ async function verifyPayment(req, res) {
         if (user) {
           let referrerId = user.referrer_id;
           
-          // If not in User table, check Referral table
           if (!referrerId) {
             const [referral] = await db.query(
-              'SELECT u.id FROM Referral r JOIN User u ON r.referrerEmail = u.email WHERE r.refereeEmail = ? LIMIT 1',
+              'SELECT r.referrerId as id FROM Referral r WHERE r.refereeEmail = ? LIMIT 1',
               [user.email]
             );
             if (referral) referrerId = referral.id;

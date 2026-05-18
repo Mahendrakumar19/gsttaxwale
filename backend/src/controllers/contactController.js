@@ -10,14 +10,14 @@ const nodemailer = require('nodemailer');
 async function handleContactForm(req, res) {
   try {
     const { name, email, message } = req.body;
-    const userId = req.user ? req.user.id : null;
+    const userId = req.user ? req.user.id : 1; // Fallback to user ID 1 for guests
 
     if (!name || !email || !message) {
       return res.status(400).json(errorResponse('Name, email and message are required'));
     }
 
     // 1. Create a Support Ticket in the system
-    const ticket = await prisma.ticket.create({
+    const ticket = await prisma.supportTicket.create({
       data: {
         userId: userId,
         subject: `Contact Form: ${name}`,
@@ -46,7 +46,7 @@ async function handleContactForm(req, res) {
       from: `"${fromName}" <${fromEmail}>`,
       to: 'help@gsttaxwale.com',
       replyTo: email,
-      subject: `[Support Ticket #${ticket.id.substring(0, 8)}] New Query from ${name}`,
+      subject: `[Support Ticket #${ticket.id}] New Query from ${name}`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; color: #333;">
           <h2 style="color: #2563eb;">New Support Query</h2>

@@ -114,7 +114,7 @@ export default function ReferralPage() {
     setTimeout(() => setCopied(null), 2000);
   }
 
-  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/register?ref=${user?.referral_code || user?.id}`;
+  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/contact?ref=${user?.referral_code || user?.id}`;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pt-24 pb-12">

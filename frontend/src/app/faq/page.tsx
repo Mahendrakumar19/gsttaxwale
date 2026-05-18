@@ -124,7 +124,7 @@ export default function FAQ() {
         <h2 className="text-2xl font-bold text-white mb-4">Didn't find your answer?</h2>
         <p className="text-amber-100 mb-6">Our support team is here to help you 24/7</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="https://wa.me/917739301568" className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold transition">
+          <a href="https://wa.me/917870778771" className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold transition">
             Chat on WhatsApp
           </a>
           <a href="/contact" className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold transition">

@@ -310,7 +310,7 @@ function ServiceDetail({ params }: { params: { id: string } }) {
         <div className="max-w-4xl mx-auto text-center text-gray-600">
           <h3 className="font-bold text-gray-900 mb-4">Need Help?</h3>
           <p className="mb-4">
-            Contact our support team at <a href="mailto:help@gsttaxwale.com" className="text-blue-600 hover:underline">help@gsttaxwale.com</a> or call <a href="tel:+917739301568" className="text-blue-600 hover:underline">7739301568</a>
+            Contact our support team at <a href="mailto:help@gsttaxwale.com" className="text-blue-600 hover:underline">help@gsttaxwale.com</a> or call <a href="tel:+917870778771" className="text-blue-600 hover:underline">7870778771</a> / <a href="tel:+916182313455" className="text-blue-600 hover:underline">6182313455</a>
           </p>
           <p className="text-sm text-gray-500">Available Monday - Friday, 9 AM - 6 PM IST</p>
         </div>

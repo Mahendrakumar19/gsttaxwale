@@ -108,7 +108,7 @@ export default function UserSummaryCard({ onRefresh }: UserSummaryCardProps) {
             <Phone className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
             <div>
               <p className="text-xs uppercase text-gray-500 font-semibold">Mobile Number</p>
-              <p className="text-gray-900 font-medium">{user.phone || '7739301568'}</p>
+              <p className="text-gray-900 font-medium">{user.phone || '7870778771'}</p>
             </div>
           </div>
 

@@ -121,7 +121,7 @@ async function getService(req, res) {
 
 async function createService(req, res) {
   try {
-    const { title, description, price, discountedPrice, features, slug } = req.body;
+    const { title, description, price, discountedPrice, features, slug, requirements } = req.body;
 
     const parsedPrice = Number(price) || 0;
     const parsedDiscountPrice = discountedPrice === undefined || discountedPrice === null || discountedPrice === ''
@@ -135,6 +135,7 @@ async function createService(req, res) {
       price: parsedPrice,
       discountPrice: parsedDiscountPrice,
       features: typeof features === 'string' ? features : JSON.stringify(features || []),
+      requirements: requirements || '',
       createdAt: new Date(),
       updatedAt: new Date(),
       active: 1

@@ -208,7 +208,7 @@ export default function ContactForm() {
       </div>
       
       <div className="space-y-1.5">
-        <label className="text-xs font-bold text-gray-500 uppercase ml-1">Mobile Number (Optional)</label>
+        <label className="text-xs font-bold text-gray-500 uppercase ml-1">Mobile Number</label>
         <div className="relative">
           <Phone className="absolute left-4 top-4 text-gray-400" size={18} />
           <input 

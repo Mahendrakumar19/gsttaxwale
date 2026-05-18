@@ -23,7 +23,11 @@ export default function SiteFooter() {
               </div>
               <div className="flex items-center gap-2">
                 <Phone size={16} />
-                <a href="tel:+917739301568" className="transition hover:text-blue-600">7739301568</a>
+                <div className="flex flex-col sm:flex-row sm:gap-2">
+                  <a href="tel:+917870778771" className="transition hover:text-blue-600">7870778771</a>
+                  <span className="hidden sm:inline text-gray-400">|</span>
+                  <a href="tel:+916182313455" className="transition hover:text-blue-600">6182313455</a>
+                </div>
               </div>
             </div>
           </div>

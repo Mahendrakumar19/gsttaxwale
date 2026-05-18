@@ -5,7 +5,7 @@ export default function Disclaimer() {
     <div className="min-h-screen bg-white text-gray-900">
       <section className="pt-20 pb-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-900 mb-2">Disclaimer</h1>
-        <p className="text-gray-600">Last updated: May 2, 2026</p>
+        <p className="text-gray-600">Last updated: May 18, 2026</p>
       </section>
 
       <section className="py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto text-gray-700 space-y-8">
@@ -15,177 +15,149 @@ export default function Disclaimer() {
           </p>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">1. No Professional Advice</h2>
-            <p className="mb-3">
-              GST Tax Wale provides information and tools for educational purposes only. The content is NOT a substitute for professional tax or legal advice. Always consult with a qualified:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>Chartered Accountant (CA)</li>
-              <li>Tax consultant</li>
-              <li>Registered auditor</li>
-              <li>Legal advisor</li>
-            </ul>
-            <p className="mt-3">before taking any financial or tax decisions.</p>
-          </div>
+        <div className="space-y-8">
 
+          {/* Section 1 */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">2. Accuracy of Information</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">1. About Our Services</h2>
             <p className="mb-3">
-              While we strive to provide accurate and up-to-date information:
+              GST Tax Wale provides professional tax, GST, and compliance services through qualified Chartered Accountants (CAs) and tax professionals. We assist users with:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>Tax laws and regulations change frequently</li>
-              <li>Information may become outdated without notice</li>
-              <li>We make no guarantee of accuracy, completeness, or timeliness</li>
-              <li>Users should verify information from official government sources</li>
-              <li>Errors may occur despite our efforts to prevent them</li>
+              <li>GST filings and registrations</li>
+              <li>Income tax return preparation and filing</li>
+              <li>Compliance notices and responses</li>
+              <li>Bookkeeping and accounting services</li>
+              <li>Related statutory and compliance services</li>
             </ul>
           </div>
 
+          {/* Section 2 */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">3. Liability Limitation</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">2. User Responsibility</h2>
+            <p className="mb-3">
+              While we strive to provide accurate and timely services, users remain responsible for:
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-2">
+              <li>Reviewing all information, documents, and filings before final submission to government authorities</li>
+              <li>Providing accurate and complete data to our team</li>
+              <li>Ensuring their financial records are up-to-date and verifiable</li>
+              <li>Informing us promptly of any changes in their business, income, or compliance status</li>
+              <li>Keeping login credentials and shared documents confidential and secure</li>
+            </ul>
+          </div>
+
+          {/* Section 3 */}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">3. Independence from Government Authorities</h2>
+            <p className="mb-3">
+              GST Tax Wale is an independent private service provider and is <strong>not affiliated with, endorsed by, or operated by</strong> the Government of India, GSTN, Income Tax Department, or any government authority.
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-2">
+              <li>We are not an official government website or portal</li>
+              <li>Our name, branding, and communications carry no government authority</li>
+              <li>We do not represent or act on behalf of any regulatory body</li>
+            </ul>
+          </div>
+
+          {/* Section 4 */}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">4. Government Processing & Outcomes</h2>
+            <p className="mb-3">
+              Acceptance, approval, refunds, assessments, and processing timelines are solely determined by the respective government departments and authorities. GST Tax Wale:
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-2">
+              <li>Cannot guarantee acceptance of filed returns or applications by tax authorities</li>
+              <li>Is not responsible for government processing delays or system downtime</li>
+              <li>Cannot influence or control the outcome of assessments, notices, or refunds</li>
+              <li>Is not liable for penalties arising from government decisions made independent of our services</li>
+            </ul>
+          </div>
+
+          {/* Section 5 */}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">5. Accuracy of Information</h2>
+            <p className="mb-3">
+              While our qualified professionals work diligently to ensure accuracy:
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-2">
+              <li>Tax laws and regulations change frequently and without prior notice</li>
+              <li>Users should verify final filings and documents before authorizing submission</li>
+              <li>We recommend cross-referencing critical matters with official government sources</li>
+              <li>Our team updates practices in accordance with the latest applicable rules and circulars</li>
+            </ul>
+          </div>
+
+          {/* Section 6 */}
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">6. Limitation of Liability</h2>
             <p className="mb-3">
               GST Tax Wale is not liable for:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>Financial losses or tax penalties resulting from using our services</li>
-              <li>Incorrect tax calculations or filing errors</li>
-              <li>Non-compliance with tax laws or regulations</li>
-              <li>Data loss or security breaches (beyond our reasonable control)</li>
-              <li>Third-party claims or actions based on our content</li>
-              <li>Indirect, incidental, or consequential damages</li>
+              <li>Losses arising from inaccurate or incomplete information provided by the user</li>
+              <li>Penalties or interest due to government-imposed delays or policy changes</li>
+              <li>Losses caused by unauthorized access to user accounts</li>
+              <li>Indirect, incidental, or consequential damages arising from use of our services</li>
+              <li>Service disruptions caused by government portals (GSTN, IT e-filing, etc.) or third-party platforms</li>
             </ul>
           </div>
 
+          {/* Section 7 */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">4. Government Authority</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">7. Data Security</h2>
             <p className="mb-3">
-              GST Tax Wale is an independent service provider and is NOT:
+              We implement industry-standard security measures to protect your data. However:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>An official government website or authority</li>
-              <li>Authorized to file returns on behalf of users (unless specifically stated)</li>
-              <li>Responsible for government processing delays</li>
-              <li>Able to guarantee acceptance of filed returns by tax authorities</li>
-              <li>Associated with or endorsed by any government agency</li>
+              <li>No system is 100% immune to security threats</li>
+              <li>Users transmit data over the internet at their own risk</li>
+              <li>We are not liable for unauthorized access resulting from user negligence (e.g., sharing passwords)</li>
+              <li>We recommend not sharing sensitive credentials with anyone, including our team, beyond what is strictly necessary</li>
             </ul>
           </div>
 
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">5. User Responsibility</h2>
-            <p className="mb-3">
-              Users are solely responsible for:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>Verifying all information before using it for official filings</li>
-              <li>Maintaining accuracy and completeness of data provided</li>
-              <li>Complying with applicable tax laws and regulations</li>
-              <li>Obtaining professional advice before making financial decisions</li>
-              <li>Keeping login credentials confidential and secure</li>
-              <li>Reviewing outputs before submitting to government authorities</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">6. Changes to Regulations</h2>
-            <p className="mb-3">
-              Tax laws and regulations are subject to change. GST Tax Wale:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>Makes best efforts to update content for new regulations</li>
-              <li>Cannot guarantee timely updates for all changes</li>
-              <li>Is not responsible for compliance issues due to regulatory changes</li>
-              <li>Recommends checking official sources for latest updates</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">7. Third-Party Content</h2>
-            <p className="mb-3">
-              Regarding external links and third-party content:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>We are not responsible for external website content</li>
-              <li>Links are provided for reference only, not endorsement</li>
-              <li>Third-party services are subject to their own terms</li>
-              <li>We do not control or verify external content</li>
-            </ul>
-          </div>
-
+          {/* Section 8 */}
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">8. Service Availability</h2>
-            <p className="mb-3">
-              GST Tax Wale platform availability:
-            </p>
             <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>Service may be unavailable for maintenance or updates</li>
-              <li>We do not guarantee 100% uptime</li>
-              <li>Technical issues may prevent access to services</li>
-              <li>We are not liable for losses due to service interruptions</li>
-              <li>Critical deadlines should be planned accordingly</li>
+              <li>Our platform may be intermittently unavailable due to maintenance or technical issues</li>
+              <li>We do not guarantee 100% uptime of the web portal</li>
+              <li>Time-sensitive compliance filings should not be left to the last minute</li>
+              <li>We are not liable for losses caused by platform downtime or technical interruptions</li>
             </ul>
           </div>
 
+          {/* Section 9 */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">9. Data Security Disclaimer</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">9. Jurisdiction & Governing Law</h2>
             <p className="mb-3">
-              While we implement security measures:
+              This disclaimer is governed by the laws of India. Any disputes arising from the use of our services shall be subject to:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>No system is 100% secure against all threats</li>
-              <li>Users assume risk of data transmission over internet</li>
-              <li>We are not liable for unauthorized access or data breaches</li>
-              <li>Users should not share passwords or sensitive information</li>
-              <li>Regular backups are recommended for important documents</li>
+              <li>Exclusive jurisdiction of competent courts in India</li>
+              <li>Resolution through good-faith negotiation before legal proceedings</li>
             </ul>
           </div>
 
+          {/* Section 10 */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">10. Assumption of Risk</h2>
-            <p className="mb-3">
-              By using GST Tax Wale, you assume all risks associated with:
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">10. Changes to This Disclaimer</h2>
+            <p>
+              We reserve the right to update this disclaimer at any time to reflect changes in our services, applicable laws, or best practices. Continued use of our services after any update constitutes your acceptance of the revised disclaimer.
             </p>
-            <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>Accuracy of calculations and recommendations</li>
-              <li>Suitability of services for your specific situation</li>
-              <li>Compliance with applicable laws</li>
-              <li>Submission and processing of filings</li>
-              <li>Reliance on third-party services and integrations</li>
-            </ul>
           </div>
 
+          {/* Contact */}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">11. Jurisdiction & Governing Law</h2>
-            <p className="mb-3">
-              This disclaimer is governed by the laws of India. Users agree to:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-2">
-              <li>Exclusive jurisdiction of courts in India</li>
-              <li>Binding arbitration for disputes (if applicable)</li>
-              <li>Cannot initiate class action suits</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">12. Professional Recommendation</h2>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="font-semibold text-gray-900 mb-2">Strongly Recommended:</p>
-              <p>
-                While GST Tax Wale provides helpful tools and information, we strongly recommend consulting with a qualified Chartered Accountant or tax professional for your specific situation. Professional advice can help you optimize your tax position and ensure full compliance with applicable laws.
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">13. Contact & Grievances</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">11. Contact & Grievances</h2>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-3">
               <p><strong className="text-gray-900">For Disclaimer Clarifications:</strong> help@gsttaxwale.com</p>
-              <p><strong className="text-gray-900">Phone:</strong> +91-7739-301-568</p>
-              <p><strong className="text-gray-900">Office Hours:</strong> Monday - Friday, 9 AM - 6 PM IST</p>
+              <p><strong className="text-gray-900">Phone:</strong> +91-7870778771 | +91-6182313455</p>
+              <p><strong className="text-gray-900">Office Hours:</strong> Monday – Saturday, 10 AM – 6 PM IST</p>
             </div>
           </div>
+
         </div>
       </section>
     </div>

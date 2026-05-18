@@ -30,8 +30,8 @@ async function getReferralInfo(req, res) {
 
     // Get count of referrals where this user is the referrer
     const [referralCount] = await db.query(
-      'SELECT COUNT(*) as count FROM Referral WHERE referrerEmail = ?',
-      [user.email]
+      'SELECT COUNT(*) as count FROM Referral WHERE referrerId = ?',
+      [userId]
     );
 
     // Get total redeemed points from ledger
@@ -74,9 +74,9 @@ async function createReferral(req, res) {
 
     // Create referral record in existing table for compatibility
     const [result] = await db.query(
-      `INSERT INTO Referral (referrerEmail, refereeEmail, status, createdAt, updatedAt)
-       SELECT email, ?, 'pending', NOW(), NOW() FROM User WHERE id = ?`,
-      [refereeEmail, userId]
+      `INSERT INTO Referral (referrerId, refereeEmail, refereePhone, referralStatus, createdAt, updatedAt)
+       VALUES (?, ?, ?, 'pending', NOW(), NOW())`,
+      [userId, refereeEmail, refereePhone || null]
     );
 
     // Track Event
@@ -116,7 +116,7 @@ async function getReferralLink(req, res) {
     }
 
     const baseUrl = process.env.FRONTEND_URL || 'https://gsttaxwale.com';
-    const referralLink = `${baseUrl}/signup?ref=${user.referral_code}`;
+    const referralLink = `${baseUrl}/?ref=${user.referral_code}`;
 
     return res.status(200).json(
       successResponse('Referral link generated', {
@@ -154,10 +154,10 @@ async function registerReferral(req, res) {
 
     // Insert into existing Referral table
     await db.query(
-      `INSERT INTO Referral (referrerEmail, refereeEmail, status, createdAt, updatedAt)
+      `INSERT INTO Referral (referrerId, refereeEmail, referralStatus, createdAt, updatedAt)
        VALUES (?, ?, 'pending', NOW(), NOW())
-       ON DUPLICATE KEY UPDATE status = 'pending', updatedAt = NOW()`,
-      [referrer.email, email]
+       ON DUPLICATE KEY UPDATE referralStatus = 'pending', updatedAt = NOW()`,
+      [referrer.id, email]
     );
 
     // Track Event
@@ -197,7 +197,7 @@ async function trackReferralConversion(req, res) {
     // If not in User table, check Referral table
     if (!referrerId) {
       const [referral] = await db.query(
-        'SELECT u.id FROM Referral r JOIN User u ON r.referrerEmail = u.email WHERE r.refereeEmail = ? LIMIT 1',
+        'SELECT referrerId as id FROM Referral WHERE refereeEmail = ? LIMIT 1',
         [user.email]
       );
       if (referral) referrerId = referral.id;
@@ -212,7 +212,7 @@ async function trackReferralConversion(req, res) {
 
     // 3. Update status in Referral table
     await db.query(
-      "UPDATE Referral SET status = 'completed', completedAt = NOW() WHERE refereeEmail = ?",
+      "UPDATE Referral SET referralStatus = 'completed', updatedAt = NOW() WHERE refereeEmail = ?",
       [user.email]
     );
 
@@ -255,7 +255,7 @@ async function redeemPoints(req, res) {
 
     // 2. Create a Ticket for Admin
     const prisma = require('../utils/prisma');
-    const ticket = await prisma.ticket.create({
+    const ticket = await prisma.supportTicket.create({
       data: {
         userId: userId,
         subject: '💸 Payout Request: ' + user.name,
@@ -327,8 +327,8 @@ async function getAllReferrals(req, res) {
     const referrals = await db.query(`
       SELECT r.*, u1.name as referrerName, u1.email as referrerEmail, u2.name as refereeName, u2.email as refereeEmail
       FROM Referral r
-      LEFT JOIN User u1 ON r.referrerEmail = u1.email
-      LEFT JOIN User u2 ON r.refereeEmail = u2.email
+      LEFT JOIN User u1 ON r.referrerId = u1.id
+      LEFT JOIN User u2 ON r.refereeId = u2.id
       ORDER BY r.createdAt DESC
     `);
 
@@ -355,6 +355,82 @@ async function getWalletHistory(req, res) {
   }
 }
 
+/**
+ * Get referral by ID (Admin only)
+ */
+async function getReferralById(req, res) {
+  try {
+    const { id } = req.params;
+    const [referral] = await db.query(`
+      SELECT r.*, u1.name as referrerName, u1.email as referrerEmail, u2.name as refereeName, u2.email as refereeEmail
+      FROM Referral r
+      LEFT JOIN User u1 ON r.referrerId = u1.id
+      LEFT JOIN User u2 ON r.refereeId = u2.id
+      WHERE r.id = ?
+    `, [id]);
+
+    if (!referral) {
+      return res.status(404).json(errorResponse('Referral not found'));
+    }
+
+    const formattedReferral = {
+      ...referral,
+      referrer: {
+        name: referral.referrerName,
+        email: referral.referrerEmail
+      },
+      referee: referral.refereeName ? {
+        name: referral.refereeName
+      } : null
+    };
+
+    return res.status(200).json(successResponse('Referral retrieved successfully', { referral: formattedReferral }));
+  } catch (error) {
+    console.error('❌ Error fetching referral by ID:', error);
+    return res.status(500).json(errorResponse('Failed to fetch referral details'));
+  }
+}
+
+/**
+ * Update referral by ID (Admin only)
+ */
+async function updateReferralById(req, res) {
+  try {
+    const { id } = req.params;
+    const { referralStatus, commissionAmount, notes } = req.body;
+
+    await db.query(`
+      UPDATE Referral 
+      SET referralStatus = ?, commissionAmount = ?, notes = ?, updatedAt = NOW()
+      WHERE id = ?
+    `, [referralStatus, commissionAmount, notes, id]);
+
+    const [referral] = await db.query(`
+      SELECT r.*, u1.name as referrerName, u1.email as referrerEmail, u2.name as refereeName, u2.email as refereeEmail
+      FROM Referral r
+      LEFT JOIN User u1 ON r.referrerId = u1.id
+      LEFT JOIN User u2 ON r.refereeId = u2.id
+      WHERE r.id = ?
+    `, [id]);
+
+    const formattedReferral = {
+      ...referral,
+      referrer: {
+        name: referral.referrerName,
+        email: referral.referrerEmail
+      },
+      referee: referral.refereeName ? {
+        name: referral.refereeName
+      } : null
+    };
+
+    return res.status(200).json(successResponse('Referral updated successfully', { referral: formattedReferral }));
+  } catch (error) {
+    console.error('❌ Error updating referral:', error);
+    return res.status(500).json(errorResponse('Failed to update referral'));
+  }
+}
+
 module.exports = {
   getReferralInfo,
   createReferral,
@@ -364,5 +440,7 @@ module.exports = {
   redeemPoints,
   getRedemptionHistory,
   getAllReferrals,
-  getWalletHistory
+  getWalletHistory,
+  getReferralById,
+  updateReferralById
 };

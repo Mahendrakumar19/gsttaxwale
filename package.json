@@ -12,8 +12,10 @@
   },
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js",
+    "start": "NODE_ENV=production node server.js",
+    "start:win": "set NODE_ENV=production && node server.js",
     "build": "npm install && npx prisma generate && cd frontend && npm install && npm run build && cd .. && cd backend && npm install && cd ..",
+    "build:frontend": "cd frontend && npm install && npm run build",
     "setup-db": "node backend/scripts/setup_db.js",
     "test-login": "node backend/scripts/test_login.js",
     "lint": "next lint",
@@ -25,7 +27,7 @@
     "format": "prettier --write \"app/**/*.{js,jsx,ts,tsx}\" \"lib/**/*.{js,ts}\" \"prisma/**/*.ts\""
   },
   "dependencies": {
-    "@prisma/client": "^4.16.2",
+    "@prisma/client": "^6.19.3",
     "aws-sdk": "^2.1559.0",
     "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
@@ -43,6 +45,7 @@
     "mysql2": "^3.20.0",
     "next": "^14.2.35",
     "nodemailer": "^6.9.7",
+    "prisma": "^6.19.3",
     "razorpay": "^2.9.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -61,7 +64,6 @@
     "concurrently": "^8.2.2",
     "nodemon": "^3.0.2",
     "postcss": "^8.4.38",
-    "prisma": "^4.16.2",
     "tailwindcss": "^3.4.3",
     "typescript": "^5.4.5"
   }

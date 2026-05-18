@@ -47,6 +47,7 @@ module.exports = function(app) {
   app.post(`${prefix}/auth/send-reset-otp`, asyncHandler(authController.sendResetOTP));
   app.post(`${prefix}/auth/verify-reset-otp`, asyncHandler(authController.verifyResetOTP));
   app.post(`${prefix}/auth/reset-password`, asyncHandler(authController.resetPassword));
+  app.post(`${prefix}/auth/change-password`, authenticate, asyncHandler(authController.changePassword));
   app.post(`${prefix}/auth/logout`, authenticate, asyncHandler(authController.logout));
   app.post(`${prefix}/auth/convert-guest-to-account`, asyncHandler(authController.convertGuestToAccount));
   app.post(`${prefix}/auth/check-email`, asyncHandler(authController.checkEmail));
@@ -89,6 +90,8 @@ module.exports = function(app) {
   app.put(`${prefix}/admin/referral/settings`, authenticate, adminOnly, asyncHandler(adminReferralController.updateSettings));
   app.get(`${prefix}/admin/referral/analytics`, authenticate, adminOnly, asyncHandler(adminReferralController.getReferralAnalytics));
   app.get(`${prefix}/admin/referrals`, authenticate, adminOnly, asyncHandler(referralController.getAllReferrals));
+  app.get(`${prefix}/referrals/:id`, authenticate, adminOnly, asyncHandler(referralController.getReferralById));
+  app.put(`${prefix}/referrals/:id`, authenticate, adminOnly, asyncHandler(referralController.updateReferralById));
 
   // DOCUMENT ROUTES
   app.post(`${prefix}/documents/upload`, authenticate, upload.array('files', 10), asyncHandler(documentController.uploadDocument));

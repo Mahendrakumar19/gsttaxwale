@@ -48,127 +48,108 @@ export default function AdminOrders() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'paid':
-        return (
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 rounded-md border border-green-200 text-[10px] font-bold uppercase tracking-wider">
-            Processed
-          </div>
-        );
+        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-500/30 text-green-200">✓ Paid</span>;
       case 'pending':
-        return (
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md border border-amber-200 text-[10px] font-bold uppercase tracking-wider">
-            Pending
-          </div>
-        );
+        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/30 text-yellow-200">⏳ Pending</span>;
       default:
-        return (
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-500 rounded-md border border-slate-200 text-[10px] font-bold uppercase tracking-wider">
-            {status || 'Unknown'}
-          </div>
-        );
+        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{status?.toUpperCase()}</span>;
     }
   };
 
   if (loading && orders.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[70vh]">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin mb-4" />
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Synchronizing Transaction Ledger...</p>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-gray-600 text-lg">Loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="animate-in fade-in duration-700">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Financial Ledger</h1>
-          <p className="text-sm text-slate-500 mt-1 font-medium">Monitoring platform-wide service acquisitions and settlements</p>
+    <div className="min-h-screen bg-white text-gray-900">
+      {/* Top Navigation */}
+      <nav className="glassmorphic sticky top-0 z-50 border-b border-slate-600/30 shadow-lg bg-white/80 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Link href="/admin/dashboard" className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition font-medium">
+            <span>←</span>
+            <span>Dashboard</span>
+          </Link>
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Customer Orders</h1>
+            <div className={`text-[10px] sm:text-xs px-3 py-1 rounded-full font-medium flex items-center gap-2 ${refreshing ? 'bg-blue-500/30 text-blue-800 animate-pulse' : 'bg-green-500/30 text-green-800'}`}>
+              <span className={`w-2 h-2 rounded-full ${refreshing ? 'bg-blue-400' : 'bg-green-400'}`}></span>
+              {refreshing ? 'Syncing…' : 'Live'}
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              adminAuth.clearAdmin();
+              router.push('/admin');
+            }}
+            className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg"
+          >
+            Logout
+          </button>
         </div>
-        <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all shadow-sm ${refreshing ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>
-           <span className={`w-1.5 h-1.5 rounded-full ${refreshing ? 'bg-white animate-pulse' : 'bg-slate-300'}`} />
-           <span>{refreshing ? 'Refreshing Matrix' : 'Audit Sync Active'}</span>
-        </div>
-      </div>
+      </nav>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="text-left px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Reference ID</th>
-                <th className="text-left px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Service Item</th>
-                <th className="text-left px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Valuation</th>
-                <th className="text-left px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Settlement</th>
-                <th className="text-left px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Counterparty</th>
-                <th className="text-left px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Timestamp</th>
-                <th className="text-right px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
-              </tr>
-            </thead>
 
-            <tbody className="divide-y divide-slate-50">
-              {orders.map((o) => (
-                <tr key={o.id} className="hover:bg-slate-50/30 transition-colors group">
-                  <td className="px-8 py-5">
-                     <span className="font-mono text-[10px] font-bold text-slate-300 uppercase tracking-tighter">ORD-{o.id.substring(0, 6)}</span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <p className="text-sm font-bold text-slate-900 leading-none tracking-tight">{o.service?.title || o.serviceId || 'Standard Unit'}</p>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase mt-1.5 tracking-widest">{o.service?.category || 'General'}</p>
-                  </td>
-                  <td className="px-6 py-5">
-                    <span className="text-sm font-bold text-slate-900 tracking-tight">₹{o.amount?.toLocaleString()}</span>
-                  </td>
-                  <td className="px-6 py-5">
-                    {getStatusBadge(o.status)}
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-col leading-tight">
-                      <span className="text-sm font-bold text-slate-900 tracking-tight">{o.customer?.name || o.guestName || 'Terminal User'}</span>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-widest">{o.customer?.email || o.guestEmail || 'Anonymous'}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-5">
-                    <p className="text-[10px] font-bold text-slate-700 uppercase tracking-tight">{new Date(o.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                    <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">{new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                  </td>
-                  <td className="px-8 py-5">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px]">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Order ID</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Service</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Customer</th>
+                  <th className="text-left px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="text-right px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {orders.map((o) => (
+                  <tr key={o.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                    <td className="px-6 py-4 text-sm font-mono text-gray-900">{o.id.substring(0, 8)}…</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{o.service?.title || o.serviceId || '—'}</td>
+                    <td className="px-6 py-4 font-semibold text-green-600">₹{o.amount?.toLocaleString()}</td>
+                    <td className="px-6 py-4">{getStatusBadge(o.status)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      <div className="font-medium">{o.customer?.name || o.guestName || 'Guest'}</div>
+                      <div className="text-xs text-gray-500">{o.customer?.email || o.guestEmail}</div>
+                      {o.guestPan && <div className="text-[10px] text-blue-600 font-mono uppercase">PAN: {o.guestPan}</div>}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{new Date(o.createdAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-right space-x-2">
                       {o.status !== 'paid' && (
                         <button
                           onClick={() => handleUpdateOrderStatus(o.id, 'paid')}
-                          className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[9px] font-bold rounded-lg transition-all uppercase tracking-widest shadow-sm"
+                          className="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded transition"
                         >
-                          Settle
+                          Mark Paid
                         </button>
                       )}
                       {o.status !== 'pending' && (
                         <button
                           onClick={() => handleUpdateOrderStatus(o.id, 'pending')}
-                          className="px-4 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-500 text-[9px] font-bold rounded-lg transition-all uppercase tracking-widest"
+                          className="text-xs bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded transition"
                         >
-                          Defer
+                          Mark Pending
                         </button>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        {orders.length === 0 && (
-          <div className="text-center py-24 bg-slate-50/50">
-            <div className="w-16 h-16 bg-white border border-slate-100 text-slate-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">📊</div>
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No Transactions Registered</h3>
-            <p className="text-xs text-slate-500 mt-1">Ready for financial ingestion</p>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
-
-      <div className="mt-12 text-center">
-        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.3em]">Institutional Grade Transaction Ledger • Secure-Stream Active</p>
+          {orders.length === 0 && (
+            <div className="text-center py-12 text-gray-900">📊 No orders yet. Orders will appear here once customers make purchases.</div>
+          )}
+        </div>
       </div>
     </div>
   );

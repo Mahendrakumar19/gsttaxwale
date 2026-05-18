@@ -24,22 +24,22 @@ export default function DashboardHeader({
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
-      <div className="flex items-center justify-between px-8 py-3">
+      <div className="flex items-center justify-between px-4 md:px-8 py-3">
         <Link href="/" className="hover:opacity-80 transition py-1">
           <img src="/gsttaxwale_logo.svg" alt="GST Tax Wale" className="h-12 w-auto" />
         </Link>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 md:gap-6">
+          <div className="text-xs md:text-sm text-gray-700 font-medium hidden sm:block">
+            Welcome, <span className="text-blue-600 font-semibold">{user?.name || 'User'}</span>
+          </div>
           <button 
             onClick={() => setShowLogoutModal(true)}
-            className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 font-semibold transition"
+            className="flex items-center gap-1 md:gap-2 text-xs md:text-sm text-red-600 hover:text-red-700 font-semibold transition bg-red-50 hover:bg-red-100 px-3 py-2 rounded-lg"
           >
             <LogOut size={16} />
             Logout
           </button>
-          <div className="text-sm text-gray-700 font-medium">
-            Welcome, <span className="text-blue-600 font-semibold">{user?.name || 'User'}</span>
-          </div>
         </div>
 
         {/* Logout Modal */}

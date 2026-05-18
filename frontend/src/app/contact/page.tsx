@@ -27,6 +27,9 @@ export default function ContactPage() {
   const [refName, setRefName] = useState('');
   const [refEmail, setRefEmail] = useState('');
   const [refPhone, setRefPhone] = useState('');
+  const [refereeName, setRefereeName] = useState('');
+  const [refereeEmail, setRefereeEmail] = useState('');
+  const [refereePhone, setRefereePhone] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [submittingRef, setSubmittingRef] = useState(false);
   
@@ -58,7 +61,10 @@ export default function ContactPage() {
       const response = await api.post('/api/referrals/generate-public', {
         name: refName,
         email: refEmail,
-        phone: refPhone
+        phone: refPhone,
+        refereeName,
+        refereeEmail,
+        refereePhone
       });
       if (response.data.success) {
         setReferralCode(response.data.data.referralCode);
@@ -197,7 +203,7 @@ export default function ContactPage() {
                       Hi {refName || 'Future Partner'}
                     </h3>
                     <p className="text-[#4B5E74] leading-relaxed">
-                      Refer your friends to GST Tax Wale's <span className="font-bold text-[#002B49]">350+ services</span>, and get <span className="font-bold text-[#2563EB]">points as a token of gratitude</span> for every successful referral.
+                      Refer your friends to GST Tax Wale's <span className="font-bold text-[#002B49]">30+ services</span>, and get <span className="font-bold text-[#2563EB]">points as a token of gratitude</span> for every successful referral.
                     </p>
                   </div>
                 </div>
@@ -309,39 +315,98 @@ export default function ContactPage() {
               ) : (
                 <div className="animate-in fade-in duration-500">
                   <h3 className="text-2xl font-black text-[#002B49] mb-8 text-center uppercase tracking-widest">Referral Details</h3>
-                  <form className="space-y-5" onSubmit={handleReferralSubmit}>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-black text-[#002B49] uppercase ml-1">Full Name</label>
-                      <input 
-                        type="text" 
-                        placeholder="Enter your name" 
-                        value={refName}
-                        onChange={(e) => setRefName(e.target.value)}
-                        className="w-full px-5 py-4 bg-[#F8FAFF] border border-[#E5E9F0] rounded-2xl focus:ring-2 focus:ring-[#2563EB] outline-none transition-all font-medium" 
-                        required 
-                      />
+                  <form className="space-y-6" onSubmit={handleReferralSubmit}>
+                    
+                    {/* Referrer section */}
+                    <div className="border-b border-[#E5E9F0] pb-6 mb-6">
+                      <h4 className="text-xs font-black text-[#2563EB] uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <span className="w-1.5 h-4 bg-[#2563EB] rounded-full"></span>
+                        Your Details (Referrer)
+                      </h4>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black text-[#002B49] uppercase ml-1">Your Full Name</label>
+                          <input 
+                            type="text" 
+                            placeholder="Enter your name" 
+                            value={refName}
+                            onChange={(e) => setRefName(e.target.value)}
+                            className="w-full px-5 py-4 bg-[#F8FAFF] border border-[#E5E9F0] rounded-2xl focus:ring-2 focus:ring-[#2563EB] outline-none transition-all font-medium text-black" 
+                            required 
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-black text-[#002B49] uppercase ml-1">Your Email</label>
+                            <input 
+                              type="email" 
+                              placeholder="Enter your email" 
+                              value={refEmail}
+                              onChange={(e) => setRefEmail(e.target.value)}
+                              className="w-full px-5 py-4 bg-[#F8FAFF] border border-[#E5E9F0] rounded-2xl focus:ring-2 focus:ring-[#2563EB] outline-none transition-all font-medium text-black" 
+                              required 
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-black text-[#002B49] uppercase ml-1">Your Mobile</label>
+                            <input 
+                              type="tel" 
+                              placeholder="Enter your mobile number" 
+                              value={refPhone}
+                              onChange={(e) => setRefPhone(e.target.value.replace(/\D/g, ''))}
+                              className="w-full px-5 py-4 bg-[#F8FAFF] border border-[#E5E9F0] rounded-2xl focus:ring-2 focus:ring-[#2563EB] outline-none transition-all font-medium text-black" 
+                              required 
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-black text-[#002B49] uppercase ml-1">Email Address</label>
-                      <input 
-                        type="email" 
-                        placeholder="Enter your email" 
-                        value={refEmail}
-                        onChange={(e) => setRefEmail(e.target.value)}
-                        className="w-full px-5 py-4 bg-[#F8FAFF] border border-[#E5E9F0] rounded-2xl focus:ring-2 focus:ring-[#2563EB] outline-none transition-all font-medium" 
-                        required 
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-black text-[#002B49] uppercase ml-1">Mobile Number</label>
-                      <input 
-                        type="tel" 
-                        placeholder="Enter your mobile number" 
-                        value={refPhone}
-                        onChange={(e) => setRefPhone(e.target.value.replace(/\D/g, ''))}
-                        className="w-full px-5 py-4 bg-[#F8FAFF] border border-[#E5E9F0] rounded-2xl focus:ring-2 focus:ring-[#2563EB] outline-none transition-all font-medium" 
-                        required 
-                      />
+
+                    {/* Referee section */}
+                    <div className="pb-4">
+                      <h4 className="text-xs font-black text-amber-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <span className="w-1.5 h-4 bg-amber-500 rounded-full"></span>
+                        Friend's Details (Whom You Refer)
+                      </h4>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black text-[#002B49] uppercase ml-1">Friend's Full Name</label>
+                          <input 
+                            type="text" 
+                            placeholder="Enter friend's name" 
+                            value={refereeName}
+                            onChange={(e) => setRefereeName(e.target.value)}
+                            className="w-full px-5 py-4 bg-[#F8FAFF] border border-[#E5E9F0] rounded-2xl focus:ring-2 focus:ring-[#2563EB] outline-none transition-all font-medium text-black" 
+                            required 
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-black text-[#002B49] uppercase ml-1">Friend's Email</label>
+                            <input 
+                              type="email" 
+                              placeholder="Enter friend's email" 
+                              value={refereeEmail}
+                              onChange={(e) => setRefereeEmail(e.target.value)}
+                              className="w-full px-5 py-4 bg-[#F8FAFF] border border-[#E5E9F0] rounded-2xl focus:ring-2 focus:ring-[#2563EB] outline-none transition-all font-medium text-black" 
+                              required 
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-black text-[#002B49] uppercase ml-1">Friend's Mobile</label>
+                            <input 
+                              type="tel" 
+                              placeholder="Enter friend's mobile number" 
+                              value={refereePhone}
+                              onChange={(e) => setRefereePhone(e.target.value.replace(/\D/g, ''))}
+                              className="w-full px-5 py-4 bg-[#F8FAFF] border border-[#E5E9F0] rounded-2xl focus:ring-2 focus:ring-[#2563EB] outline-none transition-all font-medium text-black" 
+                              required 
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="pt-4">
@@ -350,7 +415,7 @@ export default function ContactPage() {
                         disabled={submittingRef}
                         className="w-full bg-[#2563EB] text-white font-black py-5 rounded-2xl hover:bg-[#1D4ED8] hover:shadow-xl transition-all duration-300 disabled:opacity-50 text-lg uppercase tracking-widest"
                       >
-                        {submittingRef ? 'GENERATING...' : 'GET MY REFERRAL CODE'}
+                        {submittingRef ? 'GENERATING...' : 'SUBMIT REFERRAL & GET CODE'}
                       </button>
                       <p className="mt-4 text-center text-[10px] text-[#4B5E74] font-bold uppercase tracking-wider">
                         By clicking, you agree to our Referral Program T&C.

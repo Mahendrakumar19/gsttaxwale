@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
+
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ImageData {
@@ -96,20 +96,28 @@ export default function ImageSlider({
 
   if (loading || images.length === 0) {
     return (
-      <div className="w-full max-w-[1400px] mx-auto h-[300px] md:h-[400px] lg:h-[450px] bg-slate-900 animate-pulse rounded-[2.5rem] flex items-center justify-center">
-        <div className="text-white/20 font-black tracking-widest text-2xl">LOADING BANNERS...</div>
+      <div className="w-full max-w-[1400px] mx-auto bg-slate-900 animate-pulse rounded-2xl md:rounded-[2.5rem] flex items-center justify-center relative">
+        <div className="w-full pt-[40%]"></div> {/* 2.5:1 approximate aspect ratio for loading state */}
+        <div className="absolute inset-0 flex items-center justify-center text-white/20 font-black tracking-widest text-lg md:text-2xl">LOADING BANNERS...</div>
       </div>
     );
   }
 
   return (
     <div 
-      className="relative w-full max-w-[1400px] mx-auto overflow-hidden rounded-[2.5rem] shadow-2xl border-4 border-white/10 group"
+      className="relative w-full max-w-[1400px] mx-auto overflow-hidden rounded-2xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl border-2 md:border-4 border-white/10 group"
       onMouseEnter={() => setIsAutoPlay(false)}
       onMouseLeave={() => setIsAutoPlay(autoPlay)}
     >
       {/* Image Container */}
-      <div className="relative w-full h-[300px] md:h-[400px] lg:h-[450px] bg-slate-900">
+      <div className="relative w-full bg-slate-900 flex items-center justify-center">
+        {/* Invisible sizer to dynamically set container height based on the first image's aspect ratio */}
+        <img 
+          src={images[0].src} 
+          alt="sizer" 
+          className="w-full h-auto opacity-0 pointer-events-none block" 
+        />
+        
         {images.map((image, index) => (
           <div
             key={index}
@@ -117,40 +125,38 @@ export default function ImageSlider({
               index === currentIndex ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
             }`}
           >
-            {/* Background Image */}
-            <Image
+            {/* Using standard img for perfect responsive scaling without cropping */}
+            <img
               src={image.src}
               alt={image.alt}
-              fill
-              className="object-cover"
-              priority={index === 0}
+              className="w-full h-full object-contain"
             />
           </div>
         ))}
       </div>
 
       {/* Navigation Controls */}
-      <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+      <div className="absolute inset-x-2 md:inset-x-8 top-1/2 -translate-y-1/2 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
         <button
           onClick={goToPrevious}
-          className="pointer-events-auto w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:border-blue-500 transition-all shadow-2xl"
+          className="pointer-events-auto w-10 h-10 md:w-14 md:h-14 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:border-blue-500 transition-all shadow-2xl"
           aria-label="Previous image"
         >
-          <ChevronLeft className="w-8 h-8" />
+          <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
         </button>
 
         <button
           onClick={goToNext}
-          className="pointer-events-auto w-14 h-14 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:border-blue-500 transition-all shadow-2xl"
+          className="pointer-events-auto w-10 h-10 md:w-14 md:h-14 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-full flex items-center justify-center hover:bg-blue-600 hover:border-blue-500 transition-all shadow-2xl"
           aria-label="Next image"
         >
-          <ChevronRight className="w-8 h-8" />
+          <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
         </button>
       </div>
 
       {/* Slide Counter Overlay */}
       {showCounter && images.length > 0 && (
-        <div className="absolute top-8 right-8 px-4 py-2 bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl text-xs font-black tracking-widest">
+        <div className="absolute top-4 right-4 md:top-8 md:right-8 px-2 md:px-4 py-1 md:py-2 bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-xl md:rounded-2xl text-[10px] md:text-xs font-black tracking-widest">
           {String(currentIndex + 1).padStart(2, '0')} / {String(images.length).padStart(2, '0')}
         </div>
       )}

@@ -94,118 +94,111 @@ export default function SliderManagement() {
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Banner Management</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage hero section banners and promotional announcements</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Homepage Slider</h2>
+          <p className="text-slate-500 text-sm font-medium">Manage banners that appear on the homepage hero section</p>
         </div>
-        <div className="hidden md:block px-4 py-2 bg-blue-50 border border-blue-100 rounded-lg">
-          <p className="text-[10px] font-bold text-blue-700 uppercase tracking-wider flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
-            Active Display Status: Nominal
+        <div className="px-4 py-2 bg-blue-50 border border-blue-100 rounded-xl">
+          <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+            Recommended: Active Banners (3+)
           </p>
         </div>
       </div>
 
       {/* Upload Section */}
-      <div className="bg-white border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-blue-400 hover:bg-blue-50/30 transition-all group">
+      <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2rem] p-10 text-center hover:border-blue-400 transition-colors group">
         {previewUrl ? (
           <div className="space-y-6">
-            <div className="relative w-full max-w-2xl mx-auto h-[200px] rounded-lg overflow-hidden border border-slate-200 shadow-sm">
+            <div className="relative w-full max-w-2xl mx-auto h-[200px] rounded-2xl overflow-hidden border-4 border-white shadow-xl">
               <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
               <button 
                 onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}
-                className="absolute top-3 right-3 bg-red-600 text-white p-1.5 rounded-md hover:bg-red-700 shadow-sm transition"
+                className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 shadow-lg transition"
               >
-                <Trash2 size={16} />
+                <Trash2 size={18} />
               </button>
             </div>
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center justify-center gap-4">
               <button 
                 onClick={handleUpload}
                 disabled={uploading}
-                className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
+                className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50"
               >
-                {uploading ? <Loader2 className="animate-spin" size={14} /> : <Plus size={14} />}
-                {uploading ? 'Processing...' : 'Upload Banner'}
-              </button>
-              <button 
-                onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}
-                className="px-6 py-2.5 border border-slate-200 text-slate-600 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-slate-50 transition-colors"
-              >
-                Cancel
+                {uploading ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
+                {uploading ? 'UPLOADING...' : 'CONFIRM & ADD SLIDER'}
               </button>
             </div>
           </div>
         ) : (
           <label className="cursor-pointer block">
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition duration-300 shadow-sm">
-              <Upload size={24} />
+            <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition duration-500">
+              <Upload size={32} />
             </div>
-            <h3 className="text-base font-bold text-slate-900 mb-1">Upload New Banner</h3>
-            <p className="text-slate-400 text-xs mb-6">Preferred resolution: 1400x450px (PNG, JPG)</p>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Upload New Banner</h3>
+            <p className="text-slate-400 text-sm mb-6">Recommended size: 1400x450px (PNG or JPG)</p>
             <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-            <div className="inline-block px-5 py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 transition tracking-wider text-[10px] uppercase shadow-sm">
-              Select Image File
+            <div className="inline-block px-6 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-blue-600 transition tracking-wide text-xs uppercase">
+              SELECT IMAGE FILE
             </div>
           </label>
         )}
       </div>
 
       {/* Slider List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {loading ? (
-          Array(3).fill(0).map((_, i) => (
-            <div key={i} className="h-48 bg-slate-100 animate-pulse rounded-xl border border-slate-200" />
+          Array(2).fill(0).map((_, i) => (
+            <div key={i} className="h-[250px] bg-slate-100 animate-pulse rounded-3xl" />
           ))
         ) : sliders.length > 0 ? (
           sliders.map((slider) => (
-            <div key={slider.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
-              <div className="relative h-36 bg-slate-100">
+            <div key={slider.id} className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition group">
+              <div className="relative h-40 bg-slate-900">
                 <img 
                   src={`${process.env.NEXT_PUBLIC_API_URL || ''}${slider.imageUrl}`} 
                   alt={slider.alt} 
-                  className={`w-full h-full object-cover transition-all duration-500 ${!slider.isActive ? 'grayscale opacity-40' : ''}`}
+                  className={`w-full h-full object-cover transition duration-700 ${!slider.isActive ? 'grayscale opacity-50' : ''}`}
                 />
-                <div className="absolute top-3 right-3 flex gap-2">
+                <div className="absolute top-4 right-4 flex gap-2">
                   <button 
                     onClick={() => toggleSlider(slider.id, slider.isActive)}
-                    className={`p-1.5 rounded-md backdrop-blur-md border border-white/20 text-white transition-colors ${slider.isActive ? 'bg-green-600/90 hover:bg-green-700' : 'bg-slate-600/90 hover:bg-slate-700'}`}
-                    title={slider.isActive ? 'Set Inactive' : 'Set Active'}
+                    className={`p-2 rounded-xl backdrop-blur-md border border-white/20 text-white transition ${slider.isActive ? 'bg-green-500/80 hover:bg-green-600' : 'bg-slate-500/80 hover:bg-slate-600'}`}
+                    title={slider.isActive ? 'Deactivate' : 'Activate'}
                   >
-                    {slider.isActive ? <Eye size={16} /> : <EyeOff size={16} />}
+                    {slider.isActive ? <Eye size={18} /> : <EyeOff size={18} />}
                   </button>
                   <button 
                     onClick={() => deleteSlider(slider.id)}
-                    className="p-1.5 bg-red-600/90 hover:bg-red-700 backdrop-blur-md border border-white/20 text-white rounded-md transition-colors"
-                    title="Remove"
+                    className="p-2 bg-red-500/80 hover:bg-red-600 backdrop-blur-md border border-white/20 text-white rounded-xl transition"
+                    title="Delete"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
               </div>
-              <div className="p-4 flex items-center justify-between border-t border-slate-50">
+              <div className="p-5 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${slider.isActive ? 'bg-green-500' : 'bg-slate-300'}`} />
-                    <h4 className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">
-                      {slider.isActive ? 'Display Active' : 'Hidden'}
+                    <span className={`w-2 h-2 rounded-full ${slider.isActive ? 'bg-green-500' : 'bg-slate-300'}`} />
+                    <h4 className="text-sm font-bold text-slate-800 uppercase tracking-tighter">
+                      {slider.isActive ? 'Active Slide' : 'Hidden Slide'}
                     </h4>
                   </div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Priority Index: {slider.order}</p>
+                  <p className="text-xs text-slate-400">Order: {slider.order}</p>
                 </div>
-                <div className="w-8 h-8 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-slate-300">
-                  <ImageIcon size={16} />
+                <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-slate-300">
+                  <ImageIcon size={20} />
                 </div>
               </div>
             </div>
           ))
         ) : (
-          <div className="col-span-full py-16 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-             <div className="text-slate-300 mb-3 flex justify-center"><ImageIcon size={40} /></div>
-             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-1">No Custom Banners</h3>
-             <p className="text-xs text-slate-500">System is using default library assets</p>
+          <div className="col-span-full py-20 text-center bg-slate-50 rounded-[2rem] border border-dashed border-slate-200">
+             <div className="text-slate-300 mb-4 flex justify-center"><ImageIcon size={48} /></div>
+             <p className="text-slate-400 font-medium">No custom sliders uploaded yet. Default banners are currently active.</p>
           </div>
         )}
       </div>

@@ -122,11 +122,8 @@ export default function SiteHeader() {
               </div>
             ) : (
               <div className="flex items-center space-x-2">
-                <Link href="/auth/login" className="text-sm border border-blue-600 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition font-medium">
+                <Link href="/auth/login" className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium">
                   Login
-                </Link>
-                <Link href="/auth/register" className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium">
-                  Sign Up
                 </Link>
               </div>
             )}
@@ -200,17 +197,10 @@ export default function SiteHeader() {
                 <>
                   <Link
                     href="/auth/login"
-                    className="text-sm border border-blue-600 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition font-medium block text-center"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/auth/register"
                     className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium block text-center"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Sign Up
+                    Login
                   </Link>
                 </>
               )}

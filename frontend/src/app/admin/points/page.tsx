@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Wallet, Search, TrendingUp, TrendingDown, Loader2, User, History } from 'lucide-react';
-import { adminAuth } from '@/lib/adminAuth';
+import { Wallet, Search, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface User {
   id: string;
@@ -40,16 +39,26 @@ export default function AdminPointsPage() {
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const token = adminAuth.getAdminToken();
-      const user = adminAuth.getAdminUser();
+      try {
+        const token = localStorage.getItem('token');
+        const userData = localStorage.getItem('user');
 
-      if (!token || user?.role !== 'admin') {
-        router.push('/auth/login');
-        return;
+        if (!token || !userData) {
+          router.push('/auth/login');
+          return;
+        }
+
+        const user = JSON.parse(userData);
+        if (user.role !== 'admin') {
+          router.push('/');
+          return;
+        }
+
+        setAdminUser(user);
+        fetchUsers(token);
+      } catch (err) {
+        console.error('Auth check failed:', err);
       }
-
-      setAdminUser(user);
-      fetchUsers(token);
     };
 
     checkAdmin();
@@ -71,6 +80,7 @@ export default function AdminPointsPage() {
         const usersList = response.data?.users || response.users || [];
         setUsers(usersList);
       } else {
+        console.error('Failed to fetch users, status:', res.status);
         setUsers([]);
       }
     } catch (err) {
@@ -105,7 +115,7 @@ export default function AdminPointsPage() {
   };
 
   const handleSelectUser = (user: User) => {
-    const token = adminAuth.getAdminToken();
+    const token = localStorage.getItem('token');
     setSelectedUser(user);
     setAdjustmentForm({ pointsChange: '', reason: '' });
     if (token) {
@@ -117,17 +127,19 @@ export default function AdminPointsPage() {
     e.preventDefault();
 
     if (!selectedUser || !adjustmentForm.pointsChange || !adjustmentForm.reason) {
+      alert('Please fill in all fields');
       return;
     }
 
     const pointsChange = parseInt(adjustmentForm.pointsChange);
     if (isNaN(pointsChange) || pointsChange === 0) {
+      alert('Points change must be a non-zero number');
       return;
     }
 
     try {
       setSubmitting(true);
-      const token = adminAuth.getAdminToken();
+      const token = localStorage.getItem('token');
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 
       const res = await fetch(`${baseUrl}/api/admin/points/${selectedUser.id}`, {
@@ -144,15 +156,20 @@ export default function AdminPointsPage() {
       });
 
       if (res.ok) {
+        alert('Points adjusted successfully');
         fetchUsers(token!);
-        const updatedUser = users.find((u) => u.id === selectedUser.id);
-        if (updatedUser) {
-          handleSelectUser(updatedUser);
+        const user = users.find((u) => u.id === selectedUser.id);
+        if (user) {
+          handleSelectUser(user);
         }
         setAdjustmentForm({ pointsChange: '', reason: '' });
+      } else {
+        const error = await res.json();
+        alert(`Failed to adjust points: ${error.message}`);
       }
     } catch (err) {
       console.error('Adjustment error:', err);
+      alert('An error occurred during adjustment');
     } finally {
       setSubmitting(false);
     }
@@ -176,216 +193,187 @@ export default function AdminPointsPage() {
       )
     : [];
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[70vh]">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin mb-4" />
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Accessing Ledger Matrix...</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  if (!adminUser) return null;
 
   return (
-    <div className="animate-in fade-in duration-700">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Institutional Incentives</h1>
-          <p className="text-sm text-slate-500 mt-1 font-medium">Managing reward allocations and liquidity across the platform matrix</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <Link href="/admin" className="text-xl font-bold text-blue-600 hover:text-blue-700">
+            ← Admin Dashboard
+          </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* User Selection Panel */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-8">
-            <div className="mb-6">
-               <h2 className="text-lg font-bold text-slate-900 tracking-tight">Identity Lookup</h2>
-               <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-[0.2em]">Select recipient node</p>
-            </div>
+      {/* Content */}
+      <div className="p-6 max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <Wallet size={32} className="text-blue-600" />
+            Points Management
+          </h1>
+          <p className="text-gray-600">Adjust user points and view history</p>
+        </div>
 
-            {/* Search Box */}
-            <div className="mb-6 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-              <input
-                type="text"
-                placeholder="Search institutional ID..."
-                value={search}
-                onChange={(e) => handleSearchUsers(e.target.value)}
-                className="w-full pl-12 pr-6 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-slate-900 transition-all placeholder:text-slate-300 shadow-sm"
-              />
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* User Selection Panel */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Select User</h2>
 
-            {/* User List */}
-            <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 pr-2">
-              {searching && filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <button
-                    key={user.id}
-                    onClick={() => {
-                      handleSelectUser(user);
-                      setSearch('');
-                      setSearching(false);
-                    }}
-                    className="w-full text-left p-4 hover:bg-slate-50 rounded-2xl border border-transparent hover:border-slate-100 transition-all group"
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                       <p className="font-bold text-slate-900 tracking-tight text-sm group-hover:translate-x-1 transition-transform">{user.name}</p>
-                       <p className="text-[10px] font-bold text-slate-900 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100">{user.points_wallet} pts</p>
-                    </div>
-                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-tight truncate">{user.email}</p>
-                  </button>
-                ))
-              ) : searching && filteredUsers.length === 0 ? (
-                <div className="py-12 text-center">
-                   <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No matching nodes found</p>
-                </div>
-              ) : !selectedUser && (
-                <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-2xl">
-                   <User size={24} className="text-slate-200 mx-auto mb-3" />
-                   <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Awaiting Identity Query</p>
+              {/* Search Box */}
+              <div className="mb-4 relative">
+                <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search user..."
+                  value={search}
+                  onChange={(e) => handleSearchUsers(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
+
+              {/* User List */}
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {searching && filteredUsers.length > 0
+                  ? filteredUsers.map((user) => (
+                      <button
+                        key={user.id}
+                        onClick={() => {
+                          handleSelectUser(user);
+                          setSearch('');
+                          setSearching(false);
+                        }}
+                        className="w-full text-left p-3 hover:bg-blue-50 rounded-lg border border-gray-200 hover:border-blue-300 transition"
+                      >
+                        <p className="font-medium text-gray-900">{user.name}</p>
+                        <p className="text-sm text-gray-600">{user.email}</p>
+                        <p className="text-sm font-semibold text-blue-600">
+                          {user.points_wallet} pts
+                        </p>
+                      </button>
+                    ))
+                  : searching && filteredUsers.length === 0 && (
+                      <p className="text-gray-600 text-sm text-center py-4">No users found</p>
+                    )}
+              </div>
+
+              {/* Selected User Info */}
+              {selectedUser && (
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm text-gray-600 mb-1">Selected User</p>
+                  <p className="font-bold text-gray-900">{selectedUser.name}</p>
+                  <p className="text-sm text-gray-600">{selectedUser.email}</p>
+                  <p className="text-lg font-bold text-blue-600 mt-2">
+                    {selectedUser.points_wallet} Points
+                  </p>
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Selected User Info */}
-            {selectedUser && (
-              <div className="mt-8 p-6 bg-slate-900 rounded-2xl shadow-xl animate-in fade-in slide-in-from-top-4 duration-500">
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em] mb-2">Engaged Node</p>
-                <p className="font-bold text-white tracking-tight text-base mb-0.5">{selectedUser.name}</p>
-                <p className="text-[10px] font-medium text-slate-400 truncate mb-4">{selectedUser.email}</p>
-                <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Liquidity Index</p>
-                   <p className="text-xl font-bold text-white tracking-tight">
-                    {selectedUser.points_wallet} <span className="text-[10px] text-slate-500 ml-1 uppercase tracking-widest">PTS</span>
-                  </p>
+          {/* Adjustment & History Panel */}
+          <div className="lg:col-span-2 space-y-6">
+            {selectedUser ? (
+              <>
+                {/* Adjustment Form */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">Adjust Points</h2>
+
+                  <form onSubmit={handleAdjustPoints} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Points Change (positive or negative)
+                      </label>
+                      <input
+                        type="number"
+                        value={adjustmentForm.pointsChange}
+                        onChange={(e) =>
+                          setAdjustmentForm({ ...adjustmentForm, pointsChange: e.target.value })
+                        }
+                        placeholder="e.g., 100 or -50"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      />
+                      <p className="text-xs text-gray-600 mt-1">Use positive for credit, negative for debit</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Reason for Adjustment
+                      </label>
+                      <input
+                        type="text"
+                        value={adjustmentForm.reason}
+                        onChange={(e) =>
+                          setAdjustmentForm({ ...adjustmentForm, reason: e.target.value })
+                        }
+                        placeholder="e.g., Referral bonus, Service discount, etc."
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition font-semibold"
+                    >
+                      {submitting ? 'Processing...' : 'Adjust Points'}
+                    </button>
+                  </form>
                 </div>
+
+                {/* Points History */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">Points History</h2>
+
+                  {pointsHistory.length > 0 ? (
+                    <div className="space-y-3">
+                      {pointsHistory.map((txn) => (
+                        <div
+                          key={txn.id}
+                          className="flex items-start justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                        >
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className="mt-1">
+                              {txn.type === 'credit' ? (
+                                <TrendingUp className="text-green-600" size={20} />
+                              ) : (
+                                <TrendingDown className="text-red-600" size={20} />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">{txn.reason}</p>
+                              <p className="text-sm text-gray-600">{txn.description}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(txn.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div
+                            className={`font-bold text-lg whitespace-nowrap ml-4 ${
+                              txn.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                            }`}
+                          >
+                            {txn.type === 'credit' ? '+' : '-'}
+                            {txn.points}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-600 text-center py-8">No transaction history</p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+                <p className="text-gray-600 text-lg">Select a user to manage their points</p>
               </div>
             )}
           </div>
         </div>
-
-        {/* Adjustment & History Panel */}
-        <div className="lg:col-span-2 space-y-10">
-          {selectedUser ? (
-            <>
-              {/* Adjustment Form */}
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-10 animate-in fade-in slide-in-from-right-4 duration-500">
-                <div className="mb-8">
-                   <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
-                     <div className="p-2.5 bg-slate-50 text-slate-400 rounded-xl shadow-sm"><Wallet size={20} /></div>
-                     Incentive Adjustment
-                   </h2>
-                   <p className="text-[10px] text-slate-400 mt-2 uppercase font-bold tracking-[0.2em] ml-1">Modify liquidity allocation</p>
-                </div>
-
-                <form onSubmit={handleAdjustPoints} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Magnitude (Change)</label>
-                    <input
-                      type="number"
-                      value={adjustmentForm.pointsChange}
-                      onChange={(e) =>
-                        setAdjustmentForm({ ...adjustmentForm, pointsChange: e.target.value })
-                      }
-                      placeholder="e.g. 500 (Credit) or -200 (Debit)"
-                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-slate-900 transition-all placeholder:text-slate-300"
-                    />
-                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest ml-1">Positive for credit • Negative for debit</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Operational Rationale</label>
-                    <input
-                      type="text"
-                      value={adjustmentForm.reason}
-                      onChange={(e) =>
-                        setAdjustmentForm({ ...adjustmentForm, reason: e.target.value })
-                      }
-                      placeholder="Institutional Adjustment Rationale..."
-                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:border-slate-900 transition-all placeholder:text-slate-300"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2 flex justify-end">
-                    <button
-                      type="submit"
-                      disabled={submitting || !adjustmentForm.pointsChange || !adjustmentForm.reason}
-                      className="flex items-center gap-3 bg-slate-900 hover:bg-slate-800 text-white px-12 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all shadow-lg disabled:opacity-50 active:scale-95"
-                    >
-                      {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                      Commit Adjustment
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              {/* Points History */}
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="mb-8">
-                   <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
-                     <div className="p-2.5 bg-slate-50 text-slate-400 rounded-xl shadow-sm"><History size={20} /></div>
-                     Transaction Ledger
-                   </h2>
-                   <p className="text-[10px] text-slate-400 mt-2 uppercase font-bold tracking-[0.2em] ml-1">Historical flow monitor</p>
-                </div>
-
-                {pointsHistory.length > 0 ? (
-                  <div className="space-y-4">
-                    {pointsHistory.map((txn) => (
-                      <div
-                        key={txn.id}
-                        className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-900 transition-all group"
-                      >
-                        <div className="flex items-center gap-6 flex-1">
-                          <div className={`p-3 rounded-xl shadow-sm transition-all group-hover:scale-110 ${txn.type === 'credit' ? 'bg-white text-slate-900 border border-slate-100' : 'bg-slate-900 text-white shadow-xl'}`}>
-                            {txn.type === 'credit' ? (
-                              <TrendingUp size={18} />
-                            ) : (
-                              <TrendingDown size={18} />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900 tracking-tight text-base mb-0.5">{txn.reason}</p>
-                            <p className="text-[11px] font-medium text-slate-500 uppercase tracking-tight mb-2">{txn.description}</p>
-                            <div className="flex items-center gap-2">
-                               <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
-                               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-                                 {new Date(txn.createdAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                               </p>
-                            </div>
-                          </div>
-                        </div>
-                        <div
-                          className={`font-bold text-xl tracking-tight ml-6 ${
-                            txn.type === 'credit' ? 'text-slate-900' : 'text-slate-400'
-                          }`}
-                        >
-                          {txn.type === 'credit' ? '+' : '-'}{txn.points}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-24 text-center border-2 border-dashed border-slate-100 rounded-3xl">
-                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em]">Zero registered movements in ledger</p>
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="bg-white border-2 border-dashed border-slate-200 rounded-3xl p-32 text-center flex flex-col items-center justify-center min-h-[400px] shadow-sm animate-in fade-in duration-700">
-              <div className="w-20 h-20 bg-slate-50 border border-slate-100 rounded-full flex items-center justify-center mb-8 shadow-inner">
-                 <Wallet size={32} className="text-slate-200" />
-              </div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] max-w-[280px] leading-relaxed">Engage identity node to access institutional liquidity protocols</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-20 text-center">
-        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.5em]">Liquidity Governance • v4.2-ACTIVE • STABLE</p>
       </div>
     </div>
   );

@@ -72,18 +72,6 @@ export default function OverviewTab() {
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Compliance Header */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-4">
-           <div className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-2 ${
-             user.filingStatus === 'Filed' ? 'bg-green-100 text-green-700' : 
-             user.filingStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
-             user.filingStatus === 'Docs Required' ? 'bg-orange-100 text-orange-700' :
-             'bg-blue-100 text-blue-700'
-           }`}>
-             <ShieldCheck size={14} />
-             {user.filingStatus}
-           </div>
-        </div>
-
         <div className="flex flex-col md:flex-row gap-8 items-start">
           <div className="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl flex items-center justify-center text-white text-4xl font-bold shadow-xl shrink-0">
             {user.name[0].toUpperCase()}
@@ -92,7 +80,7 @@ export default function OverviewTab() {
           <div className="flex-1 space-y-6">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-1">{user.name}</h2>
-              <p className="text-gray-500 font-medium">Compliance Dashboard • Read-Only View</p>
+              <p className="text-gray-500 font-medium">User Dashboard</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
@@ -105,34 +93,11 @@ export default function OverviewTab() {
         </div>
       </div>
 
-      {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatusCard 
-          title="Filing Status" 
-          status={user.filingStatus} 
-          description="Managed by Admin"
-          icon={<Clock className="text-blue-600" />}
-        />
-        <StatusCard 
-          title="Documents" 
-          status="Available" 
-          description="View & Download Only"
-          icon={<Download className="text-green-600" />}
-        />
-        <StatusCard 
-          title="Support" 
-          status="Active" 
-          description="10 AM - 6 PM"
-          icon={<CheckCircle className="text-indigo-600" />}
-        />
-      </div>
-
       {/* Notice/Alert Section */}
       {user.filingStatus === 'Docs Required' && (
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex gap-4 items-start">
           <AlertCircle className="text-orange-600 shrink-0 mt-0.5" size={20} />
           <div>
-            <h4 className="font-bold text-orange-900 text-sm">Action Required: Documents Missing</h4>
             <p className="text-orange-700 text-xs mt-1">Our admin team has requested additional documents to proceed with your filing. Please check the Documents tab or contact support.</p>
           </div>
         </div>

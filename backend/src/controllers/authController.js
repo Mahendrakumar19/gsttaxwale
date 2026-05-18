@@ -957,6 +957,52 @@ async function verifyServicePurchaseOTP(req, res) {
     );
   }
 }
+async function changePassword(req, res) {
+  try {
+    const userId = req.user.id;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json(errorResponse('Old password and new password are required'));
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json(errorResponse('New password must be at least 6 characters'));
+    }
+
+    // Get user
+    const [user] = await db.query('SELECT * FROM `User` WHERE id = ?', [userId]);
+    if (!user) {
+      return res.status(404).json(errorResponse('User not found'));
+    }
+
+    // Verify old password
+    const isPasswordValid = await authService.comparePassword(oldPassword, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json(errorResponse('Invalid old password'));
+    }
+
+    // Hash new password
+    const hashedPassword = await authService.hashPassword(newPassword);
+
+    // Update user password
+    await db.query('UPDATE `User` SET password = ?, lastPasswordChange = NOW() WHERE id = ?', [hashedPassword, userId]);
+
+    // Send Password Change Notification if we want
+    try {
+      if (typeof authService.sendPasswordChangedEmail === 'function') {
+        await authService.sendPasswordChangedEmail(user.email);
+      }
+    } catch (mailError) {
+      console.error('📧 Failed to send password reset notification:', mailError);
+    }
+
+    res.status(200).json(successResponse(null, 'Password changed successfully.'));
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json(errorResponse('Failed to change password'));
+  }
+}
 
 module.exports = {
   register,
@@ -967,6 +1013,7 @@ module.exports = {
   sendResetOTP,
   verifyResetOTP,
   resetPassword,
+  changePassword,
   getCurrentUser,
   updateProfile,
   logout,

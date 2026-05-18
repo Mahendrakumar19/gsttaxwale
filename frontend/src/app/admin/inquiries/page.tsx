@@ -69,135 +69,121 @@ export default function AdminInquiriesPage() {
   if (loading) return <div className="flex items-center justify-center h-screen bg-white text-gray-900">Loading inquiries...</div>;
 
   return (
-    <div className="px-6 py-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Customer Inquiries</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage and respond to public messages and service requests</p>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm flex items-center gap-4">
-           <div className="w-10 h-10 bg-blue-50 text-blue-700 rounded-lg flex items-center justify-center">
-              <Mail size={20} />
-           </div>
-           <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Unread</p>
-              <p className="text-xl font-bold text-slate-900 leading-none">{inquiries.filter(i => i.status === 'new').length}</p>
-           </div>
-        </div>
-      </div>
-
-      {/* Filters and Search */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm mb-8 flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative group">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-          <input
-            type="text"
-            placeholder="Search by name, email, or subject..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-          />
-        </div>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-bold uppercase tracking-wider text-[10px] outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
-        >
-          <option value="all">All Inquiries</option>
-          <option value="new">New</option>
-          <option value="responded">Responded</option>
-          <option value="closed">Resolved</option>
-        </select>
-      </div>
-
-      {/* Inquiries Feed */}
-      <div className="space-y-4">
-        {filteredInquiries.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-200 py-16 text-center shadow-sm">
-            <div className="w-12 h-12 bg-slate-100 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">📬</div>
-            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">No Inquiries Found</h3>
-            <p className="text-xs text-slate-500 mt-1">Inbox is currently empty</p>
+    <div className="w-full min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-8 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Contact Inquiries</h1>
+            <p className="text-gray-600 mt-1">Manage messages from the public contact form</p>
           </div>
-        ) : (
-          filteredInquiries.map((inquiry) => (
-            <div key={inquiry.id} className="bg-white rounded-xl border border-slate-200 p-8 hover:shadow-md transition-shadow relative overflow-hidden">
-               <div className="flex flex-col lg:flex-row gap-8">
-                  <div className="flex-1">
-                     <div className="flex flex-wrap items-center gap-3 mb-4">
-                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
-                          inquiry.status === 'new' ? 'bg-blue-50 border-blue-100 text-blue-700' :
-                          inquiry.status === 'responded' ? 'bg-green-50 border-green-100 text-green-700' :
-                          'bg-slate-50 border-slate-100 text-slate-400'
-                        }`}>
-                          {inquiry.status === 'new' ? 'New Inquiry' : inquiry.status === 'responded' ? 'Responded' : 'Resolved'}
-                        </span>
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                           <Calendar size={12} className="text-slate-300" />
-                           {new Date(inquiry.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </div>
-                     </div>
+          <div className="flex items-center gap-4">
+             <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
+               <p className="text-xs text-blue-600 font-medium uppercase">New Inquiries</p>
+               <p className="text-2xl font-bold text-blue-900">{inquiries.filter(i => i.status === 'new').length}</p>
+             </div>
+          </div>
+        </div>
 
-                     <h3 className="text-xl font-bold text-slate-900 tracking-tight mb-4">{inquiry.subject}</h3>
-                     <div className="bg-slate-50 p-6 rounded-lg border border-slate-100 text-slate-600 text-sm leading-relaxed mb-6 whitespace-pre-wrap italic">
-                        "{inquiry.message}"
-                     </div>
+        {/* Filters */}
+        <div className="flex gap-4 flex-wrap">
+          <div className="flex-1 min-w-xs relative">
+            <Search size={20} className="absolute left-3 top-3 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name, email, or subject..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+            />
+          </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+          >
+            <option value="all">All Status</option>
+            <option value="new">New</option>
+            <option value="responded">Responded</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+      </div>
 
-                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                        <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400"><CheckCircle size={16} /></div>
-                           <div>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Sender</p>
-                              <p className="text-xs font-bold text-slate-900 uppercase">{inquiry.name}</p>
-                           </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400"><Mail size={16} /></div>
-                           <div>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Email</p>
-                              <p className="text-xs font-bold text-slate-900 lowercase">{inquiry.email}</p>
-                           </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400"><Phone size={16} /></div>
-                           <div>
-                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Phone</p>
-                              <p className="text-xs font-bold text-slate-900">{inquiry.phone}</p>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-
-                  <div className="lg:w-48 flex flex-col gap-2 justify-start pt-2">
-                     {inquiry.status === 'new' && (
-                       <button
-                         onClick={() => handleStatusUpdate(inquiry.id, 'responded')}
-                         className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-bold text-[10px] uppercase tracking-wider transition-colors shadow-sm"
-                       >
-                         Mark Responded
-                       </button>
-                     )}
-                     {inquiry.status !== 'closed' && (
-                       <button
-                         onClick={() => handleStatusUpdate(inquiry.id, 'closed')}
-                         className="w-full py-2.5 bg-white text-slate-700 border border-slate-200 rounded-lg font-bold text-[10px] uppercase tracking-wider hover:bg-slate-50 transition-colors"
-                       >
-                         Mark Resolved
-                       </button>
-                     )}
-                     <button
-                       onClick={() => handleDelete(inquiry.id)}
-                       className="w-full py-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all mt-4 flex items-center justify-center gap-2"
-                     >
-                       <Trash2 size={14} />
-                       Delete
-                     </button>
-                  </div>
-               </div>
+      {/* List */}
+      <div className="px-8 py-8">
+        <div className="space-y-4">
+          {filteredInquiries.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+              <Mail size={48} className="mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500 text-lg">No inquiries found</p>
             </div>
-          ))
-        )}
+          ) : (
+            filteredInquiries.map((inquiry) => (
+              <div key={inquiry.id} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition group">
+                <div className="flex flex-col md:flex-row justify-between gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-bold text-gray-900">{inquiry.subject}</h3>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        inquiry.status === 'new' ? 'bg-blue-100 text-blue-700' :
+                        inquiry.status === 'responded' ? 'bg-green-100 text-green-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {inquiry.status}
+                      </span>
+                    </div>
+                    <p className="text-gray-700 whitespace-pre-wrap mb-4">{inquiry.message}</p>
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-1.5 font-medium text-gray-900">
+                        <CheckCircle size={14} className="text-blue-500" />
+                        {inquiry.name}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Mail size={14} />
+                        {inquiry.email}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Phone size={14} />
+                        {inquiry.phone}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Clock size={14} />
+                        {new Date(inquiry.createdAt).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex md:flex-col gap-2 justify-end">
+                    {inquiry.status === 'new' && (
+                      <button
+                        onClick={() => handleStatusUpdate(inquiry.id, 'responded')}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-bold"
+                      >
+                        Mark Responded
+                      </button>
+                    )}
+                    {inquiry.status !== 'closed' && (
+                      <button
+                        onClick={() => handleStatusUpdate(inquiry.id, 'closed')}
+                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-bold"
+                      >
+                        Close
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(inquiry.id)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                      title="Delete Inquiry"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

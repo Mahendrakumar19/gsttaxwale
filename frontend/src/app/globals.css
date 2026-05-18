@@ -141,3 +141,12 @@ button, a {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(248, 113, 113, 0.6);
 }
+
+/* Hide scrollbar but keep scroll functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

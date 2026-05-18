@@ -25,7 +25,7 @@ interface Tab {
 const TABS: Tab[] = [
   {
     id: 'dashboard',
-    label: 'Overview',
+    label: 'Dashboard',
     icon: <BarChart3 className="w-4 h-4" />,
     component: OverviewTab,
   },
@@ -59,14 +59,14 @@ export default function DashboardTabs() {
     <div className="space-y-6">
       {/* Tab Navigation */}
       <div className="border-b border-gray-200 bg-white">
-        <div className="flex gap-1 px-8 flex-wrap">
+        <div className="flex gap-1 px-4 md:px-8 overflow-x-auto hide-scrollbar whitespace-nowrap">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                flex items-center gap-2 px-5 py-3 font-medium text-sm
-                border-b-2 transition-all duration-200 whitespace-nowrap
+                flex items-center gap-2 px-4 py-3 font-medium text-sm
+                border-b-2 transition-all duration-200 shrink-0
                 ${
                   activeTab === tab.id
                     ? 'border-blue-600 text-blue-600'
@@ -82,7 +82,7 @@ export default function DashboardTabs() {
       </div>
 
       {/* Tab Content */}
-      <div className="px-8 pb-8">
+      <div className="px-4 md:px-8 pb-8">
         {ActiveComponent ? <ActiveComponent /> : null}
       </div>
     </div>
