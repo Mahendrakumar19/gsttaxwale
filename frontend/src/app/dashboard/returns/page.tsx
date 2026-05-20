@@ -53,7 +53,7 @@ export default function ReturnsPage() {
       );
 
       const contentType = response.headers['content-type'];
-      const mimeType = typeof contentType === 'string' ? contentType : 'application/pdf';
+      const mimeType = typeof contentType === 'string' ? contentType : 'application/octet-stream';
       const blob = new Blob([response.data], { type: mimeType });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');

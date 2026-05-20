@@ -59,9 +59,9 @@ async function setSetting(key, value, type = 'text') {
     const stringValue = typeof value === 'string' ? value : String(value);
 
     if (existing) {
-      await db.query('UPDATE SiteSettings SET value = ?, type = ? WHERE key = ?', [stringValue, type, key]);
+      await db.query('UPDATE SiteSettings SET value = ?, type = ? WHERE `key` = ?', [stringValue, type, key]);
     } else {
-      await db.query('INSERT INTO SiteSettings (\`key\`, value, type) VALUES (?, ?, ?)', [key, stringValue, type]);
+      await db.query('INSERT INTO SiteSettings (`key`, value, type) VALUES (?, ?, ?)', [key, stringValue, type]);
     }
   } catch (error) {
     console.error(`Error setting ${key}:`, error);

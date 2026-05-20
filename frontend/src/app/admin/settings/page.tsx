@@ -37,15 +37,40 @@ export default function AdminSettings() {
   };
 
   const handleToggle = (key: string, currentValue: boolean) => {
-    setSettings(prev => prev.map(s => 
-      s.key === key ? { ...s, value: !currentValue } : s
-    ));
+    setSettings(prev => {
+      const exists = prev.some(s => s.key === key);
+      if (exists) {
+        return prev.map(s => s.key === key ? { ...s, value: !currentValue } : s);
+      } else {
+        let type = 'boolean';
+        return [...prev, {
+          id: Date.now(),
+          key,
+          value: !currentValue,
+          type,
+          updatedAt: new Date().toISOString()
+        }];
+      }
+    });
   };
 
   const handleChange = (key: string, value: string) => {
-    setSettings(prev => prev.map(s => 
-      s.key === key ? { ...s, value } : s
-    ));
+    setSettings(prev => {
+      const exists = prev.some(s => s.key === key);
+      if (exists) {
+        return prev.map(s => s.key === key ? { ...s, value } : s);
+      } else {
+        let type = 'text';
+        if (key === 'ENABLE_OTP' || key === 'ENABLE_REFERRAL' || key === 'MAINTENANCE_MODE') type = 'boolean';
+        return [...prev, {
+          id: Date.now(),
+          key,
+          value,
+          type,
+          updatedAt: new Date().toISOString()
+        }];
+      }
+    });
   };
 
   const handleSave = async () => {

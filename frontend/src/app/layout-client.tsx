@@ -59,7 +59,7 @@ export default function RootLayoutClient({
         <main className="flex-1 w-full">{children}</main>
         <SiteFooter />
         <StickyReferralButton />
-        <WhatsAppWidget isAdminPanel={false} />
+        {!isAdmin && <WhatsAppWidget isAdminPanel={false} />}
       </>
     );
   }
@@ -71,7 +71,7 @@ export default function RootLayoutClient({
       <main className="flex-1 w-full">{children}</main>
       {!isAdmin && !isDashboard && <SiteFooter />}
       {!isAdmin && !isDashboard && <StickyReferralButton />}
-      <WhatsAppWidget isAdminPanel={isAdmin || false} />
+      {!isAdmin && <WhatsAppWidget isAdminPanel={false} />}
     </>
   );
 }

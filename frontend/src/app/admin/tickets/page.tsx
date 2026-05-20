@@ -161,8 +161,8 @@ export default function AdminTickets() {
                         ticket.status === 'resolved' || ticket.status === 'closed'
                           ? 'bg-green-900/30 text-green-400'
                           : ticket.status === 'in-progress'
-                          ? 'bg-purple-900/30 text-purple-400'
-                          : 'bg-yellow-900/30 text-yellow-400'
+                          ? 'bg-blue-900/30 text-blue-600'
+                          : 'bg-blue-900/30 text-blue-600'  
                       }`}>
                         {ticket.status}
                       </span>

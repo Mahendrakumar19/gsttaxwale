@@ -22,7 +22,7 @@ interface ReturnSummaryProps {
 export default function ReturnSummary({ documents = [], onDownload }: ReturnSummaryProps) {
   const [selectedFY, setSelectedFY] = useState('2025-26');
   const [activeCategory, setActiveCategory] = useState<'GST' | 'ITR' | 'OTHERS'>('GST');
-  const [layoutMode, setLayoutMode] = useState<'matrix' | 'cards' | 'monthly-grid'>('matrix');
+  const [layoutMode, setLayoutMode] = useState<'matrix' | 'cards' | 'monthly-grid'>('monthly-grid');
   const [downloading, setDownloading] = useState<{ [key: string]: boolean }>({});
 
   const financialYears = ['2021-22', '2022-23', '2023-24', '2024-25', '2025-26', '2026-27'];
@@ -219,37 +219,6 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
               </select>
               <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
             </div>
-          </div>
-        </div>
-
-        {/* Switch View Trigger */}
-        <div className="flex items-center gap-2 self-end lg:self-auto">
-          <span className="text-xs font-bold text-gray-400">Layout:</span>
-          <div className="bg-gray-100 p-0.5 rounded-lg flex">
-            <button
-              onClick={() => setLayoutMode('matrix')}
-              className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-                layoutMode === 'matrix' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              Filing Matrix
-            </button>
-            <button
-              onClick={() => setLayoutMode('monthly-grid')}
-              className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-                layoutMode === 'monthly-grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              Monthly Grid
-            </button>
-            <button
-              onClick={() => setLayoutMode('cards')}
-              className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-                layoutMode === 'cards' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              Cards Grid
-            </button>
           </div>
         </div>
       </div>
