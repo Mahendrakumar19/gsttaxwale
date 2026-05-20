@@ -7,9 +7,9 @@ const nodemailer = require('nodemailer');
  * Generate unique referral code: gtw + first 3 of name + last 4 of mobile
  */
 function generateCode(name, phone) {
-  const namePart = (name || 'usr').toLowerCase().replace(/[^a-z]/g, '').slice(0, 3).padEnd(3, 'x');
+  const firstName = (name || 'USR').trim().split(/\s+/)[0].toUpperCase().replace(/[^A-Z]/g, '');
   const phonePart = (phone || '0000').replace(/\D/g, '').slice(-4).padStart(4, '0');
-  return `gtw${namePart}${phonePart}`;
+  return `GTW${firstName}${phonePart}`;
 }
 
 /**
@@ -164,9 +164,7 @@ async function generatePublicReferral(req, res) {
       return res.status(400).json(errorResponse('Name, email and phone are required'));
     }
 
-    if (!refereeName || !refereeEmail || !refereePhone) {
-      return res.status(400).json(errorResponse('Friend\'s name, email and phone are required'));
-    }
+
 
     // 1. Find or create referrer user (WITHOUT 'active' column)
     let user = await db.findOne('User', { email });
@@ -204,55 +202,57 @@ async function generatePublicReferral(req, res) {
       userId = newUser.id;
     }
 
-    // 2. Find or create referee user (WITHOUT 'active' column)
-    let refereeUser = await db.findOne('User', { email: refereeEmail });
-    if (!refereeUser) {
-      refereeUser = await db.findOne('User', { phone: refereePhone });
+    // 2. Find or create referee user if details provided
+    if (refereeEmail && refereePhone && refereeName) {
+      let refereeUser = await db.findOne('User', { email: refereeEmail });
+      if (!refereeUser) {
+        refereeUser = await db.findOne('User', { phone: refereePhone });
+      }
+
+      let refereeId;
+      if (refereeUser) {
+        refereeId = refereeUser.id;
+      } else {
+        const dummyPassword = 'TEMP_' + Math.random().toString(36).slice(-8);
+        const newReferee = await db.create('User', {
+          name: refereeName,
+          email: refereeEmail,
+          phone: refereePhone,
+          password: dummyPassword,
+          role: 'user',
+          status: 'pending',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        refereeId = newReferee.id;
+      }
+
+      // 3. Create Referral record if not already existing
+      const [existingReferral] = await db.query(
+        'SELECT id FROM Referral WHERE referrerId = ? AND refereeEmail = ?',
+        [userId, refereeEmail]
+      );
+
+      if (!existingReferral) {
+        await db.create('Referral', {
+          referrerId: userId,
+          refereeId,
+          refereeEmail,
+          refereePhone,
+          referralStatus: 'pending',
+          commissionPercent: 10,
+          commissionAmount: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+
+      // 4. Send emails (non-blocking — don't fail the request if email fails)
+      Promise.all([
+        sendReferrerEmail(email, name, refereeName, referralCode),
+        sendRefereeEmail(refereeEmail, refereeName, name, referralCode),
+      ]).catch(err => console.error('Email notification error:', err));
     }
-
-    let refereeId;
-    if (refereeUser) {
-      refereeId = refereeUser.id;
-    } else {
-      const dummyPassword = 'TEMP_' + Math.random().toString(36).slice(-8);
-      const newReferee = await db.create('User', {
-        name: refereeName,
-        email: refereeEmail,
-        phone: refereePhone,
-        password: dummyPassword,
-        role: 'user',
-        status: 'pending',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-      refereeId = newReferee.id;
-    }
-
-    // 3. Create Referral record if not already existing
-    const [existingReferral] = await db.query(
-      'SELECT id FROM Referral WHERE referrerId = ? AND refereeEmail = ?',
-      [userId, refereeEmail]
-    );
-
-    if (!existingReferral) {
-      await db.create('Referral', {
-        referrerId: userId,
-        refereeId,
-        refereeEmail,
-        refereePhone,
-        referralStatus: 'pending',
-        commissionPercent: 10,
-        commissionAmount: 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-    }
-
-    // 4. Send emails (non-blocking — don't fail the request if email fails)
-    Promise.all([
-      sendReferrerEmail(email, name, refereeName, referralCode),
-      sendRefereeEmail(refereeEmail, refereeName, name, referralCode),
-    ]).catch(err => console.error('Email notification error:', err));
 
     // 5. Track event
     try {

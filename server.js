@@ -1,17 +1,18 @@
+const path = require("path");
+// Load environment variables from root and backend at the very top
+require("dotenv").config({ path: path.join(__dirname, ".env") });
+require("dotenv").config({ path: path.join(__dirname, "backend/.env") });
+
 const express = require("express");
 const cors = require("cors"); // Restarting to pick up .env changes
 
-const path = require("path");
 const http = require("http");
 const fs = require("fs");
 const next = require("next");
 const compression = require("compression");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
-
-// Load environment variables from root and backend
-require("dotenv").config({ path: path.join(__dirname, ".env") });
-require("dotenv").config({ path: path.join(__dirname, "backend/.env") });
+const attributionMiddleware = require("./backend/src/middleware/attribution");
 
 // Fallback values for critical env vars
 if (!process.env.PORT) process.env.PORT = "3000";
@@ -140,6 +141,9 @@ app.use((req, res, next) => {
   
   next();
 });
+
+// Capture referral cookie/attribution
+app.use(attributionMiddleware);
 
 // ─────────────────────────────────────────────────────────────────────────
 // START SERVER AFTER NEXT.JS PREPARE

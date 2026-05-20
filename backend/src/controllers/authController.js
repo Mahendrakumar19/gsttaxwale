@@ -592,8 +592,8 @@ async function register(req, res) {
     const hashedPassword = await authService.hashPassword(password);
 
     // 3. Generate Referral Code for the new user
-    const namePart = name.split(' ')[0].toUpperCase();
-    const phonePart = (phone || '00000').slice(-5).padStart(5, '0');
+    const namePart = name.trim().split(/\s+/)[0].toUpperCase().replace(/[^A-Z]/g, '');
+    const phonePart = (phone || '0000').replace(/\D/g, '').slice(-4).padStart(4, '0');
     const myReferralCode = `GTW${namePart}${phonePart}`;
 
     // 4. Create User
@@ -613,18 +613,31 @@ async function register(req, res) {
     if (referralCode) {
       const referrer = await db.findOne('User', { referral_code: referralCode });
       if (referrer) {
-        await db.create('Referral', {
-          referrerId: referrer.id,
-          refereeId: newUser.id,
-          refereeEmail: email,
-          refereePhone: phone,
-          commissionPercent: 10,
-          commissionAmount: 0,
-          referralStatus: 'active',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-        console.log(`🔗 Linked new user ${email} to referrer ${referrer.email}`);
+        const [existingReferral] = await db.query(
+          'SELECT id FROM Referral WHERE referrerId = ? AND refereeEmail = ?',
+          [referrer.id, email]
+        );
+
+        if (existingReferral) {
+          await db.query(
+            'UPDATE Referral SET refereeId = ?, referralStatus = "active", updatedAt = NOW() WHERE id = ?',
+            [newUser.id, existingReferral.id]
+          );
+          console.log(`🔗 Updated existing pending referral for new user ${email} under referrer ${referrer.email}`);
+        } else {
+          await db.create('Referral', {
+            referrerId: referrer.id,
+            refereeId: newUser.id,
+            refereeEmail: email,
+            refereePhone: phone,
+            commissionPercent: 10,
+            commissionAmount: 0,
+            referralStatus: 'active',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+          console.log(`🔗 Created new active referral linking new user ${email} to referrer ${referrer.email}`);
+        }
       }
     }
 
@@ -669,14 +682,13 @@ async function convertGuestToAccount(req, res) {
         .json(errorResponse('Password must be at least 6 characters'));
     }
 
-    // Hash password
-    const salt = await bcryptjs.genSalt(10);
-    const hashedPassword = await bcryptjs.hash(password, salt);
+    // Hash password using authService
+    const hashedPassword = await authService.hashPassword(password);
 
     // Update guest user - convert to full account
     const result = await db.query(
-      `UPDATE users SET password = ?, is_guest = 0, updated_at = NOW()
-       WHERE id = ? AND is_guest = 1`,
+      `UPDATE User SET password = ?, updatedAt = NOW()
+       WHERE id = ? AND (password IS NULL OR password = '')`,
       [hashedPassword, guestUserId]
     );
 
@@ -688,7 +700,7 @@ async function convertGuestToAccount(req, res) {
 
     // Get updated user
     const users = await db.query(
-      'SELECT id, email, name, phone, role FROM users WHERE id = ?',
+      'SELECT id, email, name, phone, role FROM User WHERE id = ?',
       [guestUserId]
     );
 
@@ -698,12 +710,8 @@ async function convertGuestToAccount(req, res) {
 
     const user = users[0];
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'secret_key',
-      { expiresIn: '7d' }
-    );
+    // Generate JWT token using authService
+    const token = authService.generateToken(user.id);
 
     console.log(`✅ Guest user converted to account | User: ${guestUserId}`);
 
@@ -741,7 +749,7 @@ async function checkEmail(req, res) {
 
   try {
     const users = await db.query(
-      'SELECT id FROM users WHERE email = ?',
+      'SELECT id FROM User WHERE email = ?',
       [email]
     );
 
@@ -772,7 +780,7 @@ async function createGuest(req, res) {
   try {
     // Check if email already exists
     const existingUsers = await db.query(
-      'SELECT id FROM users WHERE email = ?',
+      'SELECT id FROM User WHERE email = ?',
       [email]
     );
 
@@ -785,10 +793,10 @@ async function createGuest(req, res) {
       );
     }
 
-    // Create guest user
+    // Create guest user - password will remain null
     const result = await db.query(
-      `INSERT INTO users (name, email, phone, role, is_guest, created_at)
-       VALUES (?, ?, ?, 'user', 1, NOW())`,
+      `INSERT INTO User (name, email, phone, role, createdAt, updatedAt)
+       VALUES (?, ?, ?, 'user', NOW(), NOW())`,
       [name, email, phone]
     );
 
@@ -959,7 +967,7 @@ async function verifyServicePurchaseOTP(req, res) {
 }
 async function changePassword(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.userId || (req.user && req.user.id);
     const { oldPassword, newPassword } = req.body;
 
     if (!oldPassword || !newPassword) {

@@ -104,8 +104,8 @@ async function createOrder(req, res) {
             
             // Also create a record in the Referral table for compatibility
             await db.query(
-              'INSERT INTO Referral (refereeEmail, referrerEmail, referralCode, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, NOW(), NOW())',
-              [email, referrer.email, referralCode, 'pending']
+              'INSERT INTO Referral (referrerId, refereeEmail, referralStatus, createdAt, updatedAt) VALUES (?, ?, ?, NOW(), NOW())',
+              [referrer.id, email, 'pending']
             ).catch(err => console.log('Referral entry failed (likely duplicate):', err.message));
           }
         }
@@ -212,7 +212,7 @@ async function verifyPayment(req, res) {
 
             // Update status in existing table for compatibility
             await db.query(
-              "UPDATE Referral SET status = 'completed', updatedAt = NOW() WHERE refereeEmail = ?",
+              "UPDATE Referral SET referralStatus = 'completed', updatedAt = NOW() WHERE refereeEmail = ?",
               [user.email]
             );
 

@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "linux-musl", "linux-musl-openssl-3.0.x"]
 }
 
@@ -9,227 +9,655 @@ datasource db {
 }
 
 model User {
-  id                   Int           @id @default(autoincrement())
-  email                String        @unique
-  password             String
-  name                 String?
-  pan                  String?       @unique(map: "pan") @db.VarChar(50)
+  id                   Int             @id @default(autoincrement())
+  email                String          @unique
+  password             String?
+  name                 String
+  pan                  String?         @unique
   phone                String?
-  role                 String        @default("user")
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
-  active               Boolean       @default(true)
-  avatar               String?
-  deletedAt            DateTime?
-  dateOfBirth          DateTime?     @db.DateTime(0)
-  gender               String?       @db.VarChar(10)
-  address              String?       @db.Text
-  city                 String?       @db.VarChar(100)
-  state                String?       @db.VarChar(100)
-  pincode              String?       @db.VarChar(10)
-  reference_number     String?       @unique(map: "reference_number") @db.VarChar(255)
-  referral_code        String?       @unique(map: "referral_code") @db.VarChar(255)
-  created_by_admin     Boolean?      @default(false)
-  points_wallet        Int?          @default(0)
-  status               String?       @default("active") @db.VarChar(20)
-  emailVerified        Boolean?      @default(false)
-  resetToken           String?       @unique(map: "resetToken") @db.VarChar(255)
-  resetTokenExpires    DateTime?     @db.DateTime(0)
-  lastPasswordChange   DateTime?     @db.DateTime(0)
-  walletId             String?       @unique(map: "walletId") @db.VarChar(255)
-  referralCodeId       String?       @unique(map: "referralCodeId") @db.VarChar(255)
-  preferEmailReminders Boolean?      @default(true)
-  preferredFilingType  String?       @db.VarChar(50)
-  aadhaar              String?       @unique(map: "aadhaar") @db.VarChar(50)
-  firstName            String?       @db.VarChar(100)
-  middleName           String?       @db.VarChar(100)
-  lastName             String?       @db.VarChar(100)
-  fatherName           String?       @db.VarChar(255)
-  doorNo               String?       @db.VarChar(50)
-  buildingName         String?       @db.VarChar(255)
-  street               String?       @db.VarChar(255)
-  area                 String?       @db.VarChar(255)
-  country              String?       @default("India") @db.VarChar(100)
-  bankDetails          String?       @db.LongText
-  filingStatus         String        @default("Under Review")
+  role                 String          @default("user")
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  dateOfBirth          DateTime?
+  gender               String?
+  address              String?
+  city                 String?
+  state                String?
+  pincode              String?
+  reference_number     String?         @unique
+  referral_code        String?         @unique
+  created_by_admin     Boolean         @default(false)
+  points_wallet        Int             @default(0)
+  status               String          @default("active")
+  emailVerified        Boolean         @default(false)
+  resetToken           String?         @unique
+  resetTokenExpires    DateTime?
+  lastPasswordChange   DateTime?
+  walletId             String?         @unique
+  referralCodeId       String?         @unique
+  preferEmailReminders Boolean         @default(true)
+  preferredFilingType  String?
+  aadhaar              String?         @unique
+  firstName            String?
+  middleName           String?
+  lastName             String?
+  fatherName           String?
+  doorNo               String?
+  buildingName         String?
+  street               String?
+  area                 String?
+  country              String?         @default("India")
+  bankDetails          String?         @db.LongText
+  referrer_id          Int?
+  filingStatus         String?         @default("pending")
+  assignedAsCA         CAAssignment[]  @relation("CAUser")
+  caAssignments        CAAssignment[]
+  consultationsAdmin   Consultation[]  @relation("consultation_admin")
+  consultationsUser    Consultation[]  @relation("consultation_user")
+  deductions           Deduction[]
   documents            Document[]
-  orders               Order[]
-  subscription         Subscription?
+  gstProfile           GstProfile?
+  incomes              Income[]
+  inquiryLogs          InquiryLog[]
+  otp                  OTP?
+  passwordResets       PasswordReset[]
+  payments             Payment[]
+  pointsHistory        PointsHistory[]
+  redeemRequests       RedeemRequest[]
+  referralsReceived    Referral[]      @relation("referred_to")
+  referralsGiven       Referral[]      @relation("referred_by")
+  referralCode         ReferralCode?
+  SupportTicket        SupportTicket[]
+  taxFilings           TaxFiling[]
+  User                 User?           @relation("UserToUser", fields: [referrer_id], references: [id])
+  other_User           User[]          @relation("UserToUser")
+  wallet               Wallet?
 
-  @@index([pan], map: "idx_pan")
+  @@index([pan])
+  @@index([email])
+  @@index([resetToken])
+  @@index([referrer_id])
 }
 
-model Service {
-  id               Int      @id @default(autoincrement())
-  slug             String   @unique
-  description      String?  @db.LongText
-  price            Float?
-  features         String?  @db.LongText
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  active           Boolean  @default(true)
+model GstProfile {
+  id               Int       @id @default(autoincrement())
+  userId           Int       @unique
+  gstin            String?   @unique
+  businessName     String?
+  legalName        String?
+  registrationDate DateTime?
+  state            String?
+  complianceStatus String?   @default("active")
+  lastFilingDate   DateTime?
+  nextDueDate      DateTime?
+  turnoverLastYear Float?    @default(0)
   category         String?
-  color            String?
-  discountPrice    Float?
-  duration         String?
-  featured         Boolean  @default(false)
-  icon             String?
-  name             String?  @unique
-  position         Int      @default(999)
-  requirements     String?  @db.LongText
-  shortDescription String?
-  turnaroundDays   Int?
-  orders           Order[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([gstin])
+  @@index([userId])
+  @@index([complianceStatus])
 }
 
-model Order {
-  id             Int        @id @default(autoincrement())
-  serviceId      Int
-  amount         Float
-  status         String     @default("pending")
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  completedAt    DateTime?
-  discountAmount Float?     @default(0)
-  finalAmount    Float
-  notes          String?    @db.LongText
-  orderNo        String     @unique
-  paymentDate    DateTime?
-  paymentId      String?
-  paymentMethod  String?
-  paymentStatus  String     @default("unpaid")
-  uploadedFiles  Int?       @default(0)
-  userId         Int
-  documents      Document[]
-  service        Service    @relation(fields: [serviceId], references: [id])
-  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+model OTP {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  code      String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([serviceId])
-  @@index([userId], map: "Order_userId_fkey")
-}
-
-model Document {
-  id            Int       @id @default(autoincrement())
-  userId        Int
-  fileUrl       String
-  fileSize      Int?
-  uploadedAt    DateTime  @default(now())
-  deletedAt     DateTime?
-  documentType  String?
-  filename      String
-  mimeType      String?
-  notes         String?
-  orderId       Int?
-  originalName  String?
-  uploadedBy    String
-  category      String?   @default("Others")
-  financialYear String?
-  visible       Boolean   @default(true)
-  order         Order?    @relation(fields: [orderId], references: [id])
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([orderId], map: "Document_orderId_fkey")
   @@index([userId])
 }
 
-model Subscription {
-  id        Int       @id @default(autoincrement())
-  userId    Int       @unique
-  planName  String
-  amount    Float
-  startDate DateTime  @default(now())
-  endDate   DateTime?
-  autoRenew Boolean   @default(true)
-  status    String    @default("active")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+model TaxFiling {
+  id                Int           @id @default(autoincrement())
+  userId            Int
+  assessmentYear    Int
+  filingYear        Int
+  itrType           String        @default("ITR1")
+  regime            String        @default("old")
+  status            String        @default("draft")
+  filingStatusAdmin String?
+  lastUpdatedBy     String?
+  adminNotes        String?       @db.Text
+  deadlineDate      DateTime?
+  reminderSent      Boolean       @default(false)
+  grossSalary       Float         @default(0)
+  businessIncome    Float         @default(0)
+  capitalGains      Float         @default(0)
+  otherIncome       Float         @default(0)
+  totalIncome       Float         @default(0)
+  totalDeductions   Float         @default(0)
+  taxableIncome     Float         @default(0)
+  incomeTax         Float         @default(0)
+  surcharge         Float         @default(0)
+  cess              Float         @default(0)
+  totalTax          Float         @default(0)
+  rebate            Float         @default(0)
+  totalTaxPayable   Float         @default(0)
+  taxPaid           Float         @default(0)
+  refund            Float         @default(0)
+  caRequired        Boolean       @default(false)
+  caId              String?
+  remarks           String?
+  submittedAt       DateTime?
+  filedAt           DateTime?
+  refundedAt        DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  caAssignment      CAAssignment?
+  deductions        Deduction[]
+  incomes           Income[]
+  payments          Payment[]
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, assessmentYear])
+  @@index([userId])
+  @@index([assessmentYear])
+  @@index([status])
+  @@index([filingStatusAdmin])
 }
 
-model Contact {
-  id        Int       @id @default(autoincrement())
-  name      String
-  email     String
-  phone     String?
-  subject   String
-  message   String    @db.LongText
-  status    String    @default("unread")
-  replied   Boolean   @default(false)
-  repliedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+model Income {
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  taxFilingId       Int
+  salaryIncome      Float     @default(0)
+  basicPay          Float     @default(0)
+  ta                Float     @default(0)
+  da                Float     @default(0)
+  hra               Float     @default(0)
+  medicalAllowance  Float     @default(0)
+  otherAllowances   Float     @default(0)
+  propertyType      String?
+  grossRentalIncome Float     @default(0)
+  municipalTaxes    Float     @default(0)
+  interestOnLoan    Float     @default(0)
+  repairs           Float     @default(0)
+  businessIncome    Float     @default(0)
+  businessExpenses  Float     @default(0)
+  capitalGains      Float     @default(0)
+  gainType          String?
+  otherIncome       Float     @default(0)
+  otherIncomeSource String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  taxFiling         TaxFiling @relation(fields: [taxFilingId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([email])
+  @@unique([userId, taxFilingId])
+  @@index([userId])
+  @@index([taxFilingId])
+}
+
+model Deduction {
+  id                     Int       @id @default(autoincrement())
+  userId                 Int
+  taxFilingId            Int
+  section80C             Float     @default(0)
+  providentFund          Float     @default(0)
+  lifeInsurancePremium   Float     @default(0)
+  nsc                    Float     @default(0)
+  tuitionFees            Float     @default(0)
+  fixedDeposit           Float     @default(0)
+  section80D             Float     @default(0)
+  medicalInsurance       Float     @default(0)
+  parentalMedInsurance   Float     @default(0)
+  seniorCitizenInsurance Float     @default(0)
+  section80CCD           Float     @default(0)
+  pensionContribution    Float     @default(0)
+  nps                    Float     @default(0)
+  section80E             Float     @default(0)
+  educationLoanInterest  Float     @default(0)
+  section80G             Float     @default(0)
+  donations              Float     @default(0)
+  section24HRA           Float     @default(0)
+  rentPaid               Float     @default(0)
+  salary                 Float     @default(0)
+  standardDeduction      Float     @default(0)
+  totalDeductions        Float     @default(0)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  taxFiling              TaxFiling @relation(fields: [taxFilingId], references: [id], onDelete: Cascade)
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taxFilingId])
+  @@index([userId])
+  @@index([taxFilingId])
+}
+
+model Payment {
+  id                Int        @id @default(autoincrement())
+  userId            Int
+  taxFilingId       Int?
+  amount            Float
+  currency          String     @default("INR")
+  paymentMethod     String
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  status            String     @default("pending")
+  paymentType       String     @default("premium")
+  description       String?
+  paidAt            DateTime?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  taxFiling         TaxFiling? @relation(fields: [taxFilingId], references: [id])
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([taxFilingId])
+  @@index([status])
+  @@index([razorpayOrderId])
+}
+
+model CAAssignment {
+  id          Int        @id @default(autoincrement())
+  userId      Int
+  caId        Int
+  taxFilingId Int?       @unique
+  status      String     @default("requested")
+  assignedAt  DateTime?
+  completedAt DateTime?
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  ca          User       @relation("CAUser", fields: [caId], references: [id], onDelete: Cascade)
+  taxFiling   TaxFiling? @relation(fields: [taxFilingId], references: [id])
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([caId])
+  @@index([status])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  action    String
+  resource  String
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Service {
+  id                  Int      @id @default(autoincrement())
+  slug                String   @unique
+  description         String?  @db.Text
+  price               Float
+  features            String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  discountedPrice     Float    @default(0)
+  title               String?
+  active              Int      @default(1)
+  category            String?
+  discountPrice       Float?   @default(0)
+  documentDescription String?  @db.Text
+  name                String?
+  requiredDocuments   String?  @db.Text
+  requirements        String?  @db.Text
+  shortDescription    String?  @db.Text
+  turnaroundDays      Int?
+  faqs                String?  @db.Text
+  orders              Order[]
+
+  @@index([slug])
+}
+
+model Order {
+  id                Int       @id @default(autoincrement())
+  serviceId         Int?
+  amount            Float
+  status            String    @default("pending")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  paymentMethod     String?
+  discountPercent   Int       @default(0)
+  finalPrice        Float?
+  gstAmount         Float     @default(0)
+  originalPrice     Float?
+  paidAt            DateTime?
+  paymentVerifiedAt DateTime?
+  planId            Int?
+  razorpayOrderId   String?   @unique
+  razorpayPaymentId String?   @unique
+  razorpaySignature String?
+  referralId        Int?
+  termsAccepted     Boolean   @default(false)
+  termsAcceptedAt   DateTime?
+  finalAmount       Float?
+  notes             String?   @db.Text
+  orderNo           String?   @unique
+  paymentDate       DateTime?
+  paymentId         String?
+  paymentStatus     String?   @default("unpaid")
+  userId            Int
+  service           Service?  @relation(fields: [serviceId], references: [id])
+
+  @@index([serviceId])
+  @@index([status])
+  @@index([planId])
+  @@index([referralId])
+  @@index([razorpayOrderId])
+  @@index([orderNo])
+  @@index([userId])
+}
+
+model Job {
+  id          Int       @id @default(autoincrement())
+  type        String
+  payload     String
+  status      String    @default("pending")
+  error       String?
+  attempts    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+}
+
+model InquiryLog {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  inquiryType  String
+  content      String    @db.Text
+  contactInfo  String?
+  status       String    @default("pending")
+  notes        String?   @db.Text
+  contactedAt  DateTime?
+  followUpDate DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([inquiryType])
+  @@index([status])
 }
 
 model Referral {
-  id               Int       @id @default(autoincrement())
-  refereeEmail     String
-  commissionAmount Float?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  activatedAt      DateTime?
-  completedAt      DateTime?
-  referralCode     String    @unique
-  referrerEmail    String
-  status           String    @default("pending")
+  id                Int      @id @default(autoincrement())
+  refereeEmail      String
+  commissionAmount  Float    @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  commissionPercent Float    @default(10)
+  notes             String?  @db.Text
+  orderId           Int?
+  refereeId         Int?
+  refereePhone      String?
+  referralStatus    String   @default("pending")
+  referrerId        Int
+  referee           User?    @relation("referred_to", fields: [refereeId], references: [id])
+  referrer          User     @relation("referred_by", fields: [referrerId], references: [id], onDelete: Cascade)
 
-  @@unique([referrerEmail, refereeEmail])
-  @@index([referralCode])
+  @@index([referrerId])
+  @@index([refereeId])
+  @@index([referralStatus])
+  @@index([orderId])
 }
 
-model AdminLog {
-  id         Int      @id @default(autoincrement())
-  adminEmail String
-  action     String
-  entityType String
-  entityId   Int?
-  changes    String?  @db.LongText
-  ipAddress  String?
-  userAgent  String?  @db.LongText
-  createdAt  DateTime @default(now())
+model Consultation {
+  id               Int       @id @default(autoincrement())
+  userId           Int
+  adminId          Int
+  subject          String
+  description      String    @db.Text
+  consultationType String
+  status           String    @default("assigned")
+  scheduledDate    DateTime?
+  completedAt      DateTime?
+  documentUrl      String?
+  documentName     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  admin            User      @relation("consultation_admin", fields: [adminId], references: [id], onDelete: Cascade)
+  user             User      @relation("consultation_user", fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([adminEmail])
+  @@index([userId])
+  @@index([adminId])
+  @@index([status])
+}
+
+model Document {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  fileSize        Int       @default(0)
+  uploadedBy      Int?
+  category        String?
+  createdAt       DateTime  @default(now())
+  customerName    String?
+  customerPan     String?
+  description     String?   @db.Text
+  downloadCount   Int       @default(0)
+  downloadUrl     String?
+  expiresAt       DateTime?
+  fileName        String?
+  filePath        String?   @unique
+  fileType        String    @default("application/pdf")
+  fiscalYear      String?
+  month           String?
+  isAdminUploaded Boolean   @default(false)
+  status          String    @default("active")
+  title           String?
+  type            String    @default("consultation")
+  updatedAt       DateTime  @updatedAt
+  uploadMetadata  String?   @db.LongText
+  year            Int?
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([downloadUrl])
+  @@index([category])
+  @@index([year])
+  @@index([fiscalYear])
+  @@index([customerPan])
+}
+
+model Wallet {
+  id             Int                 @id @default(autoincrement())
+  userId         Int                 @unique
+  balance        Float               @default(0)
+  totalEarned    Float               @default(0)
+  totalWithdrawn Float               @default(0)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions   WalletTransaction[]
+
+  @@index([userId])
+}
+
+model WalletTransaction {
+  id          Int      @id @default(autoincrement())
+  walletId    Int
+  amount      Float
+  type        String
+  description String   @db.Text
+  referenceId Int?
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@index([referenceId])
+  @@index([status])
+}
+
+model ReferralCode {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  code      String   @unique
+  link      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([userId])
+}
+
+model Plan {
+  id                 Int      @id @default(autoincrement())
+  slug               String   @unique
+  name               String
+  description        String?  @db.Text
+  planType           String   @default("standard")
+  originalPrice      Float
+  discountPercent    Int      @default(0)
+  finalPrice         Float
+  gstAmount          Float    @default(0)
+  features           String   @db.LongText
+  billingCycle       Int      @default(12)
+  cancellationPolicy String?  @db.Text
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([slug])
+  @@index([planType])
+}
+
+model PasswordReset {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  token     String    @unique
+  expiresAt DateTime
+  used      Boolean   @default(false)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model PointsHistory {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  type        String   @default("credit")
+  points      Int
+  reason      String
+  description String?  @db.Text
+  referenceId Int?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([type])
+  @@index([reason])
+}
+
+model RedeemRequest {
+  id               Int       @id @default(autoincrement())
+  userId           Int
+  points_requested Int
+  status           String    @default("pending")
+  reason           String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  approvedAt       DateTime?
+  approvedBy       Int?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
   @@index([createdAt])
 }
 
-model EmailLog {
+model PageContent {
   id        Int      @id @default(autoincrement())
-  to        String
-  subject   String
-  type      String
-  status    String   @default("sent")
-  errorMsg  String?
-  sentAt    DateTime @default(now())
-  createdAt DateTime @default(now())
+  page      String
+  section   String
+  key       String
+  content   String   @db.Text
+  type      String   @default("text")
+  metadata  String?  @db.LongText
+  updatedAt DateTime @updatedAt
 
-  @@index([to])
-  @@index([sentAt])
+  @@unique([page, section, key], name: "page_section_key")
+  @@index([page])
+}
+
+model SiteSettings {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String   @db.Text
+  type      String   @default("text")
+  updatedAt DateTime @updatedAt
+}
+
+model SliderImage {
+  id        Int      @id @default(autoincrement())
+  title     String?
+  imageUrl  String
+  link      String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model SupportTicket {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  subject     String
+  description String    @db.Text
+  category    String
+  priority    String    @default("medium")
+  status      String    @default("open")
+  assignedTo  String?
+  resolution  String?   @db.Text
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([priority])
+  @@index([status])
+  @@index([userId])
 }
 
 model Location {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   name      String
-  address   String    @db.LongText
+  address   String   @db.Text
   city      String?
   state     String?
-  pincode   String?   @db.VarChar(50)
+  pincode   String?
   email     String?
   phone     String?
-  mapUrl    String?   @db.LongText
-  active    Boolean?  @default(true)
-  createdAt DateTime? @default(now())
-  updatedAt DateTime?
+  mapUrl    String?  @db.Text
+  active    Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([city])
+  @@index([active])
 }
 
-model otp_codes {
-  id         Int       @id @default(autoincrement())
-  email      String    @db.VarChar(255)
-  phone      String    @db.VarChar(20)
-  code       String    @db.VarChar(10)
-  expires_at DateTime  @db.DateTime(0)
-  verified   Boolean?  @default(false)
-  created_at DateTime? @default(now()) @db.DateTime(0)
+model News {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String   @db.Text
+  category    String?  @default("Update")
+  date        DateTime @default(now())
+  source      String?  @default("GST Tax Wale")
+  url         String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@unique([email, phone], map: "email_phone")
+  @@index([category])
+  @@index([date])
 }

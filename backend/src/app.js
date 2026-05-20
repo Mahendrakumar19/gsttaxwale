@@ -71,7 +71,7 @@ app.get('/api/ping', (req, res) => {
 });
 
 // Mount API routes
-app.use('/api', apiRoutes);
+apiRoutes(app);
 
 // ─────────────────────────────────────────────────────────────────────
 // SOCKET.IO REAL-TIME EVENTS

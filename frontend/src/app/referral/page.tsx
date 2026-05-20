@@ -13,6 +13,7 @@ export default function ReferralPage() {
   const [refereeEmail, setRefereeEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState<'link' | 'code' | null>(null);
+  const [referredLeads, setReferredLeads] = useState<any[]>([]);
   const [token, setToken] = useState('');
 
   // Withdrawal Modal State
@@ -52,6 +53,13 @@ export default function ReferralPage() {
         balance: res.data.data?.balance || 0
       });
       setWithdrawAmount(res.data.data?.balance || 0);
+
+      // Load pending leads
+      const leadsRes = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL || ''}/api/referrals/leads`,
+        config
+      );
+      setReferredLeads(leadsRes.data.data?.leads || []);
     } catch (err) {
       console.error('Failed to load referrals', err);
     } finally {
@@ -114,7 +122,7 @@ export default function ReferralPage() {
     setTimeout(() => setCopied(null), 2000);
   }
 
-  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/contact?ref=${user?.referral_code || user?.id}`;
+  const referralLink = `${typeof window !== 'undefined' ? window.location.origin : ''}/ref/${user?.referral_code || ''}`;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pt-24 pb-12">
@@ -337,10 +345,67 @@ export default function ReferralPage() {
           </div>
         </div>
 
+        {/* Referred Leads */}
+        <div className="bg-slate-800/30 border border-slate-700/30 rounded-2xl overflow-hidden shadow-2xl mb-12">
+          <div className="p-8 border-b border-slate-700/30 bg-slate-800/50 flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">Your Referred Leads</h2>
+            <div className="px-4 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-blue-400 text-xs font-bold uppercase tracking-widest">
+              {referredLeads.length} Total
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="p-12 text-center text-slate-400">
+              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p>Loading referred leads...</p>
+            </div>
+          ) : referredLeads.length === 0 ? (
+            <div className="p-12 text-center text-slate-400">
+              <p className="text-base font-medium text-slate-300">No leads registered yet.</p>
+              <p className="text-xs mt-1 text-slate-500">When guests register interest via your invite link, they will appear here.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-700/30 bg-slate-900/50">
+                    <th className="px-8 py-5 text-left text-slate-400 font-bold text-xs uppercase tracking-widest">Name</th>
+                    <th className="px-8 py-5 text-left text-slate-400 font-bold text-xs uppercase tracking-widest">Service Interest</th>
+                    <th className="px-8 py-5 text-left text-slate-400 font-bold text-xs uppercase tracking-widest">Status</th>
+                    <th className="px-8 py-5 text-left text-slate-400 font-bold text-xs uppercase tracking-widest">Registered On</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-700/30">
+                  {referredLeads.map((lead: any) => (
+                    <tr key={lead.id} className="hover:bg-slate-700/20 transition group">
+                      <td className="px-8 py-5 text-white font-medium group-hover:text-blue-400 transition">{lead.guest_name}</td>
+                      <td className="px-8 py-5 text-slate-300 text-sm">{lead.service_interest || 'General'}</td>
+                      <td className="px-8 py-5">
+                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                          lead.status === 'converted'
+                            ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                            : lead.status === 'pending'
+                            ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                            : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                        }`}>
+                          {lead.status}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5 text-slate-400 text-sm">
+                        {new Date(lead.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
         {/* Referrals List */}
         <div className="bg-slate-800/30 border border-slate-700/30 rounded-2xl overflow-hidden shadow-2xl">
           <div className="p-8 border-b border-slate-700/30 bg-slate-800/50 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-white">Your Referral History</h2>
+            <h2 className="text-2xl font-bold text-white">Your Commission History</h2>
             <div className="px-4 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-amber-400 text-xs font-bold uppercase tracking-widest">
               {referrals.length} Total
             </div>
@@ -354,7 +419,7 @@ export default function ReferralPage() {
           ) : referrals.length === 0 ? (
             <div className="p-20 text-center text-slate-400">
               <Share2 size={48} className="mx-auto mb-4 text-slate-600 opacity-50" />
-              <p className="text-lg font-medium">No referrals yet.</p>
+              <p className="text-lg font-medium">No commissions yet.</p>
               <p className="text-sm mt-1">Start sharing to build your network and earn commissions!</p>
             </div>
           ) : (

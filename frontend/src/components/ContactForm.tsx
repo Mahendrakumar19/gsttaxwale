@@ -28,8 +28,9 @@ export default function ContactForm() {
     try {
       // 1. Submit Contact Form
       const response = await fetchClient.post('/api/contact', { name, email, message: query, phone });
-      if (response.data?.data?.ticketId) {
-        setTicketId(response.data.data.ticketId);
+      const regTicketId = response.data?.data?.ticketId;
+      if (regTicketId) {
+        setTicketId(regTicketId);
       }
       
       // 2. Try to generate a public referral code for the user so they can refer others
@@ -45,6 +46,9 @@ export default function ContactForm() {
       } catch (err) {
         console.warn('Failed to generate public referral code', err);
       }
+
+      // Show success popup to user
+      alert(`Success! Your request is registered under Ticket #${regTicketId || ''}. A confirmation email has been sent to your email address, and our team will contact you shortly.`);
 
       setSent(true);
       // Don't clear name/email yet as we might need them for referral
@@ -98,84 +102,6 @@ export default function ContactForm() {
             </div>
           )}
         </div>
-
-        {/* Refer a Friend Section */}
-        {!referred ? (
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <Share2 size={24} className="text-blue-200" />
-                <h4 className="text-xl font-bold uppercase tracking-tight">Refer a Friend & Earn</h4>
-              </div>
-              <p className="text-blue-100 mb-8 max-w-md">While you wait, refer a friend who needs tax services. You'll earn commissions on their first purchase!</p>
-              
-              <form onSubmit={handleReferral} className="space-y-4 max-w-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase text-blue-200 ml-1">Friend's Name</label>
-                    <input 
-                      type="text" 
-                      value={friendName}
-                      onChange={(e) => setFriendName(e.target.value)}
-                      placeholder="Enter name"
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-300 outline-none focus:bg-white/20 transition-all"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase text-blue-200 ml-1">Friend's Mobile</label>
-                    <input 
-                      type="tel" 
-                      value={friendPhone}
-                      onChange={(e) => setFriendPhone(e.target.value)}
-                      placeholder="98765 43210"
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-blue-300 outline-none focus:bg-white/20 transition-all"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <button 
-                  type="submit" 
-                  disabled={referring}
-                  className="w-full py-4 bg-white text-blue-700 font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg flex items-center justify-center gap-2"
-                >
-                  {referring ? 'Opening WhatsApp...' : 'Refer via WhatsApp'}
-                  <ArrowRight size={18} />
-                </button>
-              </form>
-
-              {myReferralCode && (
-                <div className="mt-8 pt-8 border-t border-white/10">
-                  <p className="text-xs font-bold uppercase text-blue-200 mb-3">Or share your code directly</p>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 font-mono font-bold text-xl tracking-widest text-white flex-1 text-center">
-                      {myReferralCode}
-                    </div>
-                    <button 
-                      onClick={copyCode}
-                      className="p-2.5 bg-white/20 hover:bg-white/30 rounded-lg transition text-white"
-                      title="Copy Code"
-                    >
-                      {copied ? <CheckCircle size={20} /> : <Copy size={20} />}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Background Decoration */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
-          </div>
-        ) : (
-          <div className="bg-blue-50 border border-blue-100 rounded-3xl p-8 text-center text-blue-800">
-            <h4 className="text-xl font-bold mb-2">Referral Started!</h4>
-            <p className="text-sm opacity-90">Thank you for referring {friendName}. We hope they find our services helpful!</p>
-            <button onClick={() => setSent(false)} className="mt-6 text-blue-600 font-bold text-sm hover:underline flex items-center justify-center gap-1 mx-auto">
-              Go Back to Contact Page
-            </button>
-          </div>
-        )}
       </div>
     );
   }

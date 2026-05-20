@@ -1,10 +1,14 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { adminAuth } from '@/lib/adminAuth';
 import Link from 'next/link';
-import { LogOut, Menu, X, LayoutDashboard, Users, FileText, ShoppingCart, Ticket, Gift, Settings, Home, Phone, MapPin, Layout } from 'lucide-react';
+import { 
+  LogOut, Menu, X, LayoutDashboard, Users, FileText, 
+  ShoppingCart, Ticket, Gift, Settings, Home, MapPin, 
+  Layout, Search, Bell, MessageSquare, Moon, Sun, ChevronRight, User
+} from 'lucide-react';
 
 export default function RootAdminLayout({
   children,
@@ -12,9 +16,11 @@ export default function RootAdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [adminUser, setAdminUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     const checkAdminAuth = async () => {
@@ -62,93 +68,215 @@ export default function RootAdminLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-gray-600 text-lg">Loading admin panel…</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-slate-500 font-bold text-sm tracking-wide">Loading workspace...</div>
+        </div>
       </div>
     );
   }
 
-  const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
-    { icon: Users, label: 'Customers', href: '/admin/customers' },
-    { icon: ShoppingCart, label: 'Orders', href: '/admin/orders' },
-    { icon: FileText, label: 'Documents', href: '/admin/documents' },
-    { icon: Home, label: 'Services', href: '/admin/services' },
-    { icon: MapPin, label: 'Store Locations', href: '/admin/locations' },
-    { icon: Layout, label: 'Slider Images', href: '/admin/slider' },
-    { icon: Ticket, label: 'Support Tickets', href: '/admin/tickets' },
-    { icon: Gift, label: 'Referrals', href: '/admin/referrals' },
-    { icon: Settings, label: 'Settings', href: '/admin/settings' },
+  // Sidebar Menu Categorized Sections
+  const menuSections = [
+    {
+      title: 'Workspace',
+      items: [
+        { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
+        { icon: Users, label: 'Customers', href: '/admin/customers' },
+        { icon: ShoppingCart, label: 'Orders', href: '/admin/orders' },
+        { icon: FileText, label: 'Documents', href: '/admin/documents' },
+      ]
+    },
+    {
+      title: 'Offerings',
+      items: [
+        { icon: Home, label: 'Services', href: '/admin/services' },
+        { icon: MapPin, label: 'Store Locations', href: '/admin/locations' },
+        { icon: Layout, label: 'Slider Images', href: '/admin/slider' },
+      ]
+    },
+    {
+      title: 'Communications',
+      items: [
+        { icon: Ticket, label: 'Support Tickets', href: '/admin/tickets' },
+        { icon: Gift, label: 'Referrals', href: '/admin/referrals' },
+      ]
+    },
+    {
+      title: 'System',
+      items: [
+        { icon: Settings, label: 'Settings', href: '/admin/settings' },
+      ]
+    }
   ];
 
+  // Breadcrumb generator
+  const getBreadcrumbs = () => {
+    const parts = pathname.split('/').filter(Boolean);
+    return parts.map((part, index) => {
+      const isLast = index === parts.length - 1;
+      const label = part.charAt(0).toUpperCase() + part.slice(1);
+      return (
+        <div key={part} className="flex items-center">
+          {index > 0 && <ChevronRight size={14} className="text-slate-400 mx-2" />}
+          <span className={`text-sm ${isLast ? 'text-slate-800 font-black' : 'text-slate-400 font-medium'}`}>
+            {label}
+          </span>
+        </div>
+      );
+    });
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return 'AD';
+    return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  };
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Top Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition text-gray-900"
-            >
-              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-            <Link href="/admin/dashboard" className="flex items-center gap-2">
-              <img src="/gsttaxwale_logo.svg" alt="GST Admin" className="h-10 w-auto" />
-            </Link>
-            <div className="hidden sm:flex items-center gap-6 ml-8">
-              <Link href="/" className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition font-medium">
-                <Home size={18} />
-                <span>Home</span>
-              </Link>
-              <Link href="/contact" className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition font-medium">
-                <Phone size={18} />
-                <span>Contact</span>
-              </Link>
-            </div>
+    <div className={`min-h-screen ${darkMode ? 'dark bg-slate-950' : 'bg-slate-50'} text-slate-800 flex transition-colors duration-200`}>
+      
+      {/* Sidebar Navigation */}
+      <aside
+        className={`${
+          sidebarOpen ? 'w-64 border-r' : 'w-0 border-r-0'
+        } bg-white border-slate-150 transition-all duration-300 overflow-hidden flex flex-col z-35 fixed h-screen top-0 left-0`}
+      >
+        {/* Brand / Logo */}
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100 shrink-0">
+          <div className="bg-blue-600 text-white font-black text-lg w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+            G
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">{adminUser?.name || 'Admin'}</p>
-              <p className="text-xs text-gray-700">Administrator</p>
+          <div className="flex-1 min-w-0">
+            <span className="font-extrabold text-slate-900 text-base leading-tight block truncate">GSTTaxWale</span>
+            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">v1.2 - active</span>
+          </div>
+        </div>
+
+        {/* Menu Items Container */}
+        <nav className="flex-1 py-6 overflow-y-auto space-y-6">
+          {menuSections.map((section) => (
+            <div key={section.title} className="space-y-1.5">
+              <h3 className="px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                {section.title}
+              </h3>
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center gap-3 mx-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm font-semibold relative ${
+                        isActive
+                          ? 'bg-blue-50 text-blue-600 shadow-sm'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                    >
+                      {isActive && (
+                        <div className="absolute left-0 top-3 bottom-3 w-1 bg-blue-600 rounded-r-md"></div>
+                      )}
+                      <item.icon size={18} className={isActive ? 'text-blue-600' : 'text-slate-400'} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-            <button
+          ))}
+        </nav>
+
+        {/* Admin Profile Widget */}
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-extrabold flex items-center justify-center text-xs shadow-md shrink-0">
+              {getInitials(adminUser?.name)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-extrabold text-slate-900 truncate">{adminUser?.name || 'Administrator'}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Admin Role</p>
+            </div>
+            <button 
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition text-sm font-medium"
+              title="Logout"
+              className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition"
             >
               <LogOut size={16} />
-              Logout
             </button>
           </div>
         </div>
-      </header>
+      </aside>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside
-          className={`${
-            sidebarOpen ? 'w-64' : 'w-0'
-          } bg-white border-r border-gray-200 text-gray-900 transition-all duration-300 overflow-hidden`}
-        >
-          <nav className="p-6 space-y-2">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition text-sm font-medium text-gray-900"
-              >
-                <item.icon size={18} />
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </nav>
-        </aside>
+      {/* Main Content Area */}
+      <div 
+        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
+          sidebarOpen ? 'pl-64' : 'pl-0'
+        }`}
+      >
+        
+        {/* Top Header Bar */}
+        <header className="bg-white border-b border-slate-150 sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-sm">
+          {/* Left Actions & Breadcrumbs */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 hover:bg-slate-50 rounded-lg text-slate-600 hover:text-slate-900 transition"
+            >
+              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            <div className="hidden sm:flex items-center gap-2">
+              {getBreadcrumbs()}
+            </div>
+          </div>
 
-        {/* Main Content */}
-        <main className="flex-1">
+          {/* Right Topbar Navigation Controls */}
+          <div className="flex items-center gap-4">
+            {/* Search Input */}
+            <div className="relative hidden md:block">
+              <Search size={16} className="absolute left-3.5 top-3 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search resources, users..."
+                className="pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-xs bg-slate-50 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 w-56 text-slate-800 placeholder-slate-400"
+              />
+            </div>
+
+            {/* Notification Badge */}
+            <button className="p-2 hover:bg-slate-50 rounded-lg text-slate-500 hover:text-slate-900 transition relative">
+              <Bell size={18} />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+
+            {/* Messages Badge */}
+            <button className="p-2 hover:bg-slate-50 rounded-lg text-slate-500 hover:text-slate-900 transition relative">
+              <MessageSquare size={18} />
+              <span className="absolute top-1 right-1 w-4 h-4 bg-blue-500 rounded-full text-[9px] font-black text-white flex items-center justify-center">
+                3
+              </span>
+            </button>
+
+            {/* Dark Mode Toggle */}
+            <button 
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 hover:bg-slate-50 rounded-lg text-slate-500 hover:text-slate-900 transition"
+            >
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            {/* User Avatar Initial */}
+            <div className="w-8 h-8 rounded-full bg-slate-950 text-white font-extrabold flex items-center justify-center text-xs shadow-sm cursor-pointer select-none">
+              {getInitials(adminUser?.name)}
+            </div>
+          </div>
+        </header>
+
+        {/* Dynamic Page Router Children */}
+        <main className="flex-1 bg-slate-50 p-6 md:p-8">
           {children}
         </main>
       </div>
+
     </div>
   );
 }

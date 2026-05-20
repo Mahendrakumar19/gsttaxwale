@@ -97,15 +97,11 @@ export default function HomePage() {
             </div>
             <div>
               <div className="mb-1 text-3xl font-bold text-blue-600">15+</div>
-              <p className="text-xs text-gray-600">Expert CAs Team</p>
+              <p className="text-xs text-gray-600">Expert Team</p>
             </div>
             <div>
               <div className="mb-1 text-3xl font-bold text-blue-600">100%</div>
               <p className="text-xs text-gray-600">Compliant</p>
-            </div>
-            <div>
-              <div className="mb-1 text-3xl font-bold text-blue-600">365</div>
-              <p className="text-xs text-gray-600">Days Support</p>
             </div>
           </div>
         </div>

@@ -60,7 +60,7 @@ export default function DashboardHeader({
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="flex-1 px-4 py-3 text-white bg-red-600 rounded-lg hover:bg-red-700 transition font-bold shadow-lg shadow-red-200"
+                  className="flex-1 px-4 py-3 text-white bg-blue-600 rounded-lg hover:bg-red-700 transition font-bold shadow-lg shadow-red-200"
                 >
                   Yes, Logout
                 </button>

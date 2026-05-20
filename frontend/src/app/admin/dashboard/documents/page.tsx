@@ -19,7 +19,8 @@ export default function DocumentsPage() {
   const [uploadForm, setUploadForm] = useState({
     userId: '',
     title: '',
-    type: 'document',
+    category: 'GST',
+    fiscalYear: '2025-26',
     file: null as File | null,
   });
 
@@ -43,7 +44,7 @@ export default function DocumentsPage() {
         `${process.env.NEXT_PUBLIC_API_URL || ''}/api/admin/documents`,
         config
       );
-      setDocuments(res.data.data || []);
+      setDocuments(res.data.data?.documents || res.data.data || []);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load documents');
     } finally {
@@ -77,10 +78,11 @@ export default function DocumentsPage() {
     try {
       const token = adminAuth.getAdminToken();
       const formData = new FormData();
-      formData.append('file', uploadForm.file);
-      formData.append('userId', uploadForm.userId);
-      formData.append('title', uploadForm.title);
-      formData.append('type', uploadForm.type);
+      formData.append('files', uploadForm.file);
+      formData.append('customerId', uploadForm.userId);
+      formData.append('displayTitle', uploadForm.title);
+      formData.append('category', uploadForm.category);
+      formData.append('fiscalYear', uploadForm.fiscalYear);
 
       const config = {
         headers: {
@@ -89,20 +91,51 @@ export default function DocumentsPage() {
         },
       };
 
-      const res = await axios.post(
+      await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL || ''}/api/documents/upload`,
         formData,
         config
       );
 
-      setDocuments([res.data.data, ...documents]);
+      if (token) loadDocuments(token);
       setShowUploadModal(false);
-      setUploadForm({ userId: '', title: '', type: 'document', file: null });
+      setUploadForm({ userId: '', title: '', category: 'GST', fiscalYear: '2025-26', file: null });
       alert('Document uploaded successfully!');
     } catch (err: any) {
       alert(err.response?.data?.message || 'Upload failed');
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleDownload(downloadUrl: string, fileName: string) {
+    if (!downloadUrl) {
+      alert('Download URL not available');
+      return;
+    }
+    try {
+      const token = adminAuth.getAdminToken();
+      const config = {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob' as const,
+      };
+
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL || ''}${downloadUrl}`,
+        config
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName || 'document.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Download failed:', err);
+      alert('Failed to download document');
     }
   }
 
@@ -212,19 +245,34 @@ export default function DocumentsPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-slate-300 mb-2">
-                  Document Type
+                  Category (Grid View Location)
                 </label>
                 <select
-                  value={uploadForm.type}
-                  onChange={(e) => setUploadForm({ ...uploadForm, type: e.target.value })}
+                  value={uploadForm.category}
+                  onChange={(e) => setUploadForm({ ...uploadForm, category: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
                 >
-                  <option value="document">Document</option>
-                  <option value="certificate">Certificate</option>
-                  <option value="return">Tax Return</option>
-                  <option value="receipt">Receipt</option>
-                  <option value="proof">Proof</option>
-                  <option value="other">Other</option>
+                  <option value="GST">GST Returns</option>
+                  <option value="ITR">Income Tax Returns (ITR)</option>
+                  <option value="Others">Others / General compliance</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">
+                  Financial Year
+                </label>
+                <select
+                  value={uploadForm.fiscalYear}
+                  onChange={(e) => setUploadForm({ ...uploadForm, fiscalYear: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500"
+                >
+                  <option value="2021-22">2021-22</option>
+                  <option value="2022-23">2022-23</option>
+                  <option value="2023-24">2023-24</option>
+                  <option value="2024-25">2024-25</option>
+                  <option value="2025-26">2025-26</option>
+                  <option value="2026-27">2026-27</option>
                 </select>
               </div>
 
@@ -269,9 +317,10 @@ export default function DocumentsPage() {
           <table className="w-full">
             <thead className="bg-slate-900/50 border-b border-slate-700/50">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">File Name</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">File Name & Title</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">User</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Type</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Category</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">FY</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Size</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-slate-300">Uploaded</th>
                 <th className="px-6 py-3 text-right text-sm font-semibold text-slate-300">Actions</th>
@@ -280,31 +329,41 @@ export default function DocumentsPage() {
             <tbody className="divide-y divide-slate-700/50">
               {documents.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
+                  <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
                     No documents found
                   </td>
                 </tr>
               ) : (
                 documents.map((doc) => (
                   <tr key={doc.id} className="hover:bg-slate-700/20 transition">
-                    <td className="px-6 py-4 font-mono text-sm">{doc.fileName}</td>
-                    <td className="px-6 py-4">{doc.userName}</td>
+                    <td className="px-6 py-4 font-mono text-sm">
+                      <div className="font-bold text-white">{doc.title || 'Untitled'}</div>
+                      <div className="text-xs text-slate-400 mt-0.5 truncate max-w-xs">{doc.fileName}</div>
+                    </td>
                     <td className="px-6 py-4">
-                      <span className="bg-blue-900/30 text-blue-300 px-2 py-1 rounded text-xs">
-                        {doc.type}
+                      <div className="text-white font-medium">{doc.customerName || 'N/A'}</div>
+                      {doc.customerPan && <div className="text-xs text-slate-500 mt-0.5 uppercase">PAN: {doc.customerPan}</div>}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="bg-blue-900/30 text-blue-300 px-2 py-1 rounded text-xs capitalize">
+                        {doc.category || 'Others'}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-slate-300 font-medium">
+                      {doc.fiscalYear || 'N/A'}
                     </td>
                     <td className="px-6 py-4 text-slate-400">
                       {(doc.fileSize / 1024).toFixed(2)} KB
                     </td>
                     <td className="px-6 py-4 text-slate-400">
-                      {new Date(doc.createdAt).toLocaleDateString()}
+                      {new Date(doc.uploadedAt || doc.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
                         <button
+                          onClick={() => handleDownload(doc.downloadUrl, doc.title || doc.fileName)}
                           className="p-2 hover:bg-slate-700 rounded transition text-slate-400 hover:text-blue-400"
-                          title="Download"
+                          title="Download File"
                         >
                           <Download size={18} />
                         </button>
@@ -312,7 +371,7 @@ export default function DocumentsPage() {
                           onClick={() => handleDelete(doc.id)}
                           disabled={deleting[doc.id]}
                           className="p-2 hover:bg-slate-700 rounded transition text-slate-400 hover:text-red-400 disabled:opacity-50"
-                          title="Delete"
+                          title="Delete Document"
                         >
                           <Trash2 size={18} />
                         </button>

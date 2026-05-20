@@ -88,15 +88,15 @@ async function sendUserCreatedEmail(email, password, referenceNumber) {
     const mailOptions = {
       from: `"${fromName}" <${fromEmail}>`,
       to: email,
-      subject: `Welcome to ${fromName} - Your Account Details`,
+      subject: `Your Account is Created - GST Tax Wale`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">
-          <h2 style="color: #2563eb;">Welcome to GST Tax Wale!</h2>
-          <p>An administrator has created an account for you. Here are your login credentials:</p>
+          <h2 style="color: #2563eb;">Your Account has been Created!</h2>
+          <p>Your account is created. Please use your email and the password below (given by admin over the mail) to log in and continue your services.</p>
           
           <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
-            <p style="margin: 5px 0;"><strong>Temporary Password:</strong> <span style="font-family: monospace; font-weight: bold; font-size: 1.1em;">${password}</span></p>
+            <p style="margin: 5px 0;"><strong>Password:</strong> <span style="font-family: monospace; font-weight: bold; font-size: 1.1em;">${password}</span></p>
             <p style="margin: 5px 0;"><strong>Reference Number:</strong> ${referenceNumber}</p>
           </div>
           

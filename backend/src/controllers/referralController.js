@@ -14,7 +14,7 @@ const ReferralService = require('../services/referralService');
  */
 async function getReferralInfo(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.userId || (req.user && req.user.id);
 
     const [user] = await db.query(
       'SELECT email, referral_code, points_wallet FROM User WHERE id = ?',
@@ -43,6 +43,17 @@ async function getReferralInfo(req, res) {
 
     const isEnabled = await configUtil.getSetting('ENABLE_REFERRAL', true);
 
+    const referrals = await db.query(
+      'SELECT id, refereeEmail, refereePhone, referralStatus, commissionAmount, createdAt FROM Referral WHERE referrerId = ? ORDER BY createdAt DESC',
+      [userId]
+    );
+
+    const [commissionSum] = await db.query(
+      'SELECT SUM(commissionAmount) as sum FROM Referral WHERE referrerId = ?',
+      [userId]
+    );
+    const totalCommission = commissionSum?.sum || 0;
+
     return res.status(200).json(
       successResponse('Referral information retrieved', {
         enabled: isEnabled,
@@ -50,7 +61,10 @@ async function getReferralInfo(req, res) {
         balance: ledgerBalance,
         pointsRedeemed: totalRedeemed,
         totalReferrals: referralCount.count || 0,
-        earned: ledgerBalance + totalRedeemed
+        earned: ledgerBalance + totalRedeemed,
+        referrals,
+        totalCommission,
+        count: referralCount.count || 0
       })
     );
 
@@ -65,7 +79,7 @@ async function getReferralInfo(req, res) {
  */
 async function createReferral(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.userId || (req.user && req.user.id);
     const { refereeEmail, refereePhone } = req.body;
 
     if (!refereeEmail) {
@@ -104,7 +118,7 @@ async function createReferral(req, res) {
  */
 async function getReferralLink(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.userId || (req.user && req.user.id);
 
     const [user] = await db.query(
       'SELECT referral_code FROM User WHERE id = ?',
@@ -185,7 +199,7 @@ async function registerReferral(req, res) {
  */
 async function trackReferralConversion(req, res) {
   try {
-    const userId = req.user.id; // The referee
+    const userId = req.userId || (req.user && req.user.id); // The referee
     const { orderId, amount, serviceId } = req.body;
 
     // 1. Find the referrer for this referee
@@ -233,7 +247,7 @@ async function trackReferralConversion(req, res) {
  */
 async function redeemPoints(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.userId || (req.user && req.user.id);
     const { pointsToRedeem, payoutMethod, payoutDetails } = req.body;
 
     if (!pointsToRedeem || pointsToRedeem < 500) {
@@ -253,11 +267,20 @@ async function redeemPoints(req, res) {
 
     const [user] = await db.query('SELECT name, email FROM User WHERE id = ?', [userId]);
 
-    // 2. Create a Ticket for Admin
+    // 2. Create a RedeemRequest record
+    const redeemResult = await db.query(
+      "INSERT INTO RedeemRequest (userId, points_requested, status, reason, createdAt, updatedAt) VALUES (?, ?, 'pending', ?, NOW(), NOW())",
+      [userId, pointsToRedeem, `${payoutMethod.toUpperCase()}: ${payoutDetails}`]
+    );
+    const redeemRequestId = redeemResult.insertId;
+
+    // 3. Create a Ticket for Admin
     const prisma = require('../utils/prisma');
     const ticket = await prisma.supportTicket.create({
       data: {
-        userId: userId,
+        User: {
+          connect: { id: userId }
+        },
         subject: '💸 Payout Request: ' + user.name,
         description: `
 PAYOUT REQUEST DETAILS:
@@ -266,21 +289,23 @@ User: ${user.name} (${user.email})
 Amount: ₹${pointsToRedeem}
 Method: ${payoutMethod.toUpperCase()}
 Details: ${payoutDetails}
+Redeem Request ID: ${redeemRequestId}
 
-Please process the payment and update the status of this ticket once completed.
+Please process the payment via the Redeem Requests panel and update the status once completed.
         `,
         category: 'redemption',
-        priority: 'high'
+        priority: 'high',
+        updatedAt: new Date()
       }
     });
 
-    // 3. Update transaction reference with ticket ID
+    // 4. Update transaction reference with RedeemRequest ID
     await db.query(
       "UPDATE wallet_transactions SET reference_id = ? WHERE user_id = ? AND type = 'debit' AND source = 'redemption' ORDER BY created_at DESC LIMIT 1",
-      [ticket.id, userId]
+      [redeemRequestId, userId]
     );
 
-    console.log(`✅ Redemption ticket created: User ${userId} redeemed ${pointsToRedeem} points`);
+    console.log(`✅ Redemption request & ticket created: User ${userId} redeemed ${pointsToRedeem} points (RedeemRequest ID: ${redeemRequestId})`);
 
     return res.status(200).json(
       successResponse('Redemption request submitted successfully. Our team will contact you soon.', {
@@ -298,7 +323,7 @@ Please process the payment and update the status of this ticket once completed.
  */
 async function getRedemptionHistory(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.userId || (req.user && req.user.id);
 
     const redemptions = await db.query(
       `SELECT id, points as points_used, description, status, created_at
@@ -325,17 +350,83 @@ async function getRedemptionHistory(req, res) {
 async function getAllReferrals(req, res) {
   try {
     const referrals = await db.query(`
-      SELECT r.*, u1.name as referrerName, u1.email as referrerEmail, u2.name as refereeName, u2.email as refereeEmail
+      SELECT r.*, 
+             u1.name as referrerName, u1.email as referrerEmail, 
+             u2.name as refereeName, u2.email as refereeEmail,
+             rl.id as leadId, rl.guest_name as guestName, rl.service_interest as serviceInterest
       FROM Referral r
       LEFT JOIN User u1 ON r.referrerId = u1.id
       LEFT JOIN User u2 ON r.refereeId = u2.id
+      LEFT JOIN referral_leads rl ON (r.refereeEmail = rl.guest_email OR r.refereePhone = rl.guest_phone)
       ORDER BY r.createdAt DESC
     `);
 
-    return res.status(200).json(successResponse('All referrals retrieved', { referrals }));
+    const formattedReferrals = referrals.map(r => {
+      const referrerName = r.referrerName || 'N/A';
+      const refereeName = r.refereeName || r.guestName || (r.notes ? r.notes.replace('Referred Guest Name: ', '') : '') || 'Guest';
+      
+      return {
+        ...r,
+        referrerName,
+        referredName: refereeName,
+        referrer: {
+          name: referrerName,
+          email: r.referrerEmail
+        },
+        referee: {
+          name: refereeName,
+          email: r.refereeEmail,
+          phone: r.refereePhone
+        },
+        leadId: r.leadId,
+        serviceInterest: r.serviceInterest
+      };
+    });
+
+    return res.status(200).json(successResponse({ referrals: formattedReferrals }, 'All referrals retrieved'));
   } catch (error) {
     console.error('❌ Error fetching all referrals:', error);
     return res.status(500).json(errorResponse('Failed to fetch referrals'));
+  }
+}
+
+/**
+ * Get referral stats (Admin only)
+ */
+async function getReferralStats(req, res) {
+  try {
+    const [totalRes] = await db.query('SELECT COUNT(*) as count FROM Referral');
+    const totalReferrals = totalRes?.count || 0;
+
+    const [commissionRes] = await db.query('SELECT SUM(commissionAmount) as sum FROM Referral');
+    const totalCommission = commissionRes?.sum || 0;
+
+    const [activeRes] = await db.query("SELECT COUNT(*) as count FROM Referral WHERE referralStatus = 'active'");
+    const activeReferrals = activeRes?.count || 0;
+
+    const statusBreakdown = await db.query(`
+      SELECT referralStatus, COUNT(*) as count 
+      FROM Referral 
+      GROUP BY referralStatus
+    `);
+
+    const statsBreakdown = statusBreakdown.map(row => ({
+      referralStatus: row.referralStatus,
+      _count: {
+        id: row.count
+      }
+    }));
+
+    return res.status(200).json(successResponse({
+      totalReferrals,
+      totalCommission,
+      totalEarnings: totalCommission,
+      activeReferrals,
+      stats: statsBreakdown
+    }, 'Referral stats retrieved successfully'));
+  } catch (error) {
+    console.error('❌ Error fetching referral stats:', error);
+    return res.status(500).json(errorResponse('Failed to fetch referral stats'));
   }
 }
 
@@ -344,7 +435,7 @@ async function getAllReferrals(req, res) {
  */
 async function getWalletHistory(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.userId || (req.user && req.user.id);
     const history = await WalletService.getTransactionHistory(userId);
     const balance = await WalletService.getBalance(userId);
 
@@ -384,7 +475,7 @@ async function getReferralById(req, res) {
       } : null
     };
 
-    return res.status(200).json(successResponse('Referral retrieved successfully', { referral: formattedReferral }));
+    return res.status(200).json(successResponse({ referral: formattedReferral }, 'Referral retrieved successfully'));
   } catch (error) {
     console.error('❌ Error fetching referral by ID:', error);
     return res.status(500).json(errorResponse('Failed to fetch referral details'));
@@ -424,7 +515,7 @@ async function updateReferralById(req, res) {
       } : null
     };
 
-    return res.status(200).json(successResponse('Referral updated successfully', { referral: formattedReferral }));
+    return res.status(200).json(successResponse({ referral: formattedReferral }, 'Referral updated successfully'));
   } catch (error) {
     console.error('❌ Error updating referral:', error);
     return res.status(500).json(errorResponse('Failed to update referral'));
@@ -440,6 +531,7 @@ module.exports = {
   redeemPoints,
   getRedemptionHistory,
   getAllReferrals,
+  getReferralStats,
   getWalletHistory,
   getReferralById,
   updateReferralById

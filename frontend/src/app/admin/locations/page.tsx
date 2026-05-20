@@ -290,7 +290,7 @@ export default function AdminLocationsPage() {
                 </div>
 
                 <h3 className="font-bold text-slate-900 text-xl mb-3 group-hover:text-blue-600 transition-colors">{location.name}</h3>
-                <p className="text-slate-600 text-sm leading-relaxed mb-6 line-clamp-3">{location.address}</p>
+                <p className="text-slate-600 text-sm leading-relaxed mb-6 whitespace-pre-line">{location.address}</p>
                 
                 <div className="space-y-3 mb-8">
                   {location.email && (

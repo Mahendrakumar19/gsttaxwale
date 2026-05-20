@@ -37,6 +37,52 @@ async function getAnalytics(req, res) {
     const [docStats] = await db.query("SELECT COUNT(*) as totalDocuments FROM Document");
     const [ticketStats] = await db.query("SELECT COUNT(*) as totalTickets FROM SupportTicket");
     const [visitorStats] = await db.query("SELECT value FROM SiteSettings WHERE `key` = 'visitor_count'");
+    const [referralStats] = await db.query("SELECT COUNT(*) as totalReferrals FROM Referral");
+
+    // 1. Calculate rate percentages
+    const [resolvedTicketStats] = await db.query("SELECT COUNT(*) as count FROM SupportTicket WHERE status = 'resolved' OR status = 'closed'");
+    const [allOrderStats] = await db.query("SELECT COUNT(*) as count FROM \`Order\`");
+    const [activeReferralStats] = await db.query("SELECT COUNT(*) as count FROM Referral WHERE referralStatus = 'active' OR referralStatus = 'completed'");
+
+    const ticketResolutionRate = ticketStats?.totalTickets > 0 
+      ? Math.round(((resolvedTicketStats?.count || 0) / ticketStats.totalTickets) * 100) 
+      : 0;
+
+    const paidOrderRate = allOrderStats?.count > 0 
+      ? Math.round(((orderStats?.totalOrders || 0) / allOrderStats.count) * 100) 
+      : 0;
+
+    const referralConversionRate = referralStats?.totalReferrals > 0 
+      ? Math.round(((activeReferralStats?.count || 0) / referralStats.totalReferrals) * 100) 
+      : 0;
+
+    // 2. Fetch top 4 services breakdown (with fallback if 0 orders exist)
+    const topServices = await db.query(`
+      SELECT s.name, COUNT(o.id) as count
+      FROM Service s
+      LEFT JOIN \`Order\` o ON o.serviceId = s.id
+      GROUP BY s.id, s.name
+      ORDER BY count DESC
+      LIMIT 4
+    `);
+
+    // 3. Fetch task checklists (recent pending items)
+    const recentPendingTickets = await db.query(`
+      SELECT id, subject as title, category, status, createdAt 
+      FROM SupportTicket 
+      WHERE status = 'open' 
+      ORDER BY createdAt DESC 
+      LIMIT 3
+    `);
+
+    const recentPendingOrders = await db.query(`
+      SELECT o.id, s.name as serviceName, o.status, o.createdAt 
+      FROM \`Order\` o 
+      JOIN Service s ON o.serviceId = s.id 
+      WHERE o.status = 'pending' 
+      ORDER BY o.createdAt DESC 
+      LIMIT 3
+    `);
 
     const analytics = {
       totalUsers: userStats?.totalUsers || 0,
@@ -47,7 +93,20 @@ async function getAnalytics(req, res) {
       totalDocuments: docStats?.totalDocuments || 0,
       totalTickets: ticketStats?.totalTickets || 0,
       totalVisitors: visitorStats ? Number(visitorStats.value) : 0,
-      conversionRate: userStats?.totalUsers > 0 ? ((orderStats?.totalOrders / userStats.totalUsers) * 100).toFixed(2) : 0
+      totalReferrals: referralStats?.totalReferrals || 0,
+      conversionRate: userStats?.totalUsers > 0 ? ((orderStats?.totalOrders / userStats.totalUsers) * 100).toFixed(2) : 0,
+      
+      // Extended fields for the new design
+      rates: {
+        tickets: ticketResolutionRate,
+        orders: paidOrderRate,
+        referrals: referralConversionRate
+      },
+      topServices,
+      pendingTasks: {
+        tickets: recentPendingTickets || [],
+        orders: recentPendingOrders || []
+      }
     };
 
     res.status(200).json(successResponse(analytics, 'Analytics fetched'));
@@ -358,29 +417,75 @@ async function approveRedeemRequest(req, res) {
     if (!request) return res.status(404).json(errorResponse('Request not found'));
 
     if (status === 'approved') {
-      // Points are already deducted when request is made (usually)
-      // Here we just mark as approved
+      // 1. Mark RedeemRequest as approved
       await db.query(
         "UPDATE RedeemRequest SET status = 'approved', reason = ?, approvedAt = NOW(), updatedAt = NOW() WHERE id = ?",
-        [adminReason, id]
+        [adminReason || '', id]
+      );
+
+      // 2. Mark the debit transaction in ledger as approved
+      await db.query(
+        "UPDATE wallet_transactions SET status = 'approved', description = CONCAT(description, ' - Approved: ', ?) WHERE reference_id = ? AND source = 'redemption'",
+        [adminReason || 'Approved by admin', id]
       );
     } else {
-      // If rejected, refund points? 
-      // Depends on the flow. For now just mark as rejected.
+      // 1. Mark RedeemRequest as rejected
       await db.query(
         "UPDATE RedeemRequest SET status = 'rejected', reason = ?, updatedAt = NOW() WHERE id = ?",
-        [adminReason, id]
+        [adminReason || '', id]
       );
-      
-      // Refund points to wallet
+
+      // 2. Mark the debit transaction in ledger as rejected (to cancel the debit effect in balance calculation)
       await db.query(
-        "UPDATE User SET points_wallet = points_wallet + ?, updatedAt = NOW() WHERE id = ?",
-        [request.points_requested, request.userId]
+        "UPDATE wallet_transactions SET status = 'rejected', description = CONCAT(description, ' - Rejected: ', ?) WHERE reference_id = ? AND source = 'redemption'",
+        [adminReason || 'Rejected by admin', id]
       );
+
+      // 3. Refund points back using WalletService.credit
+      const WalletService = require('../services/walletService');
+      await WalletService.credit(
+        request.userId,
+        request.points_requested,
+        'redemption_refund',
+        id,
+        `Refund for rejected redemption request (ID: ${id}): ${adminReason || 'N/A'}`
+      );
+    }
+
+    // 3. Auto-resolve/close corresponding SupportTicket
+    try {
+      const prisma = require('../utils/prisma');
+      // Find the open/pending redemption ticket for this user
+      const tickets = await prisma.supportTicket.findMany({
+        where: {
+          userId: request.userId,
+          category: 'redemption',
+          status: { not: 'resolved' }
+        }
+      });
+
+      for (const ticket of tickets) {
+        // If the ticket description contains our RedeemRequest ID, or if it's the only ticket
+        if (ticket.description.includes(`Redeem Request ID: ${id}`) || tickets.length === 1) {
+          await prisma.supportTicket.update({
+            where: { id: ticket.id },
+            data: {
+              status: status === 'approved' ? 'resolved' : 'closed',
+              resolution: `Redeem request was ${status} by admin. Reason: ${adminReason || 'N/A'}`,
+              resolvedAt: new Date(),
+              updatedAt: new Date()
+            }
+          });
+          console.log(`🎫 Auto-updated SupportTicket #${ticket.id} status to ${status === 'approved' ? 'resolved' : 'closed'}`);
+        }
+      }
+    } catch (ticketError) {
+      console.error('⚠️ Failed to auto-update corresponding support ticket:', ticketError);
     }
 
     res.status(200).json(successResponse(null, `Request ${status}`));
   } catch (error) {
+    console.error('❌ Error processing redeem request action:', error);
     res.status(500).json(errorResponse(error.message));
   }
 }

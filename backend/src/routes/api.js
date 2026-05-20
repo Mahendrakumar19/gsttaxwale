@@ -20,6 +20,7 @@ const configController = require('../controllers/configController');
 const adminReferralController = require('../controllers/adminReferralController');
 const newsController = require('../controllers/newsController');
 const statsController = require('../controllers/statsController');
+const referralLeadController = require('../controllers/referralLeadController');
 
 const multer = require('multer');
 const { authenticate, adminOnly, optionalAuthenticate, asyncHandler } = require('../middleware/auth');
@@ -80,6 +81,15 @@ module.exports = function(app) {
   app.get(`${prefix}/referrals/history`, authenticate, asyncHandler(referralController.getRedemptionHistory));
   app.get(`${prefix}/wallet/history`, authenticate, asyncHandler(referralController.getWalletHistory));
 
+  // NEW REFERRAL LEADS LIFE CYCLE ROUTES
+  app.post(`${prefix}/referrals/lead`, asyncHandler(referralLeadController.createLead));
+  app.get(`${prefix}/referrals/referrer/:code`, asyncHandler(referralLeadController.getReferrerName));
+  app.get(`${prefix}/referrals/leads`, authenticate, asyncHandler(referralLeadController.userListLeads));
+  app.get(`${prefix}/admin/referral-leads`, authenticate, adminOnly, asyncHandler(referralLeadController.adminListLeads));
+  app.get(`${prefix}/admin/referral-leads/:id`, authenticate, adminOnly, asyncHandler(referralLeadController.adminGetLead));
+  app.put(`${prefix}/admin/referral-leads/:id`, authenticate, adminOnly, asyncHandler(referralLeadController.adminUpdateLead));
+  app.post(`${prefix}/admin/referral-leads/:id/convert`, authenticate, adminOnly, asyncHandler(referralLeadController.adminConvertLead));
+
   // ADMIN REFERRAL & WALLET
   app.get(`${prefix}/admin/referral/rules`, authenticate, adminOnly, asyncHandler(adminReferralController.getRules));
   app.post(`${prefix}/admin/referral/rules`, authenticate, adminOnly, asyncHandler(adminReferralController.createRule));
@@ -90,6 +100,7 @@ module.exports = function(app) {
   app.put(`${prefix}/admin/referral/settings`, authenticate, adminOnly, asyncHandler(adminReferralController.updateSettings));
   app.get(`${prefix}/admin/referral/analytics`, authenticate, adminOnly, asyncHandler(adminReferralController.getReferralAnalytics));
   app.get(`${prefix}/admin/referrals`, authenticate, adminOnly, asyncHandler(referralController.getAllReferrals));
+  app.get(`${prefix}/admin/referrals-stats`, authenticate, adminOnly, asyncHandler(referralController.getReferralStats));
   app.get(`${prefix}/referrals/:id`, authenticate, adminOnly, asyncHandler(referralController.getReferralById));
   app.put(`${prefix}/referrals/:id`, authenticate, adminOnly, asyncHandler(referralController.updateReferralById));
 
@@ -202,6 +213,7 @@ module.exports = function(app) {
   app.put(`${prefix}/admin/tickets/:id`, authenticate, adminOnly, asyncHandler(ticketController.updateTicket));
   app.delete(`${prefix}/admin/tickets/:id`, authenticate, adminOnly, asyncHandler(ticketController.deleteTicket));
   app.get(`${prefix}/admin/referrals`, authenticate, adminOnly, asyncHandler(referralController.getAllReferrals));
+  app.get(`${prefix}/admin/referrals-stats`, authenticate, adminOnly, asyncHandler(referralController.getReferralStats));
 
   // NEWS ROUTES
   app.get(`${prefix}/news`, asyncHandler(newsController.getNews));

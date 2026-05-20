@@ -4,12 +4,13 @@ const fs = require('fs');
 
 exports.uploadDocument = async (req, res) => {
   try {
-    const { customerId, customerName, customerPan, fiscalYear, category: rawCategory, displayTitle } = req.body;
+    const { customerId, customerName, customerPan, fiscalYear, month, category: rawCategory, displayTitle } = req.body;
     const files = req.files;
 
     console.log('📂 Multiple Document Upload Request:', { 
       customerId, 
       fiscalYear, 
+      month,
       category: rawCategory,
       filesCount: files ? files.length : 0
     });
@@ -18,12 +19,12 @@ exports.uploadDocument = async (req, res) => {
       return res.status(400).json({ error: 'No files provided' });
     }
 
-    if (!customerId) {
-      files.forEach(f => { if (fs.existsSync(f.path)) fs.unlinkSync(f.path); });
-      return res.status(400).json({ error: 'Customer ID is required' });
+    let targetCustomerId = customerId;
+    if (customerId === 'me' || !customerId || req.userRole !== 'admin') {
+      targetCustomerId = req.userId;
     }
 
-    const parsedCustomerId = parseInt(customerId);
+    const parsedCustomerId = parseInt(targetCustomerId);
     if (isNaN(parsedCustomerId)) {
       files.forEach(f => { if (fs.existsSync(f.path)) fs.unlinkSync(f.path); });
       return res.status(400).json({ error: 'Invalid Customer ID' });
@@ -40,7 +41,7 @@ exports.uploadDocument = async (req, res) => {
 
     // Create organized directory structure
     const rootUploadDir = path.resolve(process.cwd(), 'uploads');
-    const customerDir = path.join(rootUploadDir, customerId.toString());
+    const customerDir = path.join(rootUploadDir, parsedCustomerId.toString());
     const yearDir = path.join(customerDir, fiscalYear || 'general');
     const categoryDir = path.join(yearDir, category.toLowerCase());
     
@@ -64,8 +65,8 @@ exports.uploadDocument = async (req, res) => {
       const finalDisplayName = titles[i] || displayTitle || file.originalname;
       
       const result = await db.query(`
-        INSERT INTO Document (userId, downloadUrl, fileSize, fileName, uploadedBy, category, fiscalYear, title, type, status, fileType, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, NOW())
+        INSERT INTO Document (userId, downloadUrl, fileSize, fileName, uploadedBy, category, fiscalYear, month, title, type, status, fileType, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, NOW())
       `, [
         parsedCustomerId,
         `/api/documents/download/${uniqueFilename}`,
@@ -74,6 +75,7 @@ exports.uploadDocument = async (req, res) => {
         parseInt(req.userId) || 1,
         category,
         fiscalYear || '',
+        month || null,
         finalDisplayName,
         req.userRole === 'admin' ? 'admin-upload' : 'user-upload',
         file.mimetype
@@ -84,6 +86,8 @@ exports.uploadDocument = async (req, res) => {
         fileName: uniqueFilename,
         originalName: finalDisplayName,
         category: category,
+        fiscalYear: fiscalYear,
+        month: month || null,
         fileSize: file.size
       });
     }
@@ -196,7 +200,7 @@ exports.getUserDocuments = async (req, res) => {
 
     const documents = await db.query(`
       SELECT id, title, description, type, 
-             fileSize, createdAt, downloadUrl
+             fileSize, createdAt, downloadUrl, category, fiscalYear, month
       FROM Document
       WHERE userId = ? AND status = 'active'
       ORDER BY createdAt DESC
@@ -250,14 +254,17 @@ exports.getAllDocuments = async (req, res) => {
         documents: documents.map(doc => ({
           id: doc.id,
           fileName: doc.fileName,
+          title: doc.title,
           customerId: doc.userId,
           customerName: doc.customerName,
           customerPan: doc.customerPan,
           category: doc.category,
           fiscalYear: doc.fiscalYear,
+          month: doc.month,
           status: doc.status,
           fileSize: doc.fileSize,
           uploadedAt: doc.createdAt,
+          downloadUrl: doc.downloadUrl,
         })),
       },
       total: documents.length,
@@ -429,7 +436,8 @@ exports.getGroupedDocuments = async (req, res) => {
 
     res.json({
       success: true,
-      data: grouped
+      data: grouped,
+      documents: documents
     });
   } catch (err) {
     console.error('Error in getGroupedDocuments:', err);

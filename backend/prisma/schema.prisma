@@ -440,6 +440,7 @@ model Document {
   filePath        String?   @unique
   fileType        String    @default("application/pdf")
   fiscalYear      String?
+  month           String?
   isAdminUploaded Boolean   @default(false)
   status          String    @default("active")
   title           String?

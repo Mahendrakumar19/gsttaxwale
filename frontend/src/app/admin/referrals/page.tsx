@@ -4,7 +4,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { adminAuth } from '@/lib/adminAuth';
-import { TrendingUp, Share2, Users, DollarSign, Mail, Search, CheckCircle, Phone } from 'lucide-react';
+import { 
+  TrendingUp, Share2, Users, DollarSign, Mail, Search, 
+  CheckCircle, Phone, UserCheck, CheckCircle2, RefreshCw, X 
+} from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- Referral Verification Component ---
 function ReferralVerification() {
@@ -113,6 +117,9 @@ export default function AdminReferrals() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Conversion Credentials state
+  const [credentials, setCredentials] = useState<any>(null);
 
   useEffect(() => {
     const token = adminAuth.getAdminToken();
@@ -162,6 +169,29 @@ export default function AdminReferrals() {
     }
   }
 
+  const handleConvertLead = async (leadId: number) => {
+    if (!window.confirm('Are you sure you want to convert this referral lead into an active Customer? This will auto-create their login credentials.')) {
+      return;
+    }
+    try {
+      const token = adminAuth.getAdminToken();
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL || ''}/api/admin/referral-leads/${leadId}/convert`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        toast.success('Lead converted to Customer successfully!');
+        setCredentials(res.data.data);
+        loadReferrals();
+        loadStats();
+      }
+    } catch (err: any) {
+      console.error('Conversion failed:', err);
+      toast.error(err.response?.data?.message || 'Failed to convert lead to customer');
+    }
+  };
+
   const filteredReferrals = filter === 'all'
     ? referrals
     : referrals.filter(r => r.referralStatus === filter);
@@ -170,12 +200,22 @@ export default function AdminReferrals() {
     <div className="min-h-screen bg-white pt-20 pb-12">
       <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <TrendingUp className="text-blue-600" size={28} />
-            <h1 className="text-3xl font-bold text-black">Referral Management</h1>
+        <div className="flex items-center justify-between gap-4 mb-8">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="text-blue-600" size={28} />
+              <h1 className="text-3xl font-bold text-black font-black">Referrals & Leads Dashboard</h1>
+            </div>
+            <p className="text-gray-600">Track, verify, and convert guest leads, and manage rewards/commissions from one unified system.</p>
           </div>
-          <p className="text-gray-600">Track, verify, and manage referral commissions</p>
+          <button 
+            onClick={() => { loadReferrals(); loadStats(); }}
+            disabled={refreshing}
+            className="flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-700 font-semibold px-4 py-2 border border-gray-200 rounded-xl transition shadow-sm text-sm"
+          >
+            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+            Refresh
+          </button>
         </div>
 
         {/* Referral Verification Tool */}
@@ -221,11 +261,11 @@ export default function AdminReferrals() {
               onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-lg font-semibold transition capitalize ${
                 filter === f
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-blue-600 text-white shadow-md'
                   : 'bg-gray-200 text-gray-600 hover:text-gray-900'
               }`}
             >
-              {f === 'all' ? 'All Referrals' : f}
+              {f === 'all' ? 'All Referrals & Leads' : f}
             </button>
           ))}
         </div>
@@ -236,31 +276,52 @@ export default function AdminReferrals() {
         ) : filteredReferrals.length === 0 ? (
           <div className="text-center py-12 text-gray-600">No referrals found</div>
         ) : (
-          <div className="bg-white border border-gray-300 rounded-xl overflow-hidden">
+          <div className="bg-white border border-gray-300 rounded-xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-300 bg-gray-50">
-                    <th className="px-6 py-4 text-left text-gray-900 font-semibold text-sm">Referrer</th>
-                    <th className="px-6 py-4 text-left text-gray-900 font-semibold text-sm">Referee Email</th>
-                    <th className="px-6 py-4 text-left text-gray-900 font-semibold text-sm">Commission %</th>
-                    <th className="px-6 py-4 text-left text-gray-900 font-semibold text-sm">Commission Paid</th>
-                    <th className="px-6 py-4 text-left text-gray-900 font-semibold text-sm">Status</th>
-                    <th className="px-6 py-4 text-center text-gray-900 font-semibold text-sm">Action</th>
+                    <th className="px-6 py-4 text-left text-gray-900 font-bold text-sm">Referrer</th>
+                    <th className="px-6 py-4 text-left text-gray-900 font-bold text-sm">Referee / Referred Guest</th>
+                    <th className="px-6 py-4 text-left text-gray-900 font-bold text-sm">Contact Details</th>
+                    <th className="px-6 py-4 text-left text-gray-900 font-bold text-sm">Commission Info</th>
+                    <th className="px-6 py-4 text-left text-gray-900 font-bold text-sm">Status</th>
+                    <th className="px-6 py-4 text-center text-gray-900 font-bold text-sm">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredReferrals.map((referral: any) => (
                     <tr key={referral.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
-                      <td className="px-6 py-4 text-black font-semibold">{referral.referrer?.name}</td>
-                      <td className="px-6 py-4 text-gray-700 flex items-center gap-2">
-                        <Mail size={16} className="text-gray-400" />
-                        {referral.refereeEmail}
-                      </td>
-                      <td className="px-6 py-4 text-black font-semibold">{referral.commissionPercent}%</td>
-                      <td className="px-6 py-4 text-green-600 font-semibold">₹{referral.commissionAmount.toLocaleString()}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        <div className="font-semibold text-black">{referral.referrerName}</div>
+                        <div className="text-xs text-gray-500">{referral.referrer?.email || ''}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-black">{referral.referredName}</div>
+                        {referral.serviceInterest && (
+                          <div className="text-xs text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full inline-block mt-1 font-medium border border-purple-100">
+                            Interest: {referral.serviceInterest}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        <div className="flex items-center gap-1 text-gray-600">
+                          <Mail size={13} className="text-gray-400" />
+                          <span>{referral.refereeEmail || 'N/A'}</span>
+                        </div>
+                        {referral.refereePhone && (
+                          <div className="flex items-center gap-1 text-gray-600 mt-1">
+                            <Phone size={13} className="text-gray-400" />
+                            <span>{referral.refereePhone}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-black">₹{referral.commissionAmount?.toLocaleString() || 0}</div>
+                        <div className="text-xs text-gray-500">Rate: {referral.commissionPercent}%</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                           referral.referralStatus === 'completed'
                             ? 'bg-green-100 text-green-700'
                             : referral.referralStatus === 'active'
@@ -271,9 +332,23 @@ export default function AdminReferrals() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <Link href={`/admin/referrals/${referral.id}`} className="text-blue-600 hover:text-blue-800 transition font-semibold">
-                          Manage
-                        </Link>
+                        <div className="flex items-center justify-center gap-2">
+                          {referral.referralStatus === 'pending' && referral.leadId && (
+                            <button
+                              onClick={() => handleConvertLead(referral.leadId)}
+                              className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-750 text-white rounded-lg text-xs font-bold transition shadow-sm hover:shadow-md"
+                            >
+                              <UserCheck size={14} />
+                              Convert to Customer
+                            </button>
+                          )}
+                          <Link 
+                            href={`/admin/referrals/${referral.id}`} 
+                            className="text-blue-600 hover:text-blue-800 transition font-semibold text-xs border border-gray-300 hover:border-blue-400 bg-white rounded-lg px-2.5 py-1.5"
+                          >
+                            Manage
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -290,6 +365,40 @@ export default function AdminReferrals() {
           </div>
         )}
       </div>
+
+      {/* Credentials / Conversion Success Modal */}
+      {credentials && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+          <div className="bg-white border border-gray-200 rounded-[2rem] w-full max-w-md p-8 shadow-2xl relative overflow-hidden text-center animate-in fade-in zoom-in duration-200">
+            <CheckCircle2 className="mx-auto text-green-500 mb-4 animate-bounce" size={64} />
+            
+            <h3 className="text-2xl font-black text-gray-900 mb-2">Lead Converted!</h3>
+            <p className="text-gray-500 text-sm mb-6">The user account has been successfully created. Onboarding credentials have been generated:</p>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-left font-mono text-sm space-y-2 mb-6">
+              <div>
+                <span className="text-xs text-gray-400 font-bold block uppercase tracking-wider font-sans">Login Email</span>
+                <span className="font-bold text-gray-800 select-all">{credentials.email}</span>
+              </div>
+              <div className="pt-2 border-t border-gray-200">
+                <span className="text-xs text-gray-400 font-bold block uppercase tracking-wider font-sans">Temporary Password</span>
+                <span className="font-bold text-blue-600 select-all">{credentials.password}</span>
+              </div>
+            </div>
+
+            <p className="text-gray-400 text-xs leading-relaxed mb-6">
+              An email notification has been dispatched to <span className="font-semibold text-gray-600">{credentials.email}</span> with these credentials and a link to log in.
+            </p>
+
+            <button 
+              onClick={() => setCredentials(null)}
+              className="w-full bg-gray-900 hover:bg-black text-white font-bold py-3.5 rounded-xl transition uppercase tracking-wider text-xs"
+            >
+              Close Window
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
