@@ -27,37 +27,18 @@ class ReferralService {
    */
   static async processSignupReward(referrerId, refereeId) {
     try {
-      // 1. Fetch active signup rules
-      const rules = await db.query(
-        'SELECT * FROM referral_rules WHERE trigger_type = "signup" AND is_active = TRUE LIMIT 1'
+      const rewardAmount = 100;
+      await WalletService.credit(
+        referrerId,
+        rewardAmount,
+        'referral_signup',
+        refereeId,
+        `Reward for referring new user (ID: ${refereeId})`
       );
-
-      if (rules.length === 0) return null;
-      const rule = rules[0];
-
-      let rewardAmount = 0;
-      if (rule.reward_type === 'fixed') {
-        rewardAmount = parseFloat(rule.reward_value);
-      }
-
-      if (rewardAmount > 0) {
-        // 2. Credit to referrer
-        await WalletService.credit(
-          referrerId, 
-          rewardAmount, 
-          'referral_signup', 
-          refereeId, 
-          `Reward for referring new user (ID: ${refereeId})`
-        );
-
-        // 3. Track event
-        await this.trackEvent(referrerId, refereeId, 'reward_generated', { 
-          ruleId: rule.id, 
-          amount: rewardAmount, 
-          trigger: 'signup' 
-        });
-      }
-
+      await this.trackEvent(referrerId, refereeId, 'reward_generated', {
+        amount: rewardAmount,
+        trigger: 'signup'
+      });
       return rewardAmount;
     } catch (error) {
       console.error('❌ Process Signup Reward Error:', error);
@@ -67,59 +48,86 @@ class ReferralService {
   /**
    * Process reward for a purchase
    */
-  static async processPurchaseReward(referrerId, refereeId, orderId, amount, serviceId = null) {
+  static async processPurchaseReward(refereeId, orderId, amount, serviceId = null) {
     try {
-      // 1. Fetch relevant purchase rules
-      // Priority: Service-specific rule > Global rule
-      let rules = await db.query(
-        'SELECT * FROM referral_rules WHERE trigger_type = "purchase" AND is_active = TRUE AND service_id = ? AND min_purchase_amount <= ? ORDER BY service_id DESC LIMIT 1',
-        [serviceId, amount]
+      // Find the referral lead for this referee
+      const [user] = await db.query('SELECT email FROM User WHERE id = ?', [refereeId]);
+      if (!user) return 0;
+
+      const [lead] = await db.query(
+        'SELECT * FROM referral_leads WHERE converted_user_id = ? OR referred_email = ? LIMIT 1',
+        [refereeId, user.email]
       );
 
-      if (rules.length === 0) {
-        rules = await db.query(
-          'SELECT * FROM referral_rules WHERE trigger_type = "purchase" AND is_active = TRUE AND service_id IS NULL AND min_purchase_amount <= ? LIMIT 1',
-          [amount]
-        );
+      if (!lead) {
+        console.log('No referral lead found for referee ID:', refereeId);
+        return 0;
       }
 
-      if (rules.length === 0) return null;
-      const rule = rules[0];
-
-      let rewardAmount = 0;
-      if (rule.reward_type === 'fixed') {
-        rewardAmount = parseFloat(rule.reward_value);
-      } else if (rule.reward_type === 'percentage') {
-        rewardAmount = (amount * parseFloat(rule.reward_value)) / 100;
+      if (lead.reward_given) {
+        console.log('Reward already processed for lead ID:', lead.id);
+        return 0;
       }
 
-      // Cap the reward if max_reward is set
-      if (rule.max_reward && rewardAmount > rule.max_reward) {
-        rewardAmount = rule.max_reward;
-      }
+      // Fixed reward amount of 100 points for every successful referral
+      const rewardAmount = 100;
 
-      if (rewardAmount > 0) {
-        // 2. Credit to referrer
+      const referrerCode = lead.referrer_referral_id;
+
+      // Identify referrer
+      const [referrerUser] = await db.query('SELECT id FROM User WHERE referral_code = ?', [referrerCode]);
+      if (referrerUser) {
+        // Customer referrer: Credit to wallet
         await WalletService.credit(
-          referrerId, 
-          rewardAmount, 
-          'referral_purchase', 
-          orderId, 
-          `Reward for purchase by referred user (Order: ${orderId})`
+          referrerUser.id,
+          rewardAmount,
+          'referral_purchase',
+          orderId,
+          `Referral reward for purchase by user ${user.email} (Order: ${orderId})`
         );
+        console.log(`🎁 Credited ${rewardAmount} points to customer referrer (ID: ${referrerUser.id})`);
+      } else {
+        // Guest referrer: Update pending_points in referral_referrers
+        const [referrerGuest] = await db.query('SELECT id FROM referral_referrers WHERE referral_id = ?', [referrerCode]);
+        if (referrerGuest) {
+          await db.query(
+            'UPDATE referral_referrers SET pending_points = pending_points + ?, updated_at = NOW() WHERE id = ?',
+            [rewardAmount, referrerGuest.id]
+          );
+          console.log(`🎁 Added ${rewardAmount} pending points to guest referrer (ID: ${referrerGuest.id})`);
+        } else {
+          console.log('No registered customer or guest referrer found for code:', referrerCode);
+          return 0;
+        }
+      }
 
-        // 3. Track event
-        await this.trackEvent(referrerId, refereeId, 'reward_generated', { 
-          ruleId: rule.id, 
-          amount: rewardAmount, 
-          trigger: 'purchase',
-          orderId
-        });
+      // Mark reward as given in lead record and set status to completed
+      await db.query(
+        "UPDATE referral_leads SET status = 'completed', reward_given = 1, updated_at = NOW() WHERE id = ?",
+        [lead.id]
+      );
+
+      // Track Event
+      try {
+        await this.trackEvent(
+          referrerUser ? referrerUser.id : null,
+          refereeId,
+          'reward_generated',
+          {
+            amount: rewardAmount,
+            trigger: 'purchase',
+            orderId,
+            referrerCode
+          }
+        );
+      } catch (trackErr) {
+        console.warn('Could not write reward event:', trackErr.message);
       }
 
       return rewardAmount;
     } catch (error) {
-      console.error('❌ Process Purchase Reward Error:', error);
+      console.error('❌ processPurchaseReward error:', error);
+      throw error;
     }
   }
 

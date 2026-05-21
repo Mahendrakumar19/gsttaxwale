@@ -9,6 +9,7 @@ interface Document {
   fileName?: string;
   category?: string;
   fiscalYear?: string;
+  month?: string | null;
   createdAt: string;
   downloadUrl: string;
   fileSize?: number;

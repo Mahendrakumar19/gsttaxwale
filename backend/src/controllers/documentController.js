@@ -407,40 +407,98 @@ exports.getDocumentStats = async (req, res) => {
 };
 
 // ════════════════════════════════════════════════════════════════════
-// FLOW 2: USER OPENS DOCUMENT PAGE (Grouped)
+// Get User Documents By Fiscal Year (User Dashboard - Month Grid View)
 // ════════════════════════════════════════════════════════════════════
-exports.getGroupedDocuments = async (req, res) => {
+exports.getUserDocumentsByFY = async (req, res) => {
   try {
     const userId = req.userId;
     const { fy } = req.query;
 
     if (!fy) {
-      return res.status(400).json({ error: 'Financial year (fy) is required' });
+      return res.status(400).json({ error: 'Fiscal year (fy) required. e.g. fy=2025-26' });
     }
 
+    // Support both "2025-26" and "FY2025-26" formats from admin
+    const fyVariants = [fy, `FY${fy}`];
+
     const documents = await db.query(`
-      SELECT * FROM Document 
-      WHERE userId = ? 
-      AND (fiscalYear = ? OR fiscalYear = ?)
-      AND status = 'active'
+      SELECT id, title, fileName, fileType, fileSize, category, fiscalYear, month, downloadUrl, createdAt, status
+      FROM Document
+      WHERE userId = ?
+        AND (fiscalYear = ? OR fiscalYear = ?)
+        AND status = 'active'
       ORDER BY createdAt DESC
-    `, [userId, fy, `FY${fy}`]);
+    `, [userId, fyVariants[0], fyVariants[1]]);
 
-    // Grouping logic: ITR, GST, OTHER (Case-insensitive)
-    const grouped = {
-      ITR: documents.filter(d => d.category?.toUpperCase() === 'ITR'),
+    // Organize into month-wise buckets
+    const MONTHS = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
+
+    const byMonth = {};
+    MONTHS.forEach(m => { byMonth[m] = []; });
+    byMonth['General'] = []; // For docs without a month
+
+    documents.forEach(doc => {
+      const m = doc.month;
+      if (m && byMonth[m] !== undefined) {
+        byMonth[m].push(doc);
+      } else {
+        byMonth['General'].push(doc);
+      }
+    });
+
+    // Category grouping
+    const byCategory = {
       GST: documents.filter(d => d.category?.toUpperCase() === 'GST'),
-      OTHER: documents.filter(d => !['ITR', 'GST'].includes(d.category?.toUpperCase()))
+      ITR: documents.filter(d => d.category?.toUpperCase() === 'ITR'),
+      Others: documents.filter(d => !['GST', 'ITR'].includes(d.category?.toUpperCase())),
     };
-
 
     res.json({
       success: true,
-      data: grouped,
-      documents: documents
+      data: {
+        documents,
+        byMonth,
+        byCategory,
+        fiscalYear: fy,
+        total: documents.length,
+      }
     });
   } catch (err) {
-    console.error('Error in getGroupedDocuments:', err);
+    console.error('Error in getUserDocumentsByFY:', err);
     res.status(500).json({ error: 'Failed to fetch documents' });
   }
 };
+
+
+// ════════════════════════════════════════════════════════════════════
+// Get Available Financial Years (User)
+// ════════════════════════════════════════════════════════════════════
+exports.getFinancialYears = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const rows = await db.query(`
+      SELECT DISTINCT fiscalYear
+      FROM Document
+      WHERE userId = ? AND status = 'active' AND fiscalYear IS NOT NULL AND fiscalYear != ''
+      ORDER BY fiscalYear DESC
+    `, [userId]);
+
+    const years = rows.map(r => r.fiscalYear);
+
+    // Always include all standard FY options 2021-22 to 2026-27
+    const standard = ['FY2026-27','FY2025-26','FY2024-25','FY2023-24','FY2022-23','FY2021-22',
+                      '2026-27','2025-26','2024-25','2023-24','2022-23','2021-22'];
+
+    // Normalize: convert FY2025-26 → 2025-26 and deduplicate
+    const normalizeYear = (y) => y.replace(/^FY/i, '');
+    const allRaw = [...new Set([...years, ...standard])];
+    const normalized = [...new Set(allRaw.map(normalizeYear))].sort((a, b) => b.localeCompare(a));
+
+    res.json({ success: true, data: { years: normalized } });
+  } catch (err) {
+    console.error('Error fetching financial years:', err);
+    res.status(500).json({ error: 'Failed to fetch financial years' });
+  }
+};
+

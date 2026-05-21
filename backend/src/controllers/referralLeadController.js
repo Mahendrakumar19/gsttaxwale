@@ -1,10 +1,13 @@
 const db = require('../utils/db');
 const { successResponse, errorResponse } = require('../utils/helpers');
+const { generateUniqueReferralCode } = require('../utils/referralHelper');
+const emailService = require('../services/emailService');
 const authService = require('../services/authService');
+const WalletService = require('../services/walletService');
 const crypto = require('crypto');
 
 /**
- * Public: Create a new referral lead from guest submission
+ * Public: Create a new referral lead from guest landing page submission
  */
 async function createLead(req, res) {
   const { name, email, phone, serviceInterest, referralCode } = req.body;
@@ -13,85 +16,114 @@ async function createLead(req, res) {
     return res.status(400).json(errorResponse('Name, email, phone, and referral code are required'));
   }
 
+  const cleanPhone = phone.replace(/\D/g, '');
+
   try {
-    // 1. Validate if referral code exists
-    const [referrer] = await db.query(
+    // 1. Validate if referral code exists in User table or referral_referrers
+    let referrerUser = null;
+    let referrerGuest = null;
+    let referrerName = '';
+
+    const [user] = await db.query(
       'SELECT id, name FROM User WHERE referral_code = ?',
       [referralCode]
     );
 
-    if (!referrer) {
+    if (user) {
+      referrerUser = user;
+      referrerName = user.name;
+    } else {
+      const [guest] = await db.query(
+        'SELECT id, name FROM referral_referrers WHERE referral_id = ?',
+        [referralCode]
+      );
+      if (guest) {
+        referrerGuest = guest;
+        referrerName = guest.name;
+      }
+    }
+
+    if (!referrerUser && !referrerGuest) {
       return res.status(404).json(errorResponse('Invalid referral code'));
     }
 
-    // 2. Prevent duplicates for the same referrer and same email/phone
+    // 2. Prevent duplicates for the same email or phone
     const [existingLead] = await db.query(
-      'SELECT id FROM referral_leads WHERE referrer_user_id = ? AND (guest_email = ? OR guest_phone = ?)',
-      [referrer.id, email, phone]
+      'SELECT id FROM referral_leads WHERE referred_email = ? OR referred_mobile = ?',
+      [email, cleanPhone]
     );
 
     if (existingLead) {
-      return res.status(400).json(errorResponse('A lead with this email or phone number has already been registered for this referrer'));
+      return res.status(400).json(errorResponse('A lead with this email or phone number has already been registered'));
     }
 
-    // 3. Generate secure attribution token
-    const attributionToken = crypto.randomBytes(32).toString('hex');
-
-    // 4. Insert lead
+    // 3. Insert lead into new referral_leads table
     const result = await db.create('referral_leads', {
-      referrer_user_id: referrer.id,
-      guest_name: name,
-      guest_email: email,
-      guest_phone: phone,
+      referrer_referral_id: referralCode,
+      referred_name: name,
+      referred_mobile: cleanPhone,
+      referred_email: email,
       service_interest: serviceInterest || null,
-      source: req.body.source || 'referral_landing_page',
       status: 'pending',
-      attribution_token: attributionToken,
-      notes: req.body.notes || '',
+      converted_user_id: null,
+      reward_given: 0,
       created_at: new Date(),
       updated_at: new Date()
     });
 
-    // 4b. Immediately store referred person details into legacy Referral table (with referralStatus: 'pending')
-    const [existingReferral] = await db.query(
-      'SELECT id FROM Referral WHERE referrerId = ? AND refereeEmail = ?',
-      [referrer.id, email]
-    );
-    if (!existingReferral) {
-      await db.create('Referral', {
-        referrerId: referrer.id,
-        refereeId: null,
-        refereeEmail: email,
-        refereePhone: phone,
-        referralStatus: 'pending',
-        commissionPercent: 10,
-        commissionAmount: 0,
-        notes: `Referred Guest Name: ${name}`,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+    // 4. Create record in legacy Referral table only if referrer is a registered customer
+    if (referrerUser) {
+      const [existingReferral] = await db.query(
+        'SELECT id FROM Referral WHERE referrerId = ? AND refereeEmail = ?',
+        [referrerUser.id, email]
+      );
+      if (!existingReferral) {
+        await db.create('Referral', {
+          referrerId: referrerUser.id,
+          refereeId: null,
+          refereeEmail: email,
+          refereePhone: cleanPhone,
+          referralStatus: 'pending',
+          commissionPercent: 10,
+          commissionAmount: 0,
+          notes: `Referred Guest Name: ${name}`,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
     }
 
-    // 5. Track Event: form_submit
-    const eventMetadata = {
-      serviceInterest,
-      referral_lead_id: result.id,
-      ip_address: req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '',
-      user_agent: req.headers['user-agent'] || '',
-      utm_source: req.body.utm_source || 'referral_link'
-    };
+    // 5. Track Event in referral_events
+    try {
+      const eventMetadata = {
+        serviceInterest,
+        referral_lead_id: result.id,
+        ip_address: req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '',
+        user_agent: req.headers['user-agent'] || '',
+        utm_source: req.body.utm_source || 'referral_link'
+      };
 
-    await db.create('referral_events', {
-      referrer_id: referrer.id,
-      event_type: 'form_submit',
-      metadata: JSON.stringify(eventMetadata),
-      created_at: new Date()
-    });
+      await db.create('referral_events', {
+        referral_lead_id: result.id,
+        referrer_id: referrerUser ? referrerUser.id : null,
+        event_type: 'form_submit',
+        ip_address: eventMetadata.ip_address,
+        user_agent: eventMetadata.user_agent,
+        utm_source: eventMetadata.utm_source,
+        metadata: JSON.stringify(eventMetadata),
+        created_at: new Date()
+      });
+    } catch (trackErr) {
+      console.warn('Could not write referral event:', trackErr.message);
+    }
+
+    // 6. Send invite email asynchronously (non-blocking)
+    emailService.sendReferralInviteEmail(email, referrerName, referralCode)
+      .catch(err => console.error('Error sending referee invitation email:', err));
 
     return res.status(201).json(successResponse({
       leadId: result.id,
-      guestName: name,
-      attributionToken
+      referredName: name
     }, 'Referral lead submitted successfully'));
 
   } catch (error) {
@@ -101,16 +133,22 @@ async function createLead(req, res) {
 }
 
 /**
- * Admin: List all referral leads
+ * Admin: List all referral leads (consolidated view helper fallback)
  */
 async function adminListLeads(req, res) {
   try {
     const { status, search, limit = 50, offset = 0 } = req.query;
 
     let queryStr = `
-      SELECT rl.*, u.name as referrerName, u.email as referrerEmail
+      SELECT rl.*,
+             rl.referred_name as guest_name,
+             rl.referred_email as guest_email,
+             rl.referred_mobile as guest_phone,
+             COALESCE(u.name, rr.name) as referrerName,
+             COALESCE(u.email, rr.email) as referrerEmail
       FROM referral_leads rl
-      JOIN User u ON rl.referrer_user_id = u.id
+      LEFT JOIN User u ON rl.referrer_referral_id = u.referral_code
+      LEFT JOIN referral_referrers rr ON rl.referrer_referral_id = rr.referral_id
       WHERE 1=1
     `;
     const params = [];
@@ -121,7 +159,7 @@ async function adminListLeads(req, res) {
     }
 
     if (search) {
-      queryStr += ' AND (rl.guest_name LIKE ? OR rl.guest_email LIKE ? OR rl.guest_phone LIKE ?)';
+      queryStr += ' AND (rl.referred_name LIKE ? OR rl.referred_email LIKE ? OR rl.referred_mobile LIKE ?)';
       const searchPattern = `%${search}%`;
       params.push(searchPattern, searchPattern, searchPattern);
     }
@@ -143,7 +181,7 @@ async function adminListLeads(req, res) {
       countParams.push(status);
     }
     if (search) {
-      countQueryStr += ' AND (rl.guest_name LIKE ? OR rl.guest_email LIKE ? OR rl.guest_phone LIKE ?)';
+      queryStr += ' AND (rl.referred_name LIKE ? OR rl.referred_email LIKE ? OR rl.referred_mobile LIKE ?)';
       countParams.push(searchPattern, searchPattern, searchPattern);
     }
     const [countResult] = await db.query(countQueryStr, countParams);
@@ -170,9 +208,16 @@ async function adminGetLead(req, res) {
   const { id } = req.params;
   try {
     const [lead] = await db.query(`
-      SELECT rl.*, u.name as referrerName, u.email as referrerEmail, u.phone as referrerPhone
+      SELECT rl.*,
+             rl.referred_name as guest_name,
+             rl.referred_email as guest_email,
+             rl.referred_mobile as guest_phone,
+             COALESCE(u.name, rr.name) as referrerName,
+             COALESCE(u.email, rr.email) as referrerEmail,
+             COALESCE(u.phone, rr.mobile) as referrerPhone
       FROM referral_leads rl
-      JOIN User u ON rl.referrer_user_id = u.id
+      LEFT JOIN User u ON rl.referrer_referral_id = u.referral_code
+      LEFT JOIN referral_referrers rr ON rl.referrer_referral_id = rr.referral_id
       WHERE rl.id = ?
     `, [id]);
 
@@ -241,6 +286,7 @@ async function adminUpdateLead(req, res) {
 
 /**
  * Admin: Convert referral lead to user (customer)
+ * Transaction-safe, handles guest referrals, links existing codes, and credits pending points.
  */
 async function adminConvertLead(req, res) {
   const { id } = req.params;
@@ -261,7 +307,7 @@ async function adminConvertLead(req, res) {
     }
 
     // Check if email already exists in User table
-    const [existingUser] = await db.query('SELECT id FROM User WHERE email = ?', [lead.guest_email]);
+    const [existingUser] = await db.query('SELECT id FROM User WHERE email = ?', [lead.referred_email]);
     if (existingUser) {
       return res.status(400).json(errorResponse('A user with this email already exists in the system'));
     }
@@ -269,16 +315,45 @@ async function adminConvertLead(req, res) {
     // 2. Generate credentials & referral details
     const randomPassword = Math.random().toString(36).slice(-10);
     const hashedPassword = await authService.hashPassword(randomPassword);
-
-    const namePart = lead.guest_name.trim().split(/\s+/)[0].toUpperCase().replace(/[^A-Z]/g, '');
-    const phonePart = (lead.guest_phone || '0000').replace(/\D/g, '').slice(-4).padStart(4, '0');
-    const referralCode = `GTW${namePart}${phonePart}`;
+    const referralCode = await generateUniqueReferralCode(lead.referred_name, lead.referred_mobile);
     const referenceNumber = `GTW${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 900 + 100)}`;
+
+    // Identify if the referrer is a customer (User) or guest (referral_referrers)
+    const [referrerUser] = await db.query(
+      'SELECT id, email FROM User WHERE referral_code = ?',
+      [lead.referrer_referral_id]
+    );
+
+    const [referrerGuest] = await db.query(
+      'SELECT id, name FROM referral_referrers WHERE referral_id = ?',
+      [lead.referrer_referral_id]
+    );
 
     // 3. Perform transactional database operation
     const connection = await db.pool.getConnection();
     try {
       await connection.beginTransaction();
+
+      // Check if this referee is also a guest referrer (has generated a code as guest referrer)
+      const [refereeGuestRecord] = await connection.execute(
+        'SELECT * FROM referral_referrers WHERE email = ? OR mobile = ?',
+        [lead.referred_email, lead.referred_mobile]
+      );
+
+      let finalReferralCode = referralCode;
+      let hasPendingPoints = false;
+      let pendingPointsAmount = 0;
+      let refereeGuestId = null;
+
+      if (refereeGuestRecord && refereeGuestRecord.length > 0) {
+        // Reuse their original guest referral code so their links continue to work
+        finalReferralCode = refereeGuestRecord[0].referral_id;
+        refereeGuestId = refereeGuestRecord[0].id;
+        if (refereeGuestRecord[0].pending_points > 0) {
+          hasPendingPoints = true;
+          pendingPointsAmount = refereeGuestRecord[0].pending_points;
+        }
+      }
 
       // Insert User record
       const [userResult] = await connection.execute(`
@@ -289,13 +364,13 @@ async function adminConvertLead(req, res) {
         )
         VALUES (?, ?, ?, ?, 'user', 'active', ?, ?, ?, 1, 0, NOW(), NOW())
       `, [
-        lead.guest_name,
-        lead.guest_email,
-        lead.guest_phone,
+        lead.referred_name,
+        lead.referred_email,
+        lead.referred_mobile,
         hashedPassword,
-        referralCode,
+        finalReferralCode,
         referenceNumber,
-        lead.referrer_user_id
+        referrerUser ? referrerUser.id : null
       ]);
 
       const newUserId = userResult.insertId;
@@ -307,38 +382,62 @@ async function adminConvertLead(req, res) {
         WHERE id = ?
       `, [newUserId, id]);
 
-      // Create backward-compatible record in Referral table or update existing
-      const [referrer] = await connection.execute(
-        'SELECT email FROM User WHERE id = ?',
-        [lead.referrer_user_id]
-      );
-      const referrerEmail = referrer[0]?.email || '';
+      // If referrer was a customer, update or insert into Referral table
+      if (referrerUser) {
+        const [existingReferrals] = await connection.execute(
+          'SELECT id FROM Referral WHERE referrerId = ? AND refereeEmail = ?',
+          [referrerUser.id, lead.referred_email]
+        );
 
-      const [existingReferrals] = await connection.execute(
-        'SELECT id FROM Referral WHERE referrerId = ? AND refereeEmail = ?',
-        [lead.referrer_user_id, lead.guest_email]
-      );
+        if (existingReferrals && existingReferrals.length > 0) {
+          await connection.execute(`
+            UPDATE Referral
+            SET refereeId = ?, referralStatus = 'active', updatedAt = NOW()
+            WHERE id = ?
+          `, [newUserId, existingReferrals[0].id]);
+        } else {
+          await connection.execute(`
+            INSERT INTO Referral (
+              referrerId, refereeId, refereeEmail, refereePhone,
+              commissionPercent, commissionAmount,
+              referralStatus, createdAt, updatedAt
+            )
+            VALUES (?, ?, ?, ?, 10, 0, 'active', NOW(), NOW())
+          `, [
+            referrerUser.id,
+            newUserId,
+            lead.referred_email,
+            lead.referred_mobile
+          ]);
+        }
+      }
 
-      if (existingReferrals && existingReferrals.length > 0) {
+      // If referee was a guest referrer, link their record and transfer points
+      if (refereeGuestId) {
         await connection.execute(`
-          UPDATE Referral
-          SET refereeId = ?, referralStatus = 'active', updatedAt = NOW()
+          UPDATE referral_referrers 
+          SET is_customer = 1, converted_user_id = ?, pending_points = 0, updated_at = NOW() 
           WHERE id = ?
-        `, [newUserId, existingReferrals[0].id]);
-      } else {
-        await connection.execute(`
-          INSERT INTO Referral (
-            referrerId, refereeId, refereeEmail, refereePhone,
-            commissionPercent, commissionAmount,
-            referralStatus, createdAt, updatedAt
-          )
-          VALUES (?, ?, ?, ?, 10, 0, 'active', NOW(), NOW())
-        `, [
-          lead.referrer_user_id,
-          newUserId,
-          lead.guest_email,
-          lead.guest_phone
-        ]);
+        `, [newUserId, refereeGuestId]);
+
+        if (hasPendingPoints) {
+          // Add credit ledger entry in wallet_transactions
+          await connection.execute(`
+            INSERT INTO wallet_transactions (
+              user_id, type, source, points, reference_id, status, description, created_at
+            )
+            VALUES (?, 'credit', 'referral_pending_transfer', ?, NULL, 'approved', ?, NOW())
+          `, [
+            newUserId,
+            pendingPointsAmount,
+            `Transferred pending points from guest referrals (${pendingPointsAmount} points)`
+          ]);
+
+          // Update points cached on User
+          await connection.execute(`
+            UPDATE User SET points_wallet = points_wallet + ? WHERE id = ?
+          `, [pendingPointsAmount, newUserId]);
+        }
       }
 
       // Track Event: conversion
@@ -356,24 +455,20 @@ async function adminConvertLead(req, res) {
         )
         VALUES (?, ?, 'conversion', ?, NOW())
       `, [
-        lead.referrer_user_id,
+        referrerUser ? referrerUser.id : null,
         newUserId,
         JSON.stringify(conversionMetadata)
       ]);
 
       await connection.commit();
 
-      // 4. Send onboarding email with credentials (outside transaction so it doesn't block)
-      try {
-        await authService.sendUserCreatedEmail(lead.guest_email, randomPassword, referenceNumber);
-        console.log(`📧 Welcome/onboarding credentials email sent to ${lead.guest_email}`);
-      } catch (mailError) {
-        console.error('📧 Failed to send credentials email:', mailError);
-      }
+      // Send onboarding email with credentials (outside transaction)
+      emailService.sendOnboardingCredentialsEmail(lead.referred_email, lead.referred_name, randomPassword)
+        .catch(err => console.error('📧 Onboarding email send failed:', err));
 
       return res.status(201).json(successResponse({
         userId: newUserId,
-        email: lead.guest_email,
+        email: lead.referred_email,
         password: randomPassword
       }, 'Lead converted to customer successfully'));
 
@@ -396,12 +491,17 @@ async function adminConvertLead(req, res) {
 async function userListLeads(req, res) {
   const userId = req.userId;
   try {
+    const [user] = await db.query('SELECT referral_code FROM User WHERE id = ?', [userId]);
+    if (!user || !user.referral_code) {
+      return res.status(200).json(successResponse({ leads: [] }, 'No leads found'));
+    }
+
     const leads = await db.query(
-      `SELECT id, guest_name, guest_email, guest_phone, service_interest, status, created_at
+      `SELECT id, referred_name as guest_name, referred_email as guest_email, referred_mobile as guest_phone, service_interest, status, created_at
        FROM referral_leads 
-       WHERE referrer_user_id = ? 
+       WHERE referrer_referral_id = ? 
        ORDER BY created_at DESC`,
-      [userId]
+      [user.referral_code]
     );
 
     return res.status(200).json(successResponse({ leads }, 'Your referred leads fetched'));
@@ -419,10 +519,16 @@ async function getReferrerName(req, res) {
   const { code } = req.params;
   try {
     const [user] = await db.query('SELECT name FROM User WHERE referral_code = ?', [code]);
-    if (!user) {
-      return res.status(404).json(errorResponse('Invalid referral code'));
+    if (user) {
+      return res.status(200).json(successResponse({ name: user.name }, 'Referrer found'));
     }
-    return res.status(200).json(successResponse({ name: user.name }, 'Referrer found'));
+
+    const [guest] = await db.query('SELECT name FROM referral_referrers WHERE referral_id = ?', [code]);
+    if (guest) {
+      return res.status(200).json(successResponse({ name: guest.name }, 'Referrer found'));
+    }
+
+    return res.status(404).json(errorResponse('Invalid referral code'));
   } catch (error) {
     console.error('❌ Error getting referrer name:', error);
     return res.status(500).json(errorResponse(error.message));

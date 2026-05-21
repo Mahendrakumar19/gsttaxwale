@@ -104,11 +104,20 @@ module.exports = function(app) {
   app.get(`${prefix}/referrals/:id`, authenticate, adminOnly, asyncHandler(referralController.getReferralById));
   app.put(`${prefix}/referrals/:id`, authenticate, adminOnly, asyncHandler(referralController.updateReferralById));
 
-  // DOCUMENT ROUTES
+  // DOCUMENT ROUTES (order matters: specific named routes BEFORE wildcards)
   app.post(`${prefix}/documents/upload`, authenticate, upload.array('files', 10), asyncHandler(documentController.uploadDocument));
   app.get(`${prefix}/documents/user-list`, authenticate, asyncHandler(documentController.getUserDocuments));
-  app.delete(`${prefix}/documents/:documentId`, authenticate, asyncHandler(documentController.deleteDocument));
   app.get(`${prefix}/documents/financial-years`, authenticate, asyncHandler(documentController.getFinancialYears));
+  app.get(`${prefix}/documents/by-fy`, authenticate, asyncHandler(documentController.getUserDocumentsByFY));
+  app.get(`${prefix}/documents/download/:filename`, authenticate, asyncHandler(documentController.downloadDocument));
+  // Grouped (legacy) — must come after named routes
+  app.get(`${prefix}/documents`, authenticate, asyncHandler(documentController.getUserDocumentsByFY));
+  // Wildcard delete — must come LAST among GET-like routes
+  app.delete(`${prefix}/documents/:documentId`, authenticate, asyncHandler(documentController.deleteDocument));
+  // User dashboard documents endpoint (used by DocumentsCenter.tsx)
+  app.get(`${prefix}/dashboard/user/documents`, authenticate, asyncHandler(documentController.getUserDocumentsByFY));
+  app.delete(`${prefix}/dashboard/user/documents/:documentId`, authenticate, asyncHandler(documentController.deleteDocument));
+
 
   // ADMIN SYSTEM ROUTES
   app.get(`${prefix}/admin/stats`, authenticate, adminOnly, asyncHandler(adminController.getAdminStats));
@@ -202,8 +211,7 @@ module.exports = function(app) {
   app.patch(`${prefix}/admin/documents/:documentId/archive`, authenticate, adminOnly, asyncHandler(documentController.archiveDocument));
   app.get(`${prefix}/admin/documents/stats`, authenticate, adminOnly, asyncHandler(documentController.getDocumentStats));
 
-  app.get(`${prefix}/documents`, authenticate, asyncHandler(documentController.getGroupedDocuments));
-  app.get(`${prefix}/documents/download/:filename`, authenticate, asyncHandler(documentController.downloadDocument));
+
 
   app.get(`${prefix}/dashboard/wallet`, authenticate, asyncHandler(referralController.getReferralInfo));
   app.put(`${prefix}/admin/update-filing-status`, authenticate, adminOnly, asyncHandler(adminController.updateFilingStatus));

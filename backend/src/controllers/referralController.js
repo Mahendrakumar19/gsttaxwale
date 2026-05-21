@@ -202,38 +202,22 @@ async function trackReferralConversion(req, res) {
     const userId = req.userId || (req.user && req.user.id); // The referee
     const { orderId, amount, serviceId } = req.body;
 
-    // 1. Find the referrer for this referee
-    const [user] = await db.query('SELECT email, referrer_id FROM User WHERE id = ?', [userId]);
+    // 1. Get User email
+    const [user] = await db.query('SELECT email FROM User WHERE id = ?', [userId]);
     if (!user) return res.status(404).json(errorResponse('User not found'));
 
-    let referrerId = user.referrer_id;
-    
-    // If not in User table, check Referral table
-    if (!referrerId) {
-      const [referral] = await db.query(
-        'SELECT referrerId as id FROM Referral WHERE refereeEmail = ? LIMIT 1',
-        [user.email]
-      );
-      if (referral) referrerId = referral.id;
-    }
+    // 2. Process Reward using Refactored Rule Engine (handles guest & customer tracking)
+    const rewardAmount = await ReferralService.processPurchaseReward(userId, orderId, amount, serviceId);
 
-    if (!referrerId) {
-      return res.status(404).json(errorResponse('No referrer found for this user'));
-    }
-
-    // 2. Process Reward using Rule Engine
-    const rewardAmount = await ReferralService.processPurchaseReward(referrerId, userId, orderId, amount, serviceId);
-
-    // 3. Update status in Referral table
+    // 3. Update status in legacy Referral table for backwards compatibility
     await db.query(
-      "UPDATE Referral SET referralStatus = 'completed', updatedAt = NOW() WHERE refereeEmail = ?",
-      [user.email]
+      "UPDATE Referral SET referralStatus = 'completed', commissionAmount = ?, updatedAt = NOW() WHERE refereeEmail = ?",
+      [rewardAmount || 0, user.email]
     );
 
     return res.status(200).json(
       successResponse('Referral conversion tracked', {
-        rewardAmount,
-        referrerId
+        rewardAmount
       })
     );
   } catch (error) {
@@ -349,41 +333,143 @@ async function getRedemptionHistory(req, res) {
  */
 async function getAllReferrals(req, res) {
   try {
+    // 1. Fetch legacy referrals
     const referrals = await db.query(`
       SELECT r.*, 
              u1.name as referrerName, u1.email as referrerEmail, 
              u2.name as refereeName, u2.email as refereeEmail,
-             rl.id as leadId, rl.guest_name as guestName, rl.service_interest as serviceInterest
+             rl.id as leadId, rl.referred_name as guestName, rl.service_interest as serviceInterest,
+             rl.status as leadStatus
       FROM Referral r
       LEFT JOIN User u1 ON r.referrerId = u1.id
       LEFT JOIN User u2 ON r.refereeId = u2.id
-      LEFT JOIN referral_leads rl ON (r.refereeEmail = rl.guest_email OR r.refereePhone = rl.guest_phone)
+      LEFT JOIN referral_leads rl ON r.refereeEmail = rl.referred_email
       ORDER BY r.createdAt DESC
     `);
 
-    const formattedReferrals = referrals.map(r => {
+    // 2. Fetch all referral_leads (includes both guest and customer referrers)
+    const leads = await db.query(`
+      SELECT rl.id as leadId,
+             rl.referrer_referral_id,
+             rl.referred_name as guestName,
+             rl.referred_email as refereeEmail,
+             rl.referred_mobile as refereePhone,
+             rl.service_interest as serviceInterest,
+             rl.status as referralStatus,
+             rl.created_at as createdAt,
+             rl.converted_user_id as refereeId,
+             COALESCE(u.name, rr.name) as referrerName,
+             COALESCE(u.email, rr.email) as referrerEmail,
+             u.id as referrerId
+      FROM referral_leads rl
+      LEFT JOIN User u ON rl.referrer_referral_id = u.referral_code
+      LEFT JOIN referral_referrers rr ON rl.referrer_referral_id = rr.referral_id
+      ORDER BY rl.created_at DESC
+    `);
+
+    // Merge logic to prevent duplicates and format correctly
+    const mergedMap = new Map();
+
+    // Add legacy referrals first
+    referrals.forEach(r => {
+      const emailKey = r.refereeEmail ? r.refereeEmail.toLowerCase() : '';
+      const phoneKey = r.refereePhone ? r.refereePhone.replace(/\D/g, '') : '';
+      
       const referrerName = r.referrerName || 'N/A';
       const refereeName = r.refereeName || r.guestName || (r.notes ? r.notes.replace('Referred Guest Name: ', '') : '') || 'Guest';
-      
-      return {
-        ...r,
+
+      const item = {
+        id: r.id,
+        referrerId: r.referrerId,
+        refereeId: r.refereeId,
+        refereeEmail: r.refereeEmail,
+        refereePhone: r.refereePhone,
+        commissionAmount: r.commissionAmount || 0,
+        commissionPercent: r.commissionPercent || 10,
+        referralStatus: r.leadStatus || r.referralStatus || 'pending',
+        createdAt: r.createdAt,
         referrerName,
         referredName: refereeName,
-        referrer: {
-          name: referrerName,
-          email: r.referrerEmail
-        },
-        referee: {
-          name: refereeName,
-          email: r.refereeEmail,
-          phone: r.refereePhone
-        },
+        referrerEmail: r.referrerEmail,
         leadId: r.leadId,
         serviceInterest: r.serviceInterest
       };
+
+      if (emailKey) mergedMap.set(`email_${emailKey}`, item);
+      if (phoneKey) mergedMap.set(`phone_${phoneKey}`, item);
+      mergedMap.set(`id_${r.id}`, item);
     });
 
-    return res.status(200).json(successResponse({ referrals: formattedReferrals }, 'All referrals retrieved'));
+    // Add/merge leads
+    leads.forEach(l => {
+      const emailKey = l.refereeEmail ? l.refereeEmail.toLowerCase() : '';
+      const phoneKey = l.refereePhone ? l.refereePhone.replace(/\D/g, '') : '';
+
+      let existing = null;
+      if (emailKey && mergedMap.has(`email_${emailKey}`)) {
+        existing = mergedMap.get(`email_${emailKey}`);
+      } else if (phoneKey && mergedMap.has(`phone_${phoneKey}`)) {
+        existing = mergedMap.get(`phone_${phoneKey}`);
+      }
+
+      if (existing) {
+        if (l.leadId) existing.leadId = l.leadId;
+        if (l.serviceInterest) existing.serviceInterest = l.serviceInterest;
+        if (l.referralStatus) existing.referralStatus = l.referralStatus;
+        if (l.referrerName && existing.referrerName === 'N/A') {
+          existing.referrerName = l.referrerName;
+          existing.referrerEmail = l.referrerEmail;
+        }
+      } else {
+        const refereeName = l.guestName || 'Guest';
+        const referrerName = l.referrerName || 'Guest Referrer';
+
+        const item = {
+          id: `lead_${l.leadId}`,
+          referrerId: l.referrerId || null,
+          refereeId: l.refereeId || null,
+          refereeEmail: l.refereeEmail,
+          refereePhone: l.refereePhone,
+          commissionAmount: 0,
+          commissionPercent: 10,
+          referralStatus: l.referralStatus,
+          createdAt: l.createdAt,
+          referrerName,
+          referredName: refereeName,
+          referrerEmail: l.referrerEmail,
+          leadId: l.leadId,
+          serviceInterest: l.serviceInterest
+        };
+
+        if (emailKey) mergedMap.set(`email_${emailKey}`, item);
+        if (phoneKey) mergedMap.set(`phone_${phoneKey}`, item);
+        mergedMap.set(`id_lead_${l.leadId}`, item);
+      }
+    });
+
+    const finalReferrals = [];
+    const seenIds = new Set();
+    for (const [key, val] of mergedMap.entries()) {
+      if (key.startsWith('id_') && !seenIds.has(val.id)) {
+        seenIds.add(val.id);
+        
+        val.referrer = {
+          name: val.referrerName,
+          email: val.referrerEmail
+        };
+        val.referee = {
+          name: val.referredName,
+          email: val.refereeEmail,
+          phone: val.refereePhone
+        };
+        
+        finalReferrals.push(val);
+      }
+    }
+
+    finalReferrals.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    return res.status(200).json(successResponse({ referrals: finalReferrals }, 'All referrals retrieved'));
   } catch (error) {
     console.error('❌ Error fetching all referrals:', error);
     return res.status(500).json(errorResponse('Failed to fetch referrals'));
@@ -395,19 +481,19 @@ async function getAllReferrals(req, res) {
  */
 async function getReferralStats(req, res) {
   try {
-    const [totalRes] = await db.query('SELECT COUNT(*) as count FROM Referral');
+    const [totalRes] = await db.query('SELECT COUNT(*) as count FROM referral_leads');
     const totalReferrals = totalRes?.count || 0;
 
     const [commissionRes] = await db.query('SELECT SUM(commissionAmount) as sum FROM Referral');
     const totalCommission = commissionRes?.sum || 0;
 
-    const [activeRes] = await db.query("SELECT COUNT(*) as count FROM Referral WHERE referralStatus = 'active'");
+    const [activeRes] = await db.query("SELECT COUNT(*) as count FROM referral_leads WHERE status IN ('converted', 'completed')");
     const activeReferrals = activeRes?.count || 0;
 
     const statusBreakdown = await db.query(`
-      SELECT referralStatus, COUNT(*) as count 
-      FROM Referral 
-      GROUP BY referralStatus
+      SELECT status as referralStatus, COUNT(*) as count 
+      FROM referral_leads 
+      GROUP BY status
     `);
 
     const statsBreakdown = statusBreakdown.map(row => ({
@@ -452,11 +538,61 @@ async function getWalletHistory(req, res) {
 async function getReferralById(req, res) {
   try {
     const { id } = req.params;
+
+    if (String(id).startsWith('lead_')) {
+      const leadId = id.split('_')[1];
+      const [lead] = await db.query(`
+        SELECT rl.*,
+               rl.referred_name as guest_name,
+               rl.referred_email as guest_email,
+               rl.referred_mobile as guest_phone,
+               COALESCE(u.name, rr.name) as referrerName,
+               COALESCE(u.email, rr.email) as referrerEmail,
+               COALESCE(u.phone, rr.mobile) as referrerPhone
+        FROM referral_leads rl
+        LEFT JOIN User u ON rl.referrer_referral_id = u.referral_code
+        LEFT JOIN referral_referrers rr ON rl.referrer_referral_id = rr.referral_id
+        WHERE rl.id = ?
+      `, [leadId]);
+
+      if (!lead) {
+        return res.status(404).json(errorResponse('Referral not found'));
+      }
+
+      const formattedReferral = {
+        id: `lead_${lead.id}`,
+        referrerId: null,
+        refereeId: lead.converted_user_id,
+        refereeEmail: lead.referred_email,
+        refereePhone: lead.referred_mobile,
+        commissionAmount: 0,
+        commissionPercent: 10,
+        referralStatus: lead.status,
+        createdAt: lead.created_at,
+        notes: lead.notes,
+        leadId: lead.id,
+        serviceInterest: lead.service_interest,
+        referrer: {
+          name: lead.referrerName || 'Guest Referrer',
+          email: lead.referrerEmail
+        },
+        referee: {
+          name: lead.referred_name
+        }
+      };
+
+      return res.status(200).json(successResponse({ referral: formattedReferral }, 'Referral retrieved successfully'));
+    }
+
     const [referral] = await db.query(`
-      SELECT r.*, u1.name as referrerName, u1.email as referrerEmail, u2.name as refereeName, u2.email as refereeEmail
+      SELECT r.*, 
+             u1.name as referrerName, u1.email as referrerEmail, 
+             u2.name as refereeName, u2.email as refereeEmail,
+             rl.id as leadId, rl.referred_name as guestName, rl.service_interest as serviceInterest
       FROM Referral r
       LEFT JOIN User u1 ON r.referrerId = u1.id
       LEFT JOIN User u2 ON r.refereeId = u2.id
+      LEFT JOIN referral_leads rl ON r.refereeEmail = rl.referred_email
       WHERE r.id = ?
     `, [id]);
 
@@ -467,12 +603,14 @@ async function getReferralById(req, res) {
     const formattedReferral = {
       ...referral,
       referrer: {
-        name: referral.referrerName,
+        name: referral.referrerName || 'N/A',
         email: referral.referrerEmail
       },
-      referee: referral.refereeName ? {
-        name: referral.refereeName
-      } : null
+      referee: {
+        name: referral.refereeName || referral.guestName || (referral.notes ? referral.notes.replace('Referred Guest Name: ', '') : '') || 'Guest'
+      },
+      leadId: referral.leadId,
+      serviceInterest: referral.serviceInterest
     };
 
     return res.status(200).json(successResponse({ referral: formattedReferral }, 'Referral retrieved successfully'));
@@ -489,6 +627,58 @@ async function updateReferralById(req, res) {
   try {
     const { id } = req.params;
     const { referralStatus, commissionAmount, notes } = req.body;
+
+    if (String(id).startsWith('lead_')) {
+      const leadId = id.split('_')[1];
+      const updateFields = {};
+      if (referralStatus) {
+        updateFields.status = referralStatus;
+      }
+      if (notes !== undefined) {
+        updateFields.notes = notes;
+      }
+      updateFields.updated_at = new Date();
+
+      await db.update('referral_leads', updateFields, { id: leadId });
+
+      const [lead] = await db.query(`
+        SELECT rl.*,
+               rl.referred_name as guest_name,
+               rl.referred_email as guest_email,
+               rl.referred_mobile as guest_phone,
+               COALESCE(u.name, rr.name) as referrerName,
+               COALESCE(u.email, rr.email) as referrerEmail,
+               COALESCE(u.phone, rr.mobile) as referrerPhone
+        FROM referral_leads rl
+        LEFT JOIN User u ON rl.referrer_referral_id = u.referral_code
+        LEFT JOIN referral_referrers rr ON rl.referrer_referral_id = rr.referral_id
+        WHERE rl.id = ?
+      `, [leadId]);
+
+      const formattedReferral = {
+        id: `lead_${lead.id}`,
+        referrerId: null,
+        refereeId: lead.converted_user_id,
+        refereeEmail: lead.referred_email,
+        refereePhone: lead.referred_mobile,
+        commissionAmount: 0,
+        commissionPercent: 10,
+        referralStatus: lead.status,
+        createdAt: lead.created_at,
+        notes: lead.notes,
+        leadId: lead.id,
+        serviceInterest: lead.service_interest,
+        referrer: {
+          name: lead.referrerName || 'Guest Referrer',
+          email: lead.referrerEmail
+        },
+        referee: {
+          name: lead.referred_name
+        }
+      };
+
+      return res.status(200).json(successResponse({ referral: formattedReferral }, 'Referral updated successfully'));
+    }
 
     await db.query(`
       UPDATE Referral 

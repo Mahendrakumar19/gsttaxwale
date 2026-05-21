@@ -21,7 +21,7 @@ async function getDashboard(req, res) {
     `, [userId]);
 
     // Get documents
-    const documents = await db.query('SELECT * FROM Document WHERE userId = ? ORDER BY uploadedAt DESC', [userId]);
+    const documents = await db.query('SELECT * FROM Document WHERE userId = ? ORDER BY createdAt DESC', [userId]);
 
     res.status(200).json(successResponse({
       user,
@@ -107,7 +107,7 @@ async function getUserServices(req, res) {
 async function getUserDocumentsGrouped(req, res) {
   const userId = req.userId;
   try {
-    const documents = await db.query('SELECT * FROM Document WHERE userId = ? ORDER BY financialYear DESC, uploadedAt DESC', [userId]);
+    const documents = await db.query('SELECT * FROM Document WHERE userId = ? ORDER BY fiscalYear DESC, createdAt DESC', [userId]);
 
     res.status(200).json(successResponse({ documents }));
   } catch (error) {

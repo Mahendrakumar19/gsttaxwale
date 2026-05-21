@@ -36,19 +36,19 @@ export default function AdminDocumentUpload() {
   const [success, setSuccess] = useState('');
 
   const fiscalYears = [
-    'FY2021-22',
-    'FY2022-23',
-    'FY2023-24',
-    'FY2024-25',
-    'FY2025-26',
-    'FY2026-27',
+    '2026-27',
+    '2025-26',
+    '2024-25',
+    '2023-24',
+    '2022-23',
+    '2021-22',
   ];
 
   const [formData, setFormData] = useState({
     customerId: '',
     customerName: '',
     customerPan: '',
-    fiscalYear: 'FY2025-26',
+    fiscalYear: '2025-26',
     month: '',
     category: 'gst',
     displayTitle: '',
@@ -168,7 +168,7 @@ export default function AdminDocumentUpload() {
         customerId: '',
         customerName: '',
         customerPan: '',
-        fiscalYear: 'FY2025-26',
+        fiscalYear: '2025-26',
         month: '',
         category: 'gst',
         displayTitle: '',

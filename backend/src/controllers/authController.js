@@ -575,14 +575,16 @@ async function register(req, res) {
       return res.status(400).json(errorResponse('Name, email and password are required'));
     }
 
+    const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
+
     // 1. Check if user already exists
     const existingUser = await db.findOne('User', { email });
     if (existingUser) {
       return res.status(400).json(errorResponse('Email already registered'));
     }
 
-    if (phone) {
-      const existingPhone = await db.findOne('User', { phone });
+    if (cleanPhone) {
+      const existingPhone = await db.findOne('User', { phone: cleanPhone });
       if (existingPhone) {
         return res.status(400).json(errorResponse('Phone number already registered'));
       }
@@ -591,16 +593,33 @@ async function register(req, res) {
     // 2. Hash password
     const hashedPassword = await authService.hashPassword(password);
 
-    // 3. Generate Referral Code for the new user
-    const namePart = name.trim().split(/\s+/)[0].toUpperCase().replace(/[^A-Z]/g, '');
-    const phonePart = (phone || '0000').replace(/\D/g, '').slice(-4).padStart(4, '0');
-    const myReferralCode = `GTW${namePart}${phonePart}`;
+    // 3. Check if guest referrer exists to reuse code/transfer points
+    const { generateUniqueReferralCode } = require('../utils/referralHelper');
+    const WalletService = require('../services/walletService');
+
+    let guestReferrer = null;
+    if (email) {
+      guestReferrer = await db.findOne('referral_referrers', { email });
+    }
+    if (!guestReferrer && cleanPhone) {
+      guestReferrer = await db.findOne('referral_referrers', { mobile: cleanPhone });
+    }
+
+    let myReferralCode;
+    let pendingPoints = 0;
+
+    if (guestReferrer) {
+      myReferralCode = guestReferrer.referral_id;
+      pendingPoints = guestReferrer.pending_points || 0;
+    } else {
+      myReferralCode = await generateUniqueReferralCode(name, cleanPhone);
+    }
 
     // 4. Create User
     const newUser = await db.create('User', {
       name,
       email,
-      phone,
+      phone: cleanPhone || null,
       password: hashedPassword,
       role: 'user',
       status: 'active',
@@ -609,13 +628,60 @@ async function register(req, res) {
       updatedAt: new Date(),
     });
 
-    // 5. Link Referral if provided
-    if (referralCode) {
-      const referrer = await db.findOne('User', { referral_code: referralCode });
-      if (referrer) {
+    // 5. If they were a guest referrer, mark guest record as converted and transfer points
+    if (guestReferrer) {
+      await db.query(
+        'UPDATE referral_referrers SET is_customer = 1, converted_user_id = ?, pending_points = 0, updated_at = NOW() WHERE id = ?',
+        [newUser.id, guestReferrer.id]
+      );
+
+      if (pendingPoints > 0) {
+        await WalletService.credit(
+          newUser.id,
+          pendingPoints,
+          'referral_pending_transfer',
+          null,
+          `Transferred pending points from guest referrals (${pendingPoints} points)`
+        );
+      }
+    }
+
+    // 6. Handle referee relationship / conversion update
+    const finalReferralCode = referralCode || req.body.referral_code;
+    if (finalReferralCode) {
+      // Find if referrer exists
+      let referrerUser = await db.findOne('User', { referral_code: finalReferralCode });
+      
+      // Update/create lead in referral_leads
+      const [existingLead] = await db.query(
+        'SELECT id, status FROM referral_leads WHERE referred_email = ? OR referred_mobile = ?',
+        [email, cleanPhone]
+      );
+
+      if (existingLead) {
+        await db.query(
+          "UPDATE referral_leads SET status = 'converted', converted_user_id = ?, updated_at = NOW() WHERE id = ?",
+          [newUser.id, existingLead.id]
+        );
+      } else {
+        await db.create('referral_leads', {
+          referrer_referral_id: finalReferralCode,
+          referred_name: name,
+          referred_mobile: cleanPhone,
+          referred_email: email,
+          status: 'converted',
+          converted_user_id: newUser.id,
+          reward_given: 0,
+          created_at: new Date(),
+          updated_at: new Date()
+        });
+      }
+
+      // Maintain legacy Referral record compatibility
+      if (referrerUser) {
         const [existingReferral] = await db.query(
           'SELECT id FROM Referral WHERE referrerId = ? AND refereeEmail = ?',
-          [referrer.id, email]
+          [referrerUser.id, email]
         );
 
         if (existingReferral) {
@@ -623,25 +689,39 @@ async function register(req, res) {
             'UPDATE Referral SET refereeId = ?, referralStatus = "active", updatedAt = NOW() WHERE id = ?',
             [newUser.id, existingReferral.id]
           );
-          console.log(`🔗 Updated existing pending referral for new user ${email} under referrer ${referrer.email}`);
         } else {
           await db.create('Referral', {
-            referrerId: referrer.id,
+            referrerId: referrerUser.id,
             refereeId: newUser.id,
             refereeEmail: email,
-            refereePhone: phone,
+            refereePhone: cleanPhone,
             commissionPercent: 10,
             commissionAmount: 0,
             referralStatus: 'active',
             createdAt: new Date(),
             updatedAt: new Date()
           });
-          console.log(`🔗 Created new active referral linking new user ${email} to referrer ${referrer.email}`);
         }
+      }
+
+      // Track Event
+      try {
+        await db.create('referral_events', {
+          referrer_id: referrerUser ? referrerUser.id : null,
+          referee_id: newUser.id,
+          event_type: 'conversion',
+          metadata: JSON.stringify({
+            convertedUserId: newUser.id,
+            utm_source: 'self_registration'
+          }),
+          created_at: new Date()
+        });
+      } catch (trackErr) {
+        console.warn('Could not write referral event:', trackErr.message);
       }
     }
 
-    // 6. Generate Token
+    // 7. Generate Token
     const token = authService.generateToken(newUser.id);
 
     res.status(201).json(successResponse({

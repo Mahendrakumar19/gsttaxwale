@@ -175,7 +175,6 @@ async function runTest() {
 
     console.log('   Processing reward via ReferralService...');
     const rewardCredited = await ReferralService.processPurchaseReward(
-      REFERRER_ID,
       createdUserId,
       orderId,
       paymentAmount,
