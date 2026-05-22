@@ -22,7 +22,8 @@ export default function WalletTab() {
     if (userData) {
       try {
         const user = JSON.parse(userData);
-        setReferralCode(user.referral_code || 'GSTW' + Math.random().toString(36).substring(2, 7).toUpperCase());
+        // set a temporary referral code from session if available; prefer API result when fetched
+        if (user.referral_code) setReferralCode(user.referral_code);
       } catch {}
     }
     fetchData();
@@ -30,30 +31,84 @@ export default function WalletTab() {
 
   const fetchData = async () => {
     try {
-      const res = await api.get('/api/dashboard/wallet');
-      const data = res.data?.data || { balance: 0, totalReferrals: 0, earned: 0, pointsRedeemed: 0 };
-      setPoints(data.balance);
+      const [summaryResult, historyResult] = await Promise.allSettled([
+        api.get('/api/dashboard/wallet'),
+        api.get('/api/wallet/history'),
+      ]);
+
+        const summaryData = summaryResult.status === 'fulfilled'
+            ? summaryResult.value.data?.data
+            : null;
+
+          // Prefer referral code from API (server source of truth) to keep it stable per user
+          if (summaryData && summaryData.referralCode) {
+            setReferralCode(summaryData.referralCode);
+            // also sync to sessionStorage user object for other parts of the app
+            try {
+              const userData = sessionStorage.getItem('user');
+              if (userData) {
+                const user = JSON.parse(userData);
+                user.referral_code = summaryData.referralCode;
+                sessionStorage.setItem('user', JSON.stringify(user));
+              }
+            } catch (e) { /* ignore */ }
+          }
+
+          // If no referral code yet, try generating one via the same endpoint used by ContactForm
+          const hasReferral = (summaryData && summaryData.referralCode) || (sessionStorage.getItem('user') && (() => { try { const u=JSON.parse(sessionStorage.getItem('user')||'{}'); return !!u.referral_code; } catch { return false; } })());
+          if (!hasReferral) {
+            try {
+              const userData = sessionStorage.getItem('user');
+              if (userData) {
+                const user = JSON.parse(userData);
+                const name = user.name || user.full_name || user.firstName || '';
+                const email = user.email || user.emailAddress || '';
+                const phone = user.phone || user.mobile || '0000000000';
+                // Call backend to generate a public referral code for this user
+                const genRes = await api.post('/api/referrals/generate-public', { name, email, phone });
+                const genData = genRes?.data || {};
+                const generatedCode = genData?.data?.referralCode || genData?.referralCode || genData?.data?.referral_code || genData?.referral_code;
+                if (generatedCode) {
+                  setReferralCode(generatedCode);
+                  try {
+                    user.referral_code = generatedCode;
+                    sessionStorage.setItem('user', JSON.stringify(user));
+                  } catch (e) { /* ignore */ }
+                }
+              }
+            } catch (err) {
+              // generation failed - non-fatal
+              console.warn('Failed to auto-generate referral code', err);
+            }
+          }
+
+      const historyData = historyResult.status === 'fulfilled'
+        ? historyResult.value.data?.data
+        : null;
+
+      const balance = Number(summaryData?.balance || historyData?.balance || 0);
+      setPoints(balance);
       setStats({
-        totalReferrals: data.totalReferrals || 0,
-        earned: data.earned || 0,
-        redeemed: data.pointsRedeemed || 0,
-        balance: data.balance || 0
+        totalReferrals: Number(summaryData?.totalReferrals || 0),
+        earned: Number(summaryData?.earned || 0),
+        redeemed: Number(summaryData?.pointsRedeemed || 0),
+        balance,
       });
-      
-      // Fetch history (tickets with category 'redemption')
-      const ticketsRes = await api.get('/api/tickets');
-      const redemptions = (ticketsRes.data?.data?.tickets || [])
-        .filter((t: any) => t.category === 'redemption')
-        .map((t: any) => ({
-          id: t.id,
-          type: 'debit',
-          points: parseInt(t.description.match(/redeem (\d+) points/)?.[1] || '0'),
-          reason: 'Redemption Request',
-          desc: t.status.toUpperCase(),
-          date: new Date(t.createdAt).toLocaleDateString()
-        }));
-        
-      setHistory(redemptions);
+
+      const transactions = (historyData?.history || []).map((item: any) => ({
+        id: item.id,
+        type: item.type === 'credit' ? 'credit' : 'debit',
+        points: Number(item.points || 0),
+        reason: item.type === 'credit'
+          ? 'Points Earned'
+          : item.source === 'redemption'
+            ? 'Redemption Request'
+            : 'Points Deducted',
+        desc: String(item.description || item.source || 'Transaction').toUpperCase(),
+        date: new Date(item.created_at || item.createdAt || Date.now()).toLocaleDateString()
+      }));
+
+      setHistory(transactions);
     } catch {
       // Fallback
     } finally {
@@ -62,8 +117,8 @@ export default function WalletTab() {
   };
 
   const handleRedeem = async () => {
-    if (points < 200) {
-      alert('Minimum 200 points required to redeem.');
+    if (points < 100) {
+      alert('Minimum 100 points required to redeem.');
       return;
     }
     
@@ -104,11 +159,11 @@ export default function WalletTab() {
               </div>
               <button 
                 onClick={handleRedeem}
-                disabled={points < 200}
+                disabled={points < 100}
                 className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all ${
-                  points >= 200 
-                  ? 'bg-white text-blue-600 hover:bg-blue-50 shadow-lg shadow-black/20' 
-                  : 'bg-white/20 text-white/40 cursor-not-allowed'
+                  points >= 100 
+                      ? 'bg-white text-blue-600 hover:bg-blue-50 shadow-lg shadow-black/20' 
+                      : 'bg-white/20 text-white/40 cursor-not-allowed'
                 }`}
               >
                 Redeem Request
@@ -167,8 +222,8 @@ export default function WalletTab() {
           </div>
           <div className="mt-6 flex gap-4 items-start bg-blue-50/50 p-4 rounded-xl border border-blue-100">
              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs shrink-0">!</div>
-             <p className="text-xs text-blue-800 leading-relaxed font-medium">
-                Get <span className="font-bold">+200 points</span> instantly when your referred friend completes their first paid purchase. 
+            <p className="text-xs text-blue-800 leading-relaxed font-medium">
+             Get <span className="font-bold">+100 points</span> instantly when your referred friend completes their first paid purchase. 
                 Points can be redeemed for service discounts and expert consultations.
              </p>
           </div>

@@ -185,40 +185,26 @@ async function verifyPayment(req, res) {
     try {
       const ReferralService = require('../services/referralService');
       const [order] = await db.query('SELECT userId, finalAmount, serviceId FROM `Order` WHERE id = ?', [orderId]);
-      
+
       if (order) {
-        const [user] = await db.query('SELECT email, referrer_id FROM User WHERE id = ?', [order.userId]);
-        
-        if (user) {
-          let referrerId = user.referrer_id;
-          
-          if (!referrerId) {
-            const [referral] = await db.query(
-              'SELECT r.referrerId as id FROM Referral r WHERE r.refereeEmail = ? LIMIT 1',
-              [user.email]
-            );
-            if (referral) referrerId = referral.id;
-          }
+        // Call reward processor with the referee's userId (buyer)
+        await ReferralService.processPurchaseReward(
+          order.userId,
+          orderId,
+          order.finalAmount,
+          order.serviceId
+        );
 
-          if (referrerId) {
-            // Process dynamic reward
-            await ReferralService.processPurchaseReward(
-              referrerId, 
-              order.userId, 
-              orderId, 
-              order.finalAmount, 
-              order.serviceId
-            );
-
-            // Update status in existing table for compatibility
-            await db.query(
-              "UPDATE Referral SET referralStatus = 'completed', updatedAt = NOW() WHERE refereeEmail = ?",
-              [user.email]
-            );
-
-            console.log(`🎁 Dynamic Referral reward processed for user ${referrerId} for referee ${user.email}`);
-          }
+        // Update status in existing table for compatibility
+        const [user] = await db.query('SELECT email FROM User WHERE id = ?', [order.userId]);
+        if (user && user.email) {
+          await db.query(
+            "UPDATE Referral SET referralStatus = 'completed', updatedAt = NOW() WHERE refereeEmail = ?",
+            [user.email]
+          );
         }
+
+        console.log(`🎁 Dynamic Referral reward processed for referee user ${order.userId}`);
       }
     } catch (refErr) {
       console.error('❌ Error processing referral reward:', refErr);

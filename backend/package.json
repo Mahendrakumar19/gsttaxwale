@@ -9,6 +9,7 @@
     "start:app": "node src/app.js",
     "dev": "nodemon src/app.js",
     "dev:server": "nodemon server.js",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",

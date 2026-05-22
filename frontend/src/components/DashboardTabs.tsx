@@ -49,8 +49,12 @@ const TABS: Tab[] = [
   },
 ];
 
-export default function DashboardTabs() {
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+interface DashboardTabsProps {
+  defaultTab?: TabType;
+}
+
+export default function DashboardTabs({ defaultTab = 'dashboard' }: DashboardTabsProps) {
+  const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
 
   const activeTabConfig = TABS.find((tab) => tab.id === activeTab);
   const ActiveComponent = activeTabConfig?.component;

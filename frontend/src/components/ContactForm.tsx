@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import fetchClient from '@/lib/fetchClient';
 import { Share2, CheckCircle, Copy, ArrowRight, UserPlus, Phone } from 'lucide-react';
-import axios from 'axios';
+// use centralized fetchClient to respect base URL and auth handling
 
 export default function ContactForm() {
   const [name, setName] = useState('');
@@ -35,13 +35,13 @@ export default function ContactForm() {
       
       // 2. Try to generate a public referral code for the user so they can refer others
       try {
-        const refRes = await axios.post(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/referrals/generate-public`, {
+        const refRes = await fetchClient.post('/api/referrals/generate-public', {
           name,
           email,
           phone: phone || '0000000000'
         });
-        if (refRes.data.success) {
-          setMyReferralCode(refRes.data.data.referralCode);
+        if (refRes?.success && refRes.data) {
+          setMyReferralCode(refRes.data.referralCode);
         }
       } catch (err) {
         console.warn('Failed to generate public referral code', err);

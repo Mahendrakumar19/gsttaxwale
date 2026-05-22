@@ -18,6 +18,25 @@ console.log(`ℹ️  Next.js dir: ${FRONTEND_DIR}`);
 const app = next({ dev, dir: FRONTEND_DIR });
 const handle = app.getRequestHandler();
 
+// Ensure Prisma client binaries exist on startup (useful for local Windows dev).
+const { execSync } = require('child_process');
+try {
+  const prismaClientDir = path.join(__dirname, 'node_modules', '.prisma', 'client');
+  const enginePaths = [
+    path.join(prismaClientDir, 'query_engine-windows.dll.node'),
+    path.join(prismaClientDir, 'query-engine-windows.dll.node'),
+    path.join(prismaClientDir, 'libquery_engine.dll.node')
+  ];
+  const engineExists = enginePaths.some(p => require('fs').existsSync(p));
+  if (!engineExists) {
+    console.log('🔧 Prisma query engine not found. Running `npx prisma generate` in backend...');
+    execSync('npx prisma generate', { cwd: __dirname, stdio: 'inherit' });
+    console.log('✅ Prisma generate completed.');
+  }
+} catch (err) {
+  console.warn('⚠️  Prisma generate check failed:', err.message || err);
+}
+
 app.prepare().then(() => {
   const server = express();
 

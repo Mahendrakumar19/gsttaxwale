@@ -1,5 +1,4 @@
 const db = require('../utils/db');
-const prisma = require('../utils/prisma');
 const { successResponse, errorResponse } = require('../utils/helpers');
 const nodemailer = require('nodemailer');
 
@@ -16,29 +15,38 @@ async function handleContactForm(req, res) {
       return res.status(400).json(errorResponse('Name, email and message are required'));
     }
 
-    // Fallback: If not logged in, dynamically associate the ticket to the first user
-    // in the database to prevent foreign key constraint violations if ID 1 doesn't exist
+    // Fallback: if the request is anonymous, assign the ticket to an admin/support user.
     if (!userId) {
-      const firstUser = await prisma.user.findFirst({
-        orderBy: { id: 'asc' }
-      });
-      userId = firstUser ? firstUser.id : 1;
+      const adminUsers = await db.query(
+        "SELECT id FROM User WHERE role = 'admin' ORDER BY id ASC LIMIT 1"
+      );00
+
+      if (adminUsers.length > 0) {
+        userId = adminUsers[0].id;
+      } else {
+        const firstUsers = await db.query('SELECT id FROM User ORDER BY id ASC LIMIT 1');
+        userId = firstUsers.length > 0 ? firstUsers[0].id : null;
+      }
+    }
+
+    if (!userId) {
+      return res.status(500).json(errorResponse('No support user is available to receive contact requests'));
     }
 
     // 1. Create a Support Ticket in the system
-    const ticket = await prisma.supportTicket.create({
-      data: {
-        User: {
-          connect: { id: userId }
-        },
-        subject: `Contact Form: ${name}`,
-        description: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || 'N/A'}\n\nMessage:\n${message}`,
-        category: 'support',
-        priority: 'medium',
-        status: 'open',
-        updatedAt: new Date()
-      }
-    });
+    const ticketResult = await db.query(
+      'INSERT INTO SupportTicket (userId, subject, description, category, priority, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())',
+      [
+        userId,
+        `Contact Form: ${name}`,
+        `Name: ${name}\nEmail: ${email}\nPhone: ${phone || 'N/A'}\n\nMessage:\n${message}`,
+        'support',
+        'medium',
+        'open'
+      ]
+    );
+
+    const ticket = { id: ticketResult.insertId };
 
     // 2. Prepare email transporters (resilient to email server down times)
     try {

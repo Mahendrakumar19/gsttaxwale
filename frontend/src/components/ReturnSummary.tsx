@@ -183,34 +183,34 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
   };
 
   return (
-    <div className="w-full bg-white rounded-3xl border border-blue-100 shadow-sm p-4 sm:p-6">
+    <div className="w-full p-4 bg-white border border-blue-100 shadow-sm rounded-3xl sm:p-6">
       {/* Top Filter and Actions Row */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col justify-between gap-4 mb-6 lg:flex-row lg:items-center">
         {/* Dropdowns */}
-        <div className="flex flex-wrap gap-4 items-center">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Category:</span>
+            <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">Category:</span>
             <div className="relative">
               <select
                 value={activeCategory}
                 onChange={(e) => setActiveCategory(e.target.value as any)}
-                className="appearance-none pl-4 pr-10 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-colors"
+                className="py-2 pl-4 pr-10 text-xs font-bold text-gray-800 transition-colors border border-gray-200 appearance-none cursor-pointer bg-gray-50 hover:bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="GST">GST Returns</option>
                 <option value="ITR">Income Tax Returns (ITR)</option>
                 <option value="OTHERS">Other compliance files</option>
               </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+              <ChevronDown size={14} className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2" />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Financial Year:</span>
+            <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">Financial Year:</span>
             <div className="relative">
               <select
                 value={selectedFY}
                 onChange={(e) => setSelectedFY(e.target.value)}
-                className="appearance-none pl-4 pr-10 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-colors"
+                className="py-2 pl-4 pr-10 text-xs font-bold text-gray-800 transition-colors border border-gray-200 appearance-none cursor-pointer bg-gray-50 hover:bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {financialYears.map((fy) => (
                   <option key={fy} value={fy}>
@@ -218,7 +218,7 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
                   </option>
                 ))}
               </select>
-              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+              <ChevronDown size={14} className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2" />
             </div>
           </div>
         </div>
@@ -226,14 +226,14 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
 
       {/* MATRIX TABLE LAYOUT MATCHING SCREENSHOT */}
       {layoutMode === 'matrix' && (
-        <fieldset className="border border-blue-200/80 rounded-2xl p-4 sm:p-6 bg-white relative">
-          <legend className="px-3 font-bold text-blue-900 text-lg ml-4">
+        <fieldset className="relative p-4 bg-white border border-blue-200/80 rounded-2xl sm:p-6">
+          <legend className="px-3 ml-4 text-lg font-bold text-blue-900">
             Return Summary
           </legend>
           
           
 
-          <div className="overflow-x-auto w-full mt-2 scrollbar-thin">
+          <div className="w-full mt-2 overflow-x-auto scrollbar-thin">
             <table className="w-full min-w-[1000px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-blue-100 bg-blue-50/30">
@@ -241,7 +241,7 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
                     Form Type
                   </th>
                   {months.map((month) => (
-                    <th key={month.label} className="py-3 px-2 text-center text-xs font-bold text-gray-600">
+                    <th key={month.label} className="px-2 py-3 text-xs font-bold text-center text-gray-600">
                       {month.label}
                     </th>
                   ))}
@@ -249,7 +249,7 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
               </thead>
               <tbody>
                 {rowNames[activeCategory].map((rowName) => (
-                  <tr key={rowName} className="border-b border-gray-100 hover:bg-gray-50/40 transition">
+                  <tr key={rowName} className="transition border-b border-gray-100 hover:bg-gray-50/40">
                     <td className="py-3.5 px-4 text-xs font-bold text-gray-800 border-r border-blue-100/50 bg-gray-50/20">
                       {rowName}
                     </td>
@@ -267,11 +267,11 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
                               <button
                                 onClick={() => handleDownloadClick(cellDoc)}
                                 disabled={isDownloading}
-                                className="p-1 hover:bg-blue-50 border border-blue-100/50 rounded text-blue-600 transition flex items-center justify-center shadow-sm bg-white"
+                                className="flex items-center justify-center p-1 text-blue-600 transition bg-white border rounded shadow-sm hover:bg-blue-50 border-blue-100/50"
                                 title={`Download: ${getDownloadFileName(cellDoc)}`}
                               >
                                 {isDownloading ? (
-                                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                  <div className="w-4 h-4 border-2 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
                                 ) : (
                                   <>
                                     {getFileIcon(cellDoc.fileName)}
@@ -298,7 +298,7 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
 
       {/* MONTH-WISE COMPLIANCE GRID VIEW */}
       {layoutMode === 'monthly-grid' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4 animate-in fade-in duration-200">
+        <div className="grid grid-cols-1 gap-6 mt-4 duration-200 md:grid-cols-2 lg:grid-cols-4 animate-in fade-in">
           {months.map((m) => {
             const monthDocs = documents.filter((doc) => {
               // 1. Check Category Match
@@ -331,10 +331,14 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
             });
 
             return (
-              <div key={m.label} className="bg-white border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all duration-300 rounded-[2rem] p-5 flex flex-col justify-between min-h-[220px]">
+              <div
+                key={m.label}
+                className="flex flex-col justify-between p-2 overflow-hidden transition-all duration-300 bg-white border rounded-lg border-slate-200 hover:border-blue-400 hover:shadow-md"
+                style={{ width: '2in', height: '1in' }}
+              >
                 <div>
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-                    <span className="font-extrabold text-sm text-slate-800">{m.label.split(' ')[0]} {m.year}</span>
+                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+                    <span className="text-sm font-extrabold text-slate-800">{m.label.split(' ')[0]} {m.year}</span>
                     <span className="text-[10px] font-black uppercase bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
                       {monthDocs.length} File(s)
                     </span>
@@ -347,8 +351,8 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
                       monthDocs.map((doc) => {
                         const isDownloading = !!downloading[`${doc.id}`];
                         return (
-                          <div key={doc.id} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-blue-50/50 transition">
-                            <div className="flex items-center gap-2 overflow-hidden flex-1 mr-2">
+                          <div key={doc.id} className="flex items-center justify-between p-2 transition rounded-xl bg-slate-50 hover:bg-blue-50/50">
+                            <div className="flex items-center flex-1 gap-2 mr-2 overflow-hidden">
                               <div className="shrink-0">
                                 {getFileIcon(doc.fileName)}
                               </div>
@@ -398,15 +402,15 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
             const selectedFYNorm = selectedFY.replace(/\s/g, '').replace('FY', '') || '';
             return docFY === selectedFYNorm || doc.fiscalYear === selectedFY;
           }).length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 border border-blue-50/50 rounded-2xl">
+            <div className="py-12 text-center border bg-gray-50 border-blue-50/50 rounded-2xl">
               <AlertCircle className="mx-auto mb-3 text-gray-400 animate-pulse" size={36} />
               <h3 className="text-sm font-bold text-gray-700">No Documents Found</h3>
-              <p className="text-gray-500 text-xs mt-1 max-w-md mx-auto">
+              <p className="max-w-md mx-auto mt-1 text-xs text-gray-500">
                 No files shared for {activeCategory} under FY {selectedFY}.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in duration-200">
+            <div className="grid grid-cols-1 gap-4 duration-200 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in">
               {documents
                 .filter(doc => {
                   const docCat = doc.category?.toUpperCase() || 'OTHERS';
@@ -427,14 +431,14 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
                   return (
                     <div
                       key={doc.id}
-                      className="bg-white border border-blue-50 hover:border-blue-300 hover:shadow-md transition-all duration-300 rounded-2xl p-4 flex flex-col justify-between group shadow-sm"
+                      className="flex flex-col justify-between p-4 transition-all duration-300 bg-white border shadow-sm border-blue-50 hover:border-blue-300 hover:shadow-md rounded-2xl group"
                     >
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
+                        <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 text-blue-600 transition-colors bg-blue-50 rounded-xl group-hover:bg-blue-100">
                           {getFileIcon(doc.fileName)}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-xs font-bold text-gray-900 leading-snug truncate" title={docTitle}>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-xs font-bold leading-snug text-gray-900 truncate" title={docTitle}>
                             {docTitle}
                           </h4>
                           <p className="text-[10px] text-gray-500 truncate mt-0.5" title={doc.fileName}>
@@ -443,7 +447,7 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
                         </div>
                       </div>
 
-                      <div className="border-t border-gray-100 pt-3 mt-3">
+                      <div className="pt-3 mt-3 border-t border-gray-100">
                         <div className="flex items-center justify-between text-[10px] text-gray-400 mb-3">
                           <span>Size: {formatFileSize(doc.fileSize)}</span>
                           <span>
@@ -482,10 +486,7 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
       )}
 
       {/* Info Footnote */}
-      <div className="mt-4 flex items-center gap-1.5 text-[10px] text-gray-400 italic">
-        <CheckCircle2 size={12} className="text-emerald-500" />
-        <span>Filing updates dynamically sync in real-time as documents are shared. Original format is preserved on download.</span>
-      </div>
+    
     </div>
   );
 }
