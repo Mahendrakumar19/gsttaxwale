@@ -76,11 +76,10 @@ export default function OverviewTab() {
           <div className="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl flex items-center justify-center text-white text-4xl font-bold shadow-xl shrink-0">
             {user.name[0].toUpperCase()}
           </div>
-          
+
           <div className="flex-1 space-y-6">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-1">{user.name}</h2>
-              <p className="text-gray-500 font-medium">User Dashboard</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">

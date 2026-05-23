@@ -133,7 +133,7 @@ async function verify() {
     // Clean up
     console.log('\n🧹 Cleaning up test database records...');
     await db.query('DELETE FROM Referral WHERE refereeEmail = ?', [GUEST_EMAIL]);
-    await db.query('DELETE FROM referral_leads WHERE guest_email = ?', [GUEST_EMAIL]);
+    await db.query('DELETE FROM referral_leads WHERE referred_email = ?', [GUEST_EMAIL]);
     await db.query('DELETE FROM User WHERE email = ?', [GUEST_EMAIL]);
     console.log('✅ Cleanup complete. All verification steps passed successfully!');
 

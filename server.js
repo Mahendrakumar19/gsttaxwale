@@ -142,6 +142,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// Bootstrap queuing state
+let isNextReady = false;
+const pendingRequests = [];
+
+// Middleware to queue requests until Next.js and routes are prepared
+app.use((req, res, next) => {
+  if (isNextReady) {
+    return next();
+  }
+  console.log(`⏳ [BOOTSTRAP] Queueing request ${req.method} ${req.originalUrl} until Next.js is prepared...`);
+  pendingRequests.push(next);
+});
+
 // Capture referral cookie/attribution
 app.use(attributionMiddleware);
 
@@ -216,6 +229,16 @@ nextApp.prepare().then(() => {
       message: err.message || "Internal Server Error",
     });
   });
+
+  // Mark Next.js as ready and flush any queued requests
+  isNextReady = true;
+  if (pendingRequests.length > 0) {
+    console.log(`🚀 [BOOTSTRAP] Next.js prepared! Flushing ${pendingRequests.length} queued requests.`);
+    while (pendingRequests.length > 0) {
+      const nextReq = pendingRequests.shift();
+      nextReq();
+    }
+  }
 
   // Single server instance - only listen once
   if (!server.listening) {

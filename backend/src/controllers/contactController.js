@@ -19,7 +19,7 @@ async function handleContactForm(req, res) {
     if (!userId) {
       const adminUsers = await db.query(
         "SELECT id FROM User WHERE role = 'admin' ORDER BY id ASC LIMIT 1"
-      );00
+      );
 
       if (adminUsers.length > 0) {
         userId = adminUsers[0].id;

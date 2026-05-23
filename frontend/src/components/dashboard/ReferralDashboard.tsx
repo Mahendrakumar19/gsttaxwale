@@ -29,7 +29,7 @@ export default function ReferralDashboard() {
   };
 
   const copyReferralLink = () => {
-    const link = `${window.location.origin}/?ref=${referralInfo?.referralCode}`;
+    const link = `${window.location.origin}/ref/${referralInfo?.referralCode}`;
     navigator.clipboard.writeText(link);
     setCopied(true);
     toast.success('Referral link copied to clipboard!');
@@ -37,7 +37,7 @@ export default function ReferralDashboard() {
   };
 
   const shareViaWhatsApp = () => {
-    const link = `${window.location.origin}/?ref=${referralInfo?.referralCode}`;
+    const link = `${window.location.origin}/ref/${referralInfo?.referralCode}`;
     const text = `Join GST Tax Wale and get expert tax filing support! Use my referral link: ${link}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, '_blank');

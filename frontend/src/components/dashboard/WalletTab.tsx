@@ -7,7 +7,8 @@ import api from '@/lib/api';
 export default function WalletTab() {
   const [points, setPoints] = useState(0);
   const [referralCode, setReferralCode] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -138,10 +139,17 @@ export default function WalletTab() {
     }
   };
 
-  const handleCopy = () => {
+  const handleCopyCode = () => {
     navigator.clipboard.writeText(referralCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const handleCopyLink = () => {
+    const link = typeof window !== 'undefined' ? `${window.location.origin}/ref/${referralCode}` : '';
+    navigator.clipboard.writeText(link);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   if (loading) return <div className="text-center py-12 text-gray-400">Loading wallet...</div>;
@@ -207,19 +215,41 @@ export default function WalletTab() {
           </div>
         </div>
 
-        <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6">
-           <p className="text-sm font-medium text-gray-600 mb-4 text-center">Your Unique Referral Code</p>
-           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-2 pl-6 shadow-sm">
-            <span className="font-mono font-black text-xl text-blue-600 flex-1 tracking-wider">{referralCode}</span>
-            <button 
-              onClick={handleCopy}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg transition font-bold text-sm ${
-                copied ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-gray-800'
-              }`}
-            >
-              {copied ? <><Check size={16} /> Copied</> : <><Copy size={16} /> Copy Code</>}
-            </button>
+        <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6 space-y-6">
+          <div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Your Referral Code</p>
+            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-2 pl-6 shadow-sm">
+              <span className="font-mono font-black text-xl text-blue-600 flex-1 tracking-wider">{referralCode || '—'}</span>
+              <button 
+                type="button"
+                onClick={handleCopyCode}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition font-bold text-xs ${
+                  copiedCode ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-gray-800'
+                }`}
+              >
+                {copiedCode ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy Code</>}
+              </button>
+            </div>
           </div>
+
+          <div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Your Referral Link</p>
+            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-2 pl-4 shadow-sm">
+              <span className="font-mono text-xs text-gray-600 flex-1 truncate select-all pr-2">
+                {typeof window !== 'undefined' ? `${window.location.origin}/ref/${referralCode}` : ''}
+              </span>
+              <button 
+                type="button"
+                onClick={handleCopyLink}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition font-bold text-xs shrink-0 ${
+                  copiedLink ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-gray-800'
+                }`}
+              >
+                {copiedLink ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy Link</>}
+              </button>
+            </div>
+          </div>
+
           <div className="mt-6 flex gap-4 items-start bg-blue-50/50 p-4 rounded-xl border border-blue-100">
              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs shrink-0">!</div>
             <p className="text-xs text-blue-800 leading-relaxed font-medium">

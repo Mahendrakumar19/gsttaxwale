@@ -50,7 +50,7 @@ async function login(req, res) {
         message: 'Invalid email or password',
       });
     }
-    console.log(`✅ Password verified for: ${email} (role: ${user.role})`); 
+    console.log(`✅ Password verified for: ${email} (role: ${user.role})`);
 
     // Generate token
     console.log(`🎫 Generating JWT token for: ${email}`);
@@ -106,7 +106,7 @@ async function sendOTP(req, res) {
 
     // Check if OTP is enabled in system settings
     const isOtpEnabled = await configUtil.getSetting('ENABLE_OTP', true);
-    
+
     if (!isOtpEnabled) {
       console.log(`ℹ️ OTP is disabled. Skipping for: ${email}`);
       return res.status(200).json({
@@ -424,10 +424,10 @@ async function resetPassword(req, res) {
     }
 
     // Verify OTP is still valid and verified
-    const otpRecord = await db.findOne('OTP', { 
-      userId, 
+    const otpRecord = await db.findOne('OTP', {
+      userId,
       code,
-      verified: true 
+      verified: true
     });
 
     if (!otpRecord || otpRecord.expiresAt < new Date()) {
@@ -651,7 +651,7 @@ async function register(req, res) {
     if (finalReferralCode) {
       // Find if referrer exists
       let referrerUser = await db.findOne('User', { referral_code: finalReferralCode });
-      
+
       // Update/create lead in referral_leads
       const [existingLead] = await db.query(
         'SELECT id, status FROM referral_leads WHERE referred_email = ? OR referred_mobile = ?',

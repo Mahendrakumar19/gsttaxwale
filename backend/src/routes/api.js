@@ -28,7 +28,7 @@ const db = require('../utils/db');
 
 const upload = multer({ dest: 'uploads/temp' });
 
-module.exports = function(app) {
+module.exports = function (app) {
   const prefix = '/api';
 
   app.get(`${prefix}/ping`, (req, res) => res.json({ success: true, message: 'platform-pong' }));
@@ -36,7 +36,7 @@ module.exports = function(app) {
   app.post(`${prefix}/contact`, optionalAuthenticate, asyncHandler(contactController.handleContactForm));
   app.post(`${prefix}/stats/visitor`, asyncHandler(statsController.incrementVisitorCount));
   app.post(`${prefix}/referrals/generate-public`, asyncHandler(publicReferralController.generatePublicReferral));
-  
+
   // AUTH ROUTES
   app.post(`${prefix}/auth/register`, asyncHandler(authController.register));
   app.post(`${prefix}/auth/send-service-purchase-otp`, asyncHandler(authController.sendServicePurchaseOTP));
