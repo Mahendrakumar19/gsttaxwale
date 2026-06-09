@@ -73,7 +73,7 @@ export default function OrdersPage() {
       <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} user={user} />
       <div className="flex">
         {sidebarOpen && <DashboardSidebar isOpen={sidebarOpen} user={user} />}
-        <main className="flex-1 p-4 sm:p-8">
+        <main className="flex-1 min-w-0 p-4 sm:p-8">
           <div className="max-w-4xl mx-auto">
             <div className="flex justify-between items-center mb-8">
               <h1 className="text-3xl font-bold text-white">My Orders</h1>

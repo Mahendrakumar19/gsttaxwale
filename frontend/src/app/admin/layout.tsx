@@ -136,18 +136,12 @@ export default function RootAdminLayout({
   return (
     <div className={`min-h-screen ${darkMode ? 'dark bg-slate-950' : 'bg-slate-50'} text-slate-800 flex transition-colors duration-200`}>
 
-      {/* Sidebar Navigation */}
+      {/* Sidebar Navigation - Fixed position */}
       <aside
-        className={`${sidebarOpen ? 'w-64 border-r' : 'w-0 border-r-0'
-          } bg-white border-slate-150 transition-all duration-300 overflow-hidden flex flex-col z-35 fixed h-screen top-0 left-0`}
+        className={`${
+          sidebarOpen ? 'w-64' : 'w-0'
+        } bg-white border-r border-slate-150 transition-all duration-300 overflow-hidden flex flex-col shrink-0 fixed h-screen top-0 left-0 z-40`}
       >
-        {/* Brand / Logo */}
-        {/* <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100 shrink-0">
-          
-          <div className="flex-1 min-w-0">
-            <img src="/gsttaxwale_logo.svg" alt="Logo" className="w-30 h-20" />
-          </div>
-        </div> */}
         <div className="flex items-center justify-between px-5 py-4">
           <Link href="/admin/dashboard">
             <img src="/gsttaxwale_logo.svg" alt="TaxWale Logo" className="h-14 w-auto hover:opacity-90 transition-opacity" />
@@ -167,10 +161,11 @@ export default function RootAdminLayout({
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center gap-3 mx-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm font-semibold relative ${isActive
+                      className={`flex items-center gap-3 mx-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm font-semibold relative ${
+                        isActive
                           ? 'bg-blue-50 text-blue-600 shadow-sm'
                           : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
+                      }`}
                     >
                       {isActive && (
                         <div className="absolute left-0 top-3 bottom-3 w-1 bg-blue-600 rounded-r-md"></div>
@@ -206,10 +201,11 @@ export default function RootAdminLayout({
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Content Area — uses margin-left to stay right of fixed sidebar */}
       <div
-        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${sidebarOpen ? 'pl-64' : 'pl-0'
-          }`}
+        className={`flex-1 min-w-0 flex flex-col min-h-screen transition-all duration-300 ${
+          sidebarOpen ? 'ml-64' : 'ml-0'
+        }`}
       >
 
         {/* Top Header Bar */}
@@ -229,7 +225,7 @@ export default function RootAdminLayout({
         </header>
 
         {/* Dynamic Page Router Children */}
-        <main className="flex-1 bg-slate-50 p-6 md:p-8">
+        <main className="flex-1 bg-slate-50 overflow-x-auto">
           {children}
         </main>
       </div>

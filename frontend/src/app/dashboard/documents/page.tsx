@@ -17,6 +17,7 @@ export default function YourDocumentsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadForm, setUploadForm] = useState({
     type: 'document',
+    batchName: '',
     files: [] as { file: File, title: string }[],
   });
   const [documents, setDocuments] = useState<any[]>([]);
@@ -123,6 +124,7 @@ export default function YourDocumentsPage() {
       const formData = new FormData();
       formData.append('customerId', 'me');
       formData.append('category', uploadForm.type);
+      formData.append('batchName', uploadForm.batchName || '');
       
       uploadForm.files.forEach(f => {
         formData.append('files', f.file);
@@ -144,7 +146,7 @@ export default function YourDocumentsPage() {
 
       if (token) loadDocuments(token); // Refresh list
       setShowUploadModal(false);
-      setUploadForm({ type: 'document', files: [] });
+      setUploadForm({ type: 'document', batchName: '', files: [] });
       alert('Documents uploaded successfully!');
     } catch (err: any) {
       alert(err.response?.data?.message || 'Upload failed');
@@ -159,7 +161,7 @@ export default function YourDocumentsPage() {
     <div className="min-h-screen bg-gray-50 flex">
       <DashboardSidebar isOpen={sidebarOpen} user={user} />
 
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
         <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full">
@@ -222,6 +224,18 @@ export default function YourDocumentsPage() {
                       <option value="gst">GST Related</option>
                       <option value="proof">ID Proof</option>
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Document Group Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. My Pan & Aadhaar, ITR Files"
+                      value={uploadForm.batchName}
+                      onChange={(e) => setUploadForm({ ...uploadForm, batchName: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:border-blue-500 transition-colors"
+                      required
+                    />
                   </div>
 
                   <div>

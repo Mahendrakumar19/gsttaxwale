@@ -84,7 +84,7 @@ export default function SettingsPage() {
       <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} user={user} />
       <div className="flex">
         {sidebarOpen && <DashboardSidebar isOpen={sidebarOpen} user={user} />}
-        <main className="flex-1 p-4 sm:p-8">
+        <main className="flex-1 min-w-0 p-4 sm:p-8">
           <div className="max-w-2xl mx-auto">
             <h1 className="text-3xl font-bold text-white mb-8">Settings</h1>
 

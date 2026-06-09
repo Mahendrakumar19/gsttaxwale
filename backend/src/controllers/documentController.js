@@ -1,18 +1,20 @@
 const db = require('../utils/db');
 const path = require('path');
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 
 exports.uploadDocument = async (req, res) => {
   try {
-    const { customerId, customerName, customerPan, fiscalYear, month, category: rawCategory, displayTitle } = req.body;
+    const { customerId, customerName, customerPan, fiscalYear, month, category: rawCategory, displayTitle, batchName, description } = req.body;
     const files = req.files;
 
-    console.log('📂 Multiple Document Upload Request:', { 
+    console.log('📂 Multiple Grouped Document Upload Request:', { 
       customerId, 
       fiscalYear, 
       month,
       category: rawCategory,
-      filesCount: files ? files.length : 0
+      filesCount: files ? files.length : 0,
+      batchName: batchName || description
     });
 
     if (!files || files.length === 0) {
@@ -52,6 +54,10 @@ exports.uploadDocument = async (req, res) => {
     const uploadedDocuments = [];
     const titles = Array.isArray(displayTitle) ? displayTitle : [displayTitle];
 
+    // Generate unique batch ID and batch name for grouping
+    const batchId = uuidv4();
+    const finalBatchName = batchName || description || '';
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const uniqueFilename = `${Date.now()}_${Math.floor(Math.random() * 1000)}_${file.originalname}`;
@@ -65,8 +71,8 @@ exports.uploadDocument = async (req, res) => {
       const finalDisplayName = titles[i] || displayTitle || file.originalname;
       
       const result = await db.query(`
-        INSERT INTO Document (userId, downloadUrl, fileSize, fileName, uploadedBy, category, fiscalYear, month, title, type, status, fileType, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, NOW())
+        INSERT INTO Document (userId, downloadUrl, fileSize, fileName, uploadedBy, category, fiscalYear, month, title, type, status, fileType, createdAt, description, uploadMetadata)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, NOW(), ?, ?)
       `, [
         parsedCustomerId,
         `/api/documents/download/${uniqueFilename}`,
@@ -78,7 +84,9 @@ exports.uploadDocument = async (req, res) => {
         month || null,
         finalDisplayName,
         req.userRole === 'admin' ? 'admin-upload' : 'user-upload',
-        file.mimetype
+        file.mimetype,
+        finalBatchName || null,
+        JSON.stringify({ batchId, batchName: finalBatchName })
       ]);
 
       uploadedDocuments.push({
@@ -88,7 +96,9 @@ exports.uploadDocument = async (req, res) => {
         category: category,
         fiscalYear: fiscalYear,
         month: month || null,
-        fileSize: file.size
+        fileSize: file.size,
+        batchId,
+        batchName: finalBatchName
       });
     }
 

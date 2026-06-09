@@ -51,8 +51,8 @@ export default function AdminDocumentUpload() {
     fiscalYear: '2025-26',
     month: '',
     category: 'gst',
-    displayTitle: '',
-    files: [] as File[],
+    batchName: '',
+    files: [] as { file: File; title: string }[],
   });
 
 
@@ -114,10 +114,15 @@ export default function AdminDocumentUpload() {
       return;
     }
     
-    // Append files
+    // Append files with default title
+    const newFiles = selectedFiles.map(file => ({
+      file,
+      title: file.name.replace(/\.[^/.]+$/, "")
+    }));
+
     setFormData(prev => ({ 
       ...prev, 
-      files: [...prev.files, ...selectedFiles] 
+      files: [...prev.files, ...newFiles] 
     }));
     setError('');
   };
@@ -127,6 +132,14 @@ export default function AdminDocumentUpload() {
       ...prev,
       files: prev.files.filter((_, idx) => idx !== indexToRemove)
     }));
+  };
+
+  const updateFileTitle = (index: number, title: string) => {
+    setFormData(prev => {
+      const newFiles = [...prev.files];
+      newFiles[index] = { ...newFiles[index], title };
+      return { ...prev, files: newFiles };
+    });
   };
 
   const handleUpload = async (e: React.FormEvent) => {
@@ -149,15 +162,13 @@ export default function AdminDocumentUpload() {
       uploadFormData.append('fiscalYear', formData.fiscalYear);
       uploadFormData.append('month', formData.month);
       uploadFormData.append('category', formData.category);
+      uploadFormData.append('batchName', formData.batchName || '');
       
-      // Append each file
-      formData.files.forEach((file) => {
-        uploadFormData.append('files', file);
+      // Append each file and its custom title
+      formData.files.forEach((f) => {
+        uploadFormData.append('files', f.file);
+        uploadFormData.append('displayTitle', f.title);
       });
-
-      if (formData.displayTitle) {
-        uploadFormData.append('displayTitle', formData.displayTitle);
-      }
 
       await api.post('/api/admin/documents/upload', uploadFormData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -171,7 +182,7 @@ export default function AdminDocumentUpload() {
         fiscalYear: '2025-26',
         month: '',
         category: 'gst',
-        displayTitle: '',
+        batchName: '',
         files: [],
       });
 
@@ -359,18 +370,18 @@ export default function AdminDocumentUpload() {
               </select>
             </div>
 
-            {/* Display Title */}
+            {/* Document Group Name */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Document Display Title (Optional - defaults to filename)
+                Document Group / Batch Name (Optional - e.g. KYC Documents, ITR-3 Filing FY26)
               </label>
               <div className="relative">
                 <FileText className="absolute left-3 top-3 text-gray-400" size={18} />
                 <input
                   type="text"
-                  placeholder="e.g. GST Registration Certificate"
-                  value={formData.displayTitle}
-                  onChange={(e) => setFormData({ ...formData, displayTitle: e.target.value })}
+                  placeholder="e.g. Audit Reports FY 2025-26"
+                  value={formData.batchName}
+                  onChange={(e) => setFormData({ ...formData, batchName: e.target.value })}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 bg-white"
                 />
               </div>
@@ -414,25 +425,35 @@ export default function AdminDocumentUpload() {
 
           {/* Selected Files List */}
           {formData.files.length > 0 && (
-            <div className="space-y-2 border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <div className="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                 Selected Files ({formData.files.length})
               </p>
-              <div className="max-h-[180px] overflow-y-auto divide-y divide-gray-200">
-                {formData.files.map((file, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-2">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <FileText size={16} className="text-blue-500 shrink-0" />
-                      <span className="text-sm text-gray-900 truncate font-medium">{file.name}</span>
-                      <span className="text-xs text-gray-400 shrink-0">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+              <div className="max-h-[300px] overflow-y-auto divide-y divide-gray-200 pr-2">
+                {formData.files.map((f, idx) => (
+                  <div key={idx} className="py-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <FileText size={16} className="text-blue-500 shrink-0" />
+                        <span className="text-sm text-gray-900 truncate font-semibold">{f.file.name}</span>
+                        <span className="text-xs text-gray-400 shrink-0">({(f.file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(idx)}
+                        className="p-1 hover:bg-red-50 text-red-500 rounded transition shrink-0"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(idx)}
-                      className="p-1 hover:bg-red-50 text-red-500 rounded transition shrink-0"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <input
+                      type="text"
+                      value={f.title}
+                      onChange={(e) => updateFileTitle(idx, e.target.value)}
+                      placeholder="Enter custom file name/title"
+                      className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-800 focus:border-blue-500 outline-none transition bg-white"
+                      required
+                    />
                   </div>
                 ))}
               </div>

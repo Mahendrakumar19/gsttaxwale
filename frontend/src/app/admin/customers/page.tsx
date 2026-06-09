@@ -309,9 +309,9 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0 p-6 md:p-8">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-6">
+      <div className="bg-white border border-gray-200 rounded-2xl px-6 py-5 mb-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
@@ -337,7 +337,7 @@ export default function CustomersPage() {
 
         {/* Filters */}
         <div className="flex gap-4 flex-wrap">
-          <div className="flex-1 min-w-xs relative">
+          <div className="flex-1 min-w-0 relative">
             <Search size={20} className="absolute left-3 top-3 text-gray-400" />
             <input
               type="text"
@@ -360,7 +360,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Stats */}
-      <div className="px-8 py-6 grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-blue-600 text-sm font-medium">Total Customers</p>
           <p className="text-3xl font-bold text-blue-900 mt-1">{customers.length}</p>
@@ -380,8 +380,8 @@ export default function CustomersPage() {
       </div>
 
       {/* Table */}
-      <div className="px-8 py-2">
-        <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+      <div className="mb-6">
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-x-auto">
           <table className="w-full min-w-max">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -519,8 +519,8 @@ export default function CustomersPage() {
       </div>
 
       {/* Referral Codes Summary Table */}
-      <div className="px-8 py-6">
-        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
+      <div>
+        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-1">📋 Referral Code Directory</h2>
           <p className="text-sm text-gray-600 mb-4">Quick reference: Name | Mobile | Referral Code</p>
           <div className="bg-white border border-purple-100 rounded-lg overflow-hidden">

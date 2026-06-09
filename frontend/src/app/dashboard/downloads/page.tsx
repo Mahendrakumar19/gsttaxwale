@@ -83,7 +83,7 @@ export default function YourDocumentsPage() {
     <div className="min-h-screen bg-gray-50 flex">
       <DashboardSidebar isOpen={sidebarOpen} user={user} />
 
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
         <DashboardHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Download, FileText, FileSpreadsheet, ImageIcon, FileCode, File, AlertCircle, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet, ImageIcon, FileCode, File, AlertCircle, ChevronDown, Folder, FolderOpen, Layers } from 'lucide-react';
 
 interface Document {
   id: string | number;
@@ -13,6 +13,8 @@ interface Document {
   createdAt: string;
   downloadUrl: string;
   fileSize?: number;
+  description?: string | null;
+  uploadMetadata?: string | null;
 }
 
 interface ReturnSummaryProps {
@@ -22,18 +24,100 @@ interface ReturnSummaryProps {
 
 export default function ReturnSummary({ documents = [], onDownload }: ReturnSummaryProps) {
   const [selectedFY, setSelectedFY] = useState('2025-26');
-  const [activeCategory, setActiveCategory] = useState<'GST' | 'ITR' | 'OTHERS'>('GST');
-  const [layoutMode, setLayoutMode] = useState<'matrix' | 'cards' | 'monthly-grid'>('monthly-grid');
   const [downloading, setDownloading] = useState<{ [key: string]: boolean }>({});
 
-  const financialYears = ['2021-22', '2022-23', '2023-24', '2024-25', '2025-26', '2026-27'];
+  interface GroupedBatch {
+    batchId: string;
+    batchName: string;
+    createdAt: string;
+    files: Document[];
+  }
 
-  // Categories row names definition
-  const rowNames = {
-    GST: ['GSTR 1', 'GSTR 1A', 'GSTR 3B', 'GSTR 9', 'GSTR 9C'],
-    ITR: ['ITR-1', 'ITR-2', 'ITR-3', 'ITR-4', 'Computation'],
-    OTHERS: ['Challan', 'Receipt', 'Audit Report', 'Other Document']
+  const groupedByCategories = useMemo(() => {
+    const getGroupedForCategory = (categoryKey: 'GST' | 'ITR' | 'OTHERS') => {
+      const filtered = documents.filter((doc) => {
+        // 1. Check Category Match
+        const docCat = doc.category?.toUpperCase() || 'OTHERS';
+        let isCatMatch = false;
+        if (categoryKey === 'GST') {
+          isCatMatch = docCat === 'GST';
+        } else if (categoryKey === 'ITR') {
+          isCatMatch = docCat === 'ITR';
+        } else {
+          isCatMatch = docCat !== 'GST' && docCat !== 'ITR';
+        }
+        if (!isCatMatch) return false;
+
+        // 2. Check FY Match
+        const docFY = doc.fiscalYear?.replace(/\s/g, '').replace('FY', '') || '';
+        const selectedFYNorm = selectedFY.replace(/\s/g, '').replace('FY', '') || '';
+        return docFY === selectedFYNorm || doc.fiscalYear === selectedFY;
+      });
+
+      const groups: { [key: string]: GroupedBatch } = {};
+      let ungroupedCounter = 0;
+
+      filtered.forEach((doc) => {
+        let batchId = '';
+        let batchName = '';
+
+        if (doc.uploadMetadata) {
+          try {
+            const parsed = JSON.parse(doc.uploadMetadata);
+            batchId = parsed.batchId || '';
+            batchName = parsed.batchName || '';
+          } catch {}
+        }
+
+        if (!batchId) {
+          if (doc.description) {
+            batchId = `desc-${doc.description}-${doc.createdAt.substring(0, 16)}`;
+            batchName = doc.description;
+          } else {
+            batchId = `single-${doc.id || ungroupedCounter++}`;
+            batchName = doc.title || doc.fileName || 'Document';
+          }
+        }
+
+        if (!groups[batchId]) {
+          groups[batchId] = {
+            batchId,
+            batchName: batchName || doc.description || doc.title || 'Grouped Documents',
+            createdAt: doc.createdAt,
+            files: []
+          };
+        }
+        groups[batchId].files.push(doc);
+      });
+
+      return Object.values(groups).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    };
+
+    return {
+      GST: getGroupedForCategory('GST'),
+      ITR: getGroupedForCategory('ITR'),
+      OTHERS: getGroupedForCategory('OTHERS')
+    };
+  }, [documents, selectedFY]);
+
+  const getMonthBatchesForCategory = (categoryKey: 'GST' | 'ITR' | 'OTHERS', m: { monthIndex: number; year: number; label: string }) => {
+    return groupedByCategories[categoryKey].filter((batch) => {
+      const firstDoc = batch.files[0];
+      if (!firstDoc) return false;
+      
+      const docMonth = firstDoc.month ? firstDoc.month.trim().toLowerCase() : '';
+      const targetMonthName = m.label.split(' ')[0].toLowerCase();
+      
+      if (docMonth) {
+        return docMonth.startsWith(targetMonthName);
+      } else {
+        const docDate = new Date(firstDoc.createdAt);
+        return docDate.getMonth() === m.monthIndex && docDate.getFullYear() === m.year;
+      }
+    });
   };
+
+  const financialYears = ['2021-22', '2022-23', '2023-24', '2024-25', '2025-26', '2026-27'];
 
   // Generate the columns dynamically based on the selected financial year (Apr to Mar)
   const months = useMemo(() => {
@@ -92,75 +176,6 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
     }
   };
 
-  // Find document corresponding to a row and month
-  const findDocForCell = (rowName: string, month: { monthIndex: number; year: number }) => {
-    return documents.find((doc) => {
-      // 1. Check normalized Category Match
-      const docCat = doc.category?.toUpperCase() || 'OTHERS';
-      let isCatMatch = false;
-      if (activeCategory === 'GST') {
-        isCatMatch = docCat === 'GST';
-      } else if (activeCategory === 'ITR') {
-        isCatMatch = docCat === 'ITR';
-      } else {
-        isCatMatch = docCat !== 'GST' && docCat !== 'ITR';
-      }
-      if (!isCatMatch) return false;
-
-      // 2. Check normalized FY Match
-      const docFY = doc.fiscalYear?.replace(/\s/g, '').replace('FY', '') || '';
-      const selectedFYNorm = selectedFY.replace(/\s/g, '').replace('FY', '') || '';
-      if (docFY !== selectedFYNorm && doc.fiscalYear !== selectedFY) return false;
-
-      // 3. Row type match (e.g. check if doc title contains row name like "GSTR 1")
-      const titleNorm = (doc.title || doc.fileName || '').toLowerCase();
-      const rowNorm = rowName.toLowerCase().replace(/\s/g, '');
-      const hasRowName = titleNorm.replace(/\s/g, '').includes(rowNorm);
-      if (!hasRowName) return false;
-
-      // 4. Month match (check if createdAt month and year match OR name matches month)
-      const docDate = new Date(doc.createdAt);
-      const docMonth = docDate.getMonth();
-      const docYear = docDate.getFullYear();
-      
-      const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
-      const monthShorts = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-      const hasMonthInTitle = titleNorm.includes(monthNames[month.monthIndex]) || titleNorm.includes(monthShorts[month.monthIndex]);
-
-      return (docMonth === month.monthIndex && docYear === month.year) || hasMonthInTitle;
-    });
-  };
-
-  // Calculate status for empty cells
-  const getCellStatus = (rowName: string, month: { monthIndex: number; year: number }) => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    
-    const colValue = month.year * 12 + month.monthIndex;
-    const curValue = currentYear * 12 + currentMonth;
-
-    if (colValue < curValue) {
-      if (['GSTR 1', 'GSTR 3B', 'ITR-1', 'Computation'].includes(rowName)) {
-        return { text: 'Overdue', color: 'text-red-500 font-semibold' };
-      }
-      return { text: '-', color: 'text-gray-300' };
-    } else if (colValue === curValue) {
-      if (rowName === 'GSTR 1A') {
-        return { text: 'Prepare', color: 'text-blue-500 font-semibold cursor-pointer hover:underline' };
-      }
-      if (['GSTR 1', 'GSTR 3B', 'ITR-1', 'Computation'].includes(rowName)) {
-        return { text: 'Due', color: 'text-amber-500 font-semibold' };
-      }
-      return { text: 'Due', color: 'text-amber-500 font-semibold' };
-    } else {
-      if (['GSTR 9', 'GSTR 9C'].includes(rowName) && month.monthIndex === 2) {
-        return { text: 'Due', color: 'text-amber-500 font-semibold' };
-      }
-      return { text: '-', color: 'text-gray-300' };
-    }
-  };
-
   const handleDownloadClick = async (doc: Document) => {
     const fileKey = `${doc.id}`;
     setDownloading((prev) => ({ ...prev, [fileKey]: true }));
@@ -189,22 +204,6 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
         {/* Dropdowns */}
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">Category:</span>
-            <div className="relative">
-              <select
-                value={activeCategory}
-                onChange={(e) => setActiveCategory(e.target.value as any)}
-                className="py-2 pl-4 pr-10 text-xs font-bold text-gray-800 transition-colors border border-gray-200 appearance-none cursor-pointer bg-gray-50 hover:bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="GST">GST Returns</option>
-                <option value="ITR">Income Tax Returns (ITR)</option>
-                <option value="OTHERS">Other compliance files</option>
-              </select>
-              <ChevronDown size={14} className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2" />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
             <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">Financial Year:</span>
             <div className="relative">
               <select
@@ -224,269 +223,279 @@ export default function ReturnSummary({ documents = [], onDownload }: ReturnSumm
         </div>
       </div>
 
-      {/* MATRIX TABLE LAYOUT MATCHING SCREENSHOT */}
-      {layoutMode === 'matrix' && (
-        <fieldset className="relative p-4 bg-white border border-blue-200/80 rounded-2xl sm:p-6">
-          <legend className="px-3 ml-4 text-lg font-bold text-blue-900">
-            Return Summary
-          </legend>
-          
-          
+      {/* Modern Grouped Folders/Cards View */}
+      <fieldset className="relative p-4 bg-white border border-blue-200/80 rounded-3xl sm:p-6">
+        <legend className="px-3 ml-4 text-lg font-bold text-blue-900">
+          Documents
+        </legend>
 
-          <div className="w-full mt-2 overflow-x-auto scrollbar-thin">
-            <table className="w-full min-w-[1000px] border-collapse text-left">
-              <thead>
-                <tr className="border-b border-blue-100 bg-blue-50/30">
-                  <th className="py-3 px-4 text-xs font-bold text-gray-900 border-r border-blue-100/50 w-[120px]">
-                    Form Type
-                  </th>
-                  {months.map((month) => (
-                    <th key={month.label} className="px-2 py-3 text-xs font-bold text-center text-gray-600">
-                      {month.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rowNames[activeCategory].map((rowName) => (
-                  <tr key={rowName} className="transition border-b border-gray-100 hover:bg-gray-50/40">
-                    <td className="py-3.5 px-4 text-xs font-bold text-gray-800 border-r border-blue-100/50 bg-gray-50/20">
-                      {rowName}
-                    </td>
-                    {months.map((month) => {
-                      const cellDoc = findDocForCell(rowName, month);
-                      const isDownloading = cellDoc ? !!downloading[`${cellDoc.id}`] : false;
+        {/* GST Compliance Section */}
+        <div className="mb-12 mt-6">
+          <h3 className="text-sm font-extrabold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2 uppercase tracking-wider">
+            <span className="w-2.5 h-2.5 bg-blue-500 rounded-full"></span>
+            GST Compliance (Month-Wise)
+          </h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 duration-200 animate-in fade-in">
+            {months.map((m) => {
+              const monthBatches = getMonthBatchesForCategory('GST', m);
 
-                      return (
-                        <td key={month.label} className="py-3.5 px-2 text-center text-xs border-r border-gray-100/50 last:border-r-0">
-                          {cellDoc ? (
-                            <div className="flex flex-col items-center justify-center gap-1 group">
-                              <span className="text-emerald-600 font-bold flex items-center justify-center gap-1 text-[11px]">
-                                Filed
-                              </span>
-                              <button
-                                onClick={() => handleDownloadClick(cellDoc)}
-                                disabled={isDownloading}
-                                className="flex items-center justify-center p-1 text-blue-600 transition bg-white border rounded shadow-sm hover:bg-blue-50 border-blue-100/50"
-                                title={`Download: ${getDownloadFileName(cellDoc)}`}
-                              >
-                                {isDownloading ? (
-                                  <div className="w-4 h-4 border-2 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
-                                ) : (
-                                  <>
-                                    {getFileIcon(cellDoc.fileName)}
-                                    <Download size={11} className="ml-1 text-gray-500 group-hover:text-blue-600" />
-                                  </>
-                                )}
-                              </button>
+              return (
+                <div
+                  key={m.label}
+                  className="flex flex-col justify-between p-3.5 sm:p-4 transition-all duration-300 bg-white border rounded-2xl border-slate-200 hover:border-blue-400 hover:shadow-md min-h-[175px]"
+                >
+                  <div>
+                    <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100">
+                      <span className="text-sm font-extrabold text-slate-800">{m.label.split(' ')[0]} {m.year}</span>
+                      <span className="text-[10px] font-black uppercase bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
+                        {monthBatches.length} Item(s)
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                      {monthBatches.length === 0 ? (
+                        <p className="text-[11px] text-slate-400 italic py-6 text-center">No uploads for this month</p>
+                      ) : (
+                        monthBatches.map((batch) => {
+                          const isSingle = batch.files.length === 1;
+                          if (isSingle) {
+                            const doc = batch.files[0];
+                            const isDownloading = !!downloading[`${doc.id}`];
+                            return (
+                              <div key={doc.id} className="flex items-center justify-between p-1.5 sm:p-2 transition rounded-xl bg-slate-50 hover:bg-blue-50/50">
+                                <div className="flex items-center flex-1 gap-2 mr-2 overflow-hidden">
+                                  <div className="shrink-0">
+                                    {getFileIcon(doc.fileName)}
+                                  </div>
+                                  <span className="text-[11px] font-bold text-slate-700 truncate" title={doc.title || doc.fileName}>
+                                    {doc.title || doc.fileName}
+                                  </span>
+                                </div>
+                                
+                                <button
+                                  onClick={() => handleDownloadClick(doc)}
+                                  disabled={isDownloading}
+                                  className="p-1.5 bg-white border border-slate-200 hover:border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition shrink-0 shadow-sm"
+                                  title="Download file"
+                                >
+                                  {isDownloading ? (
+                                    <div className="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                  ) : (
+                                    <Download size={12} className="text-slate-500 hover:text-blue-600" />
+                                  )}
+                                </button>
+                              </div>
+                            );
+                          }
+
+                          // Grouped batch display
+                          return (
+                            <div key={batch.batchId} className="p-1.5 border border-slate-200/60 rounded-xl bg-slate-50/60 space-y-1">
+                              <div className="flex items-center gap-1.5 px-1 py-0.5">
+                                <Folder size={13} className="text-blue-500 shrink-0" />
+                                <span className="text-[10px] font-black text-slate-700 truncate" title={batch.batchName}>
+                                  {batch.batchName}
+                                </span>
+                              </div>
+                              <div className="space-y-1 pl-2 border-l border-slate-200">
+                                {batch.files.map((doc) => {
+                                  const isDownloading = !!downloading[`${doc.id}`];
+                                  return (
+                                    <div key={doc.id} className="flex items-center justify-between p-0.5 sm:p-1 hover:bg-blue-50/40 rounded transition">
+                                      <div className="flex items-center flex-1 gap-1.5 overflow-hidden">
+                                        {getFileIcon(doc.fileName)}
+                                        <span className="text-[10px] text-slate-600 truncate font-semibold" title={doc.title || doc.fileName}>
+                                          {doc.title || doc.fileName}
+                                        </span>
+                                      </div>
+                                      <button
+                                        onClick={() => handleDownloadClick(doc)}
+                                        disabled={isDownloading}
+                                        className="p-1 hover:text-blue-600 transition"
+                                        title="Download file"
+                                      >
+                                        {isDownloading ? (
+                                          <div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                        ) : (
+                                          <Download size={10} className="text-slate-400 hover:text-blue-600" />
+                                        )}
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          ) : (
-                            <span className={getCellStatus(rowName, month).color}>
-                              {getCellStatus(rowName, month).text}
-                            </span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </fieldset>
-      )}
-
-      {/* MONTH-WISE COMPLIANCE GRID VIEW */}
-      {layoutMode === 'monthly-grid' && (
-        <div className="grid grid-cols-1 gap-6 mt-4 duration-200 md:grid-cols-2 lg:grid-cols-4 animate-in fade-in">
-          {months.map((m) => {
-            const monthDocs = documents.filter((doc) => {
-              // 1. Check Category Match
-              const docCat = doc.category?.toUpperCase() || 'OTHERS';
-              let isCatMatch = false;
-              if (activeCategory === 'GST') {
-                isCatMatch = docCat === 'GST';
-              } else if (activeCategory === 'ITR') {
-                isCatMatch = docCat === 'ITR';
-              } else {
-                isCatMatch = docCat !== 'GST' && docCat !== 'ITR';
-              }
-              if (!isCatMatch) return false;
-
-              // 2. Check FY Match
-              const docFY = doc.fiscalYear?.replace(/\s/g, '').replace('FY', '') || '';
-              const selectedFYNorm = selectedFY.replace(/\s/g, '').replace('FY', '') || '';
-              if (docFY !== selectedFYNorm && doc.fiscalYear !== selectedFY) return false;
-
-              // 3. Month Match (priority to document.month, fallback to createdAt date month)
-              const docMonth = doc.month ? doc.month.trim().toLowerCase() : '';
-              const targetMonthName = m.label.split(' ')[0].toLowerCase(); // e.g. "apr"
-              
-              if (docMonth) {
-                return docMonth.startsWith(targetMonthName);
-              } else {
-                const docDate = new Date(doc.createdAt);
-                return docDate.getMonth() === m.monthIndex && docDate.getFullYear() === m.year;
-              }
-            });
-
-            return (
-              <div
-                key={m.label}
-                className="flex flex-col justify-between p-2 overflow-hidden transition-all duration-300 bg-white border rounded-lg border-slate-200 hover:border-blue-400 hover:shadow-md"
-                style={{ width: '2in', height: '1in' }}
-              >
-                <div>
-                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-                    <span className="text-sm font-extrabold text-slate-800">{m.label.split(' ')[0]} {m.year}</span>
-                    <span className="text-[10px] font-black uppercase bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
-                      {monthDocs.length} File(s)
-                    </span>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
                   
-                  <div className="space-y-2.5 max-h-[140px] overflow-y-auto pr-1">
-                    {monthDocs.length === 0 ? (
-                      <p className="text-[11px] text-slate-400 italic py-4 text-center">No uploads for this month</p>
-                    ) : (
-                      monthDocs.map((doc) => {
+                  <div className="pt-3 border-t border-slate-50 text-[9px] text-slate-400 font-bold text-right uppercase tracking-wider">
+                    GST Compliance
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ITR Compliance Section */}
+        <div className="mb-12">
+          <h3 className="text-sm font-extrabold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2 uppercase tracking-wider">
+            <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
+            Income Tax Returns (ITR)
+          </h3>
+          {groupedByCategories.ITR.length === 0 ? (
+            <div className="py-16 text-center border border-slate-200 bg-slate-50/50 rounded-2xl duration-200 animate-in fade-in">
+              <AlertCircle className="mx-auto mb-3 text-slate-400 animate-pulse" size={36} />
+              <h3 className="text-sm font-bold text-slate-700">No Documents Found</h3>
+              <p className="max-w-md mx-auto mt-1 text-xs text-gray-500">
+                No files shared for ITR under FY {selectedFY}.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 duration-200 animate-in fade-in">
+              {groupedByCategories.ITR.map((batch) => (
+                <div key={batch.batchId} className="bg-white border border-slate-200/80 hover:border-blue-400 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between group">
+                  <div>
+                    <div className="flex items-start justify-between border-b border-slate-100 pb-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <FolderOpen size={20} className="sm:w-6 sm:h-6" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-extrabold text-slate-800 leading-snug">{batch.batchName}</h4>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                            Uploaded on {new Date(batch.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black uppercase bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full h-fit">
+                        {batch.files.length} File(s)
+                      </span>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {batch.files.map((doc) => {
                         const isDownloading = !!downloading[`${doc.id}`];
                         return (
-                          <div key={doc.id} className="flex items-center justify-between p-2 transition rounded-xl bg-slate-50 hover:bg-blue-50/50">
-                            <div className="flex items-center flex-1 gap-2 mr-2 overflow-hidden">
-                              <div className="shrink-0">
-                                {getFileIcon(doc.fileName)}
+                          <div key={doc.id} className="flex items-center justify-between p-2 sm:p-2.5 transition rounded-xl bg-slate-50/50 hover:bg-blue-50/40 border border-slate-100">
+                            <div className="flex items-center flex-1 gap-2.5 mr-2 overflow-hidden">
+                              {getFileIcon(doc.fileName)}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-slate-700 truncate" title={doc.title || doc.fileName}>
+                                  {doc.title || doc.fileName}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-medium truncate mt-0.5">
+                                  Size: {formatFileSize(doc.fileSize)}
+                                </p>
                               </div>
-                              <span className="text-[11px] font-bold text-slate-700 truncate" title={doc.title || doc.fileName}>
-                                {doc.title || doc.fileName}
-                              </span>
                             </div>
-                            
                             <button
                               onClick={() => handleDownloadClick(doc)}
                               disabled={isDownloading}
-                              className="p-1.5 bg-white border border-slate-200 hover:border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition shrink-0 shadow-sm"
+                              className="p-2 bg-white border border-slate-200 hover:border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition shrink-0 shadow-sm"
                               title="Download file"
                             >
                               {isDownloading ? (
                                 <div className="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                               ) : (
-                                <Download size={12} className="text-slate-500 hover:text-blue-600" />
+                                <Download size={13} className="text-slate-500 hover:text-blue-600" />
                               )}
                             </button>
                           </div>
                         );
-                      })
-                    )}
+                      })}
+                    </div>
+                  </div>
+                  <div className="pt-4 text-[9px] text-slate-400 font-bold text-right uppercase tracking-wider">
+                    Annual compliance
                   </div>
                 </div>
-                
-                <div className="pt-2 text-[9px] text-slate-400 font-bold text-right uppercase tracking-wider">
-                  {activeCategory} Compliance
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* MODERN CARDS LAYOUT */}
-      {layoutMode === 'cards' && (
-        <div className="mt-4">
-          {documents.filter(doc => {
-            const docCat = doc.category?.toUpperCase() || 'OTHERS';
-            if (activeCategory === 'GST') return docCat === 'GST';
-            if (activeCategory === 'ITR') return docCat === 'ITR';
-            return docCat !== 'GST' && docCat !== 'ITR';
-          }).filter(doc => {
-            const docFY = doc.fiscalYear?.replace(/\s/g, '').replace('FY', '') || '';
-            const selectedFYNorm = selectedFY.replace(/\s/g, '').replace('FY', '') || '';
-            return docFY === selectedFYNorm || doc.fiscalYear === selectedFY;
-          }).length === 0 ? (
-            <div className="py-12 text-center border bg-gray-50 border-blue-50/50 rounded-2xl">
-              <AlertCircle className="mx-auto mb-3 text-gray-400 animate-pulse" size={36} />
-              <h3 className="text-sm font-bold text-gray-700">No Documents Found</h3>
-              <p className="max-w-md mx-auto mt-1 text-xs text-gray-500">
-                No files shared for {activeCategory} under FY {selectedFY}.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 duration-200 md:grid-cols-2 lg:grid-cols-3 animate-in fade-in">
-              {documents
-                .filter(doc => {
-                  const docCat = doc.category?.toUpperCase() || 'OTHERS';
-                  if (activeCategory === 'GST') return docCat === 'GST';
-                  if (activeCategory === 'ITR') return docCat === 'ITR';
-                  return docCat !== 'GST' && docCat !== 'ITR';
-                })
-                .filter(doc => {
-                  const docFY = doc.fiscalYear?.replace(/\s/g, '').replace('FY', '') || '';
-                  const selectedFYNorm = selectedFY.replace(/\s/g, '').replace('FY', '') || '';
-                  return docFY === selectedFYNorm || doc.fiscalYear === selectedFY;
-                })
-                .map((doc) => {
-                  const fileKey = `${doc.id}`;
-                  const isDownloading = !!downloading[fileKey];
-                  const docTitle = doc.title || doc.fileName || 'Untitled Document';
-                  
-                  return (
-                    <div
-                      key={doc.id}
-                      className="flex flex-col justify-between p-4 transition-all duration-300 bg-white border shadow-sm border-blue-50 hover:border-blue-300 hover:shadow-md rounded-2xl group"
-                    >
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 text-blue-600 transition-colors bg-blue-50 rounded-xl group-hover:bg-blue-100">
-                          {getFileIcon(doc.fileName)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-bold leading-snug text-gray-900 truncate" title={docTitle}>
-                            {docTitle}
-                          </h4>
-                          <p className="text-[10px] text-gray-500 truncate mt-0.5" title={doc.fileName}>
-                            {doc.fileName}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="pt-3 mt-3 border-t border-gray-100">
-                        <div className="flex items-center justify-between text-[10px] text-gray-400 mb-3">
-                          <span>Size: {formatFileSize(doc.fileSize)}</span>
-                          <span>
-                            {new Date(doc.createdAt).toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric'
-                            })}
-                          </span>
-                        </div>
-
-                        <button
-                          onClick={() => handleDownloadClick(doc)}
-                          disabled={isDownloading}
-                          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                        >
-                          {isDownloading ? (
-                            <>
-                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              Downloading...
-                            </>
-                          ) : (
-                            <>
-                              <Download size={13} />
-                              Download File
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+              ))}
             </div>
           )}
         </div>
-      )}
 
-      {/* Info Footnote */}
-    
+        {/* Other Compliance Section */}
+        <div>
+          <h3 className="text-sm font-extrabold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2 uppercase tracking-wider">
+            <span className="w-2.5 h-2.5 bg-purple-500 rounded-full"></span>
+            Other Compliance Files
+          </h3>
+          {groupedByCategories.OTHERS.length === 0 ? (
+            <div className="py-16 text-center border border-slate-200 bg-slate-50/50 rounded-2xl duration-200 animate-in fade-in">
+              <AlertCircle className="mx-auto mb-3 text-slate-400 animate-pulse" size={36} />
+              <h3 className="text-sm font-bold text-slate-700">No Documents Found</h3>
+              <p className="max-w-md mx-auto mt-1 text-xs text-gray-500">
+                No files shared for general compliance under FY {selectedFY}.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 duration-200 animate-in fade-in">
+              {groupedByCategories.OTHERS.map((batch) => (
+                <div key={batch.batchId} className="bg-white border border-slate-200/80 hover:border-emerald-400 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between group">
+                  <div>
+                    <div className="flex items-start justify-between border-b border-slate-100 pb-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition shrink-0">
+                          <Layers size={20} className="sm:w-6 sm:h-6" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-extrabold text-slate-800 leading-snug">{batch.batchName}</h4>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                            Uploaded on {new Date(batch.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black uppercase bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full h-fit">
+                        {batch.files.length} File(s)
+                      </span>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {batch.files.map((doc) => {
+                        const isDownloading = !!downloading[`${doc.id}`];
+                        return (
+                          <div key={doc.id} className="flex items-center justify-between p-2 sm:p-2.5 transition rounded-xl bg-slate-50/50 hover:bg-emerald-50/20 border border-slate-100">
+                            <div className="flex items-center flex-1 gap-2.5 mr-2 overflow-hidden">
+                              {getFileIcon(doc.fileName)}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-slate-700 truncate" title={doc.title || doc.fileName}>
+                                  {doc.title || doc.fileName}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-medium truncate mt-0.5">
+                                  Size: {formatFileSize(doc.fileSize)}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleDownloadClick(doc)}
+                              disabled={isDownloading}
+                              className="p-2 bg-white border border-emerald-200 hover:border-emerald-200 text-emerald-600 rounded-lg hover:bg-emerald-50 transition shrink-0 shadow-sm"
+                              title="Download file"
+                            >
+                              {isDownloading ? (
+                                <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                              ) : (
+                                <Download size={13} className="text-slate-500 hover:text-emerald-600" />
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="pt-4 text-[9px] text-slate-400 font-bold text-right uppercase tracking-wider">
+                    General documents
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </fieldset>
     </div>
   );
 }
