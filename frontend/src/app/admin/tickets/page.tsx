@@ -50,19 +50,18 @@ export default function AdminTickets() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 pt-20 pb-12">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <MessageSquare className="text-blue-600" size={28} />
-            <h1 className="text-3xl font-bold text-gray-900">Support Tickets</h1>
-          </div>
-          <p className="text-gray-600">Manage customer support tickets</p>
+    <div className="p-4 sm:p-6 lg:p-8">
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-2">
+          <MessageSquare className="text-blue-600" size={22} />
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Support Tickets</h1>
         </div>
+        <p className="text-gray-600 text-sm">Manage customer support tickets</p>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="text-2xl font-bold text-blue-600 mb-1">{stats.open}</div>
             <div className="text-gray-600 text-sm">Open Tickets</div>
@@ -134,13 +133,13 @@ export default function AdminTickets() {
           <div className="space-y-3">
             {filteredTickets.map((ticket: any) => (
               <Link key={ticket.id} href={`/admin/tickets/${ticket.id}`}>
-                <div className="bg-slate-800/30 border border-slate-700/30 rounded-xl p-6 hover:bg-slate-700/30 transition cursor-pointer">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-gray-900 font-semibold text-lg mb-1">{ticket.subject}</h3>
-                      <div className="flex items-center gap-4 text-gray-600 text-sm">
+                <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 hover:border-blue-300 hover:shadow-sm transition cursor-pointer">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-gray-900 font-semibold text-base sm:text-lg mb-1 truncate">{ticket.subject}</h3>
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-gray-600 text-xs sm:text-sm">
                         <div className="flex items-center gap-1">
-                          <User size={14} />
+                          <User size={12} />
                           {ticket.user?.name}
                         </div>
                         <div>{new Date(ticket.createdAt).toLocaleDateString()}</div>
@@ -174,7 +173,6 @@ export default function AdminTickets() {
             ))}
           </div>
         )}
-      </div>
     </div>
   );
 }

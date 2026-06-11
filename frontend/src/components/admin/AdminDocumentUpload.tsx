@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Upload, Trash2, FileText, Search, Download, Calendar, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, Trash2, FileText, Search, Download, Calendar, Loader2, CheckCircle, AlertCircle, Eye } from 'lucide-react';
 import api from '@/lib/api';
 
 
@@ -16,6 +16,7 @@ interface Customer {
 interface DocumentUpload {
   id: string;
   fileName: string;
+  title?: string;
   customerId: string;
   customerName: string;
   customerPan: string;
@@ -25,6 +26,7 @@ interface DocumentUpload {
   status: 'active' | 'archived';
   uploadedAt: string;
   fileSize: number;
+  downloadUrl?: string;
 }
 
 export default function AdminDocumentUpload() {
@@ -244,10 +246,10 @@ export default function AdminDocumentUpload() {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Document Management</h2>
-        <p className="text-gray-600">Upload and manage tax documents for customers</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">Document Management</h2>
+        <p className="text-sm text-gray-600">Upload and manage tax documents for customers</p>
       </div>
 
       {/* Success/Error Messages */}
@@ -263,8 +265,8 @@ export default function AdminDocumentUpload() {
       )}
 
       {/* Upload Form */}
-      <div className="bg-white border border-gray-200 rounded-lg p-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Upload New Document</h3>
+      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 lg:p-8">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Upload New Document</h3>
         <form onSubmit={handleUpload} className="space-y-6">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Customer Selection - By Name */}
@@ -472,8 +474,8 @@ export default function AdminDocumentUpload() {
       </div>
 
       {/* Documents List */}
-      <div className="bg-white border border-gray-200 rounded-lg p-8">
-        <div className="mb-6">
+      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 lg:p-8">
+        <div className="mb-4 sm:mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Uploaded Documents</h3>
           <div className="relative">
             <Search className="absolute left-3 top-3 text-gray-400" size={18} />
@@ -488,8 +490,9 @@ export default function AdminDocumentUpload() {
         </div>
 
         {filteredDocuments.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto -mx-4 sm:-mx-6 lg:-mx-8">
+            <div className="inline-block min-w-full align-middle px-4 sm:px-6 lg:px-8">
+            <table className="min-w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Customer</th>
@@ -549,6 +552,16 @@ export default function AdminDocumentUpload() {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
+                        {/* View / Preview Button */}
+                        <a
+                          href={`${doc.downloadUrl || `/api/documents/download/${doc.fileName}`}?token=${typeof window !== 'undefined' ? (sessionStorage.getItem('adminToken') || sessionStorage.getItem('token') || sessionStorage.getItem('tempToken') || '') : ''}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="View / Download"
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded transition inline-flex items-center"
+                        >
+                          <Eye size={16} />
+                        </a>
                         {doc.status === 'active' ? (
                           <button
                             onClick={() => handleArchive(doc.id)}
@@ -571,6 +584,7 @@ export default function AdminDocumentUpload() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         ) : (
           <div className="text-center py-8">

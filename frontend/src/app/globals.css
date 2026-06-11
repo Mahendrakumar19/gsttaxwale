@@ -12,6 +12,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Prevent horizontal overflow globally */
+  overflow-x: hidden;
 }
 
 body {
@@ -20,7 +22,198 @@ body {
   font-family: 'Sora', sans-serif;
   line-height: 1.6;
   min-height: 100vh;
+  /* Prevent horizontal overflow on all pages */
+  overflow-x: hidden;
+  width: 100%;
 }
+
+:root.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+/* Responsive Container Utilities */
+.container-safe {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-safe {
+    max-width: 640px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-safe {
+    max-width: 768px;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-safe {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-safe {
+    max-width: 1280px;
+  }
+}
+
+/* Text Utilities */
+.text-sm {
+  line-height: 1.5;
+}
+
+.text-lg {
+  line-height: 1.625;
+}
+
+.text-xl {
+  line-height: 1.75;
+}
+
+.text-2xl {
+  line-height: 1.875;
+}
+
+/* Better heading line heights */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.01em;
+}
+
+/* Glassmorphism Styles */
+.glassmorphic {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.3);
+}
+
+.glassmorphic-light {
+  background: rgba(51, 65, 85, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.2);
+}
+
+.glassmorphic-dark {
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Smooth Transitions */
+button, a {
+  transition: all 0.3s ease;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(248, 113, 113, 0.4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(248, 113, 113, 0.6);
+}
+
+/* Hide scrollbar but keep scroll functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── RESPONSIVE TABLE UTILITIES ─────────────────────────────────────── */
+/* Tables that scroll horizontally on mobile */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── MOBILE TOUCH TARGETS ───────────────────────────────────────────── */
+/* Minimum 44px touch targets on mobile */
+@media (max-width: 640px) {
+  button, a, [role="button"] {
+    min-height: 36px;
+  }
+}
+
+/* ── ADMIN SIDEBAR OVERLAY ──────────────────────────────────────────── */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 39;
+  backdrop-filter: blur(2px);
+}
+
+/* ── MOBILE CARD TABLE ──────────────────────────────────────────────── */
+/* Cards for table rows on mobile */
+.mobile-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+/* ── SAFE AREA FOR NOTCHED PHONES ───────────────────────────────────── */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: min(0vmin, env(safe-area-inset-left));
+    padding-right: min(0vmin, env(safe-area-inset-right));
+  }
+}
+
+/* ── RESPONSIVE PADDING HELPERS ─────────────────────────────────────── */
+.page-padding {
+  padding: 1rem;
+}
+@media (min-width: 640px) {
+  .page-padding {
+    padding: 1.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  .page-padding {
+    padding: 2rem;
+  }
+}
+
 
 :root.dark body {
   background: #0f172a;

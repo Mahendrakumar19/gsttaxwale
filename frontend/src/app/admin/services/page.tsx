@@ -115,20 +115,20 @@ export default function AdminServices() {
   return (
     <div className="min-h-screen bg-white">
       {/* Top Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-gray-200 shadow-sm bg-white">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-black">Services</h1>
-            <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-wider">Management</span>
+      <nav className="top-0 z-50 border-b border-gray-200 shadow-sm bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-black truncate">Services</h1>
+            <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-wider hidden sm:inline-block">Management</span>
           </div>
-          <Link href="/admin/dashboard" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition flex items-center gap-1">
+          <Link href="/admin/dashboard" className="text-xs sm:text-sm font-medium text-gray-600 hover:text-blue-600 transition flex items-center gap-1 shrink-0">
             ← Back to Dashboard
           </Link>
         </div>
       </nav>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 bg-white">
         {/* Add/Edit Service Button */}
         {!showForm && (
           <button
@@ -137,13 +137,13 @@ export default function AdminServices() {
               setIsEditing(false);
               resetForm();
             }}
-            className="mb-6 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-lg font-medium transition shadow-lg hover:shadow-green-600/50 cursor-pointer"
+            className="mb-6 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition shadow-lg hover:shadow-green-600/50 cursor-pointer text-sm sm:text-base w-full sm:w-auto"
           >
             + Add New Service
           </button>
         )}        {/* Form */}
         {showForm && (
-          <div className="bg-white p-8 rounded-xl border border-gray-200 shadow-sm mb-8">
+          <div className="bg-white p-4 sm:p-8 rounded-xl border border-gray-200 shadow-sm mb-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-black">{isEditing ? 'Edit Service' : 'Create New Service'}</h2>
               <button

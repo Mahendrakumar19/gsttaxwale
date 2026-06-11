@@ -2,6 +2,7 @@ const db = require('../utils/db');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const adminEmail = require('../services/adminEmailService');
 
 exports.uploadDocument = async (req, res) => {
   try {
@@ -102,6 +103,23 @@ exports.uploadDocument = async (req, res) => {
       });
     }
 
+    // Fire document-upload email to user if uploaded by admin (non-blocking)
+    if (req.userRole === 'admin') {
+      try {
+        const [targetUser] = await db.query('SELECT email, name FROM User WHERE id = ?', [parsedCustomerId]);
+        if (targetUser && targetUser.email) {
+          const emailDocs = uploadedDocuments.map(d => ({
+            title: d.originalName,
+            category,
+            fiscalYear: fiscalYear || '',
+            month: month || null,
+          }));
+          adminEmail.sendDocumentUploadedEmail(targetUser.email, targetUser.name, emailDocs)
+            .catch(() => {});
+        }
+      } catch (_) { /* ignore email errors */ }
+    }
+
     res.status(201).json({
       success: true,
       message: `${uploadedDocuments.length} document(s) uploaded successfully`,
@@ -166,18 +184,42 @@ exports.downloadDocument = async (req, res) => {
       return res.status(404).json({ error: 'File not found on server storage' });
     }
 
-    // Set response headers
-    const mimeType = document.fileType || 'application/octet-stream';
+    // Set response headers and determine correct mimeType
+    const ext = path.extname(document.fileName).toLowerCase();
+    const mimeMap = {
+      '.pdf': 'application/pdf',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+      '.txt': 'text/plain',
+      '.html': 'text/html',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.xls': 'application/vnd.ms-excel',
+      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.zip': 'application/zip',
+      '.rar': 'application/x-rar-compressed',
+      '.csv': 'text/csv'
+    };
+
+    let mimeType = document.fileType;
+    if (!mimeType || mimeType === 'application/octet-stream') {
+      mimeType = mimeMap[ext] || 'application/octet-stream';
+    }
     res.setHeader('Content-Type', mimeType);
     
     // Ensure filename in header has extension if originalName doesn't
     let downloadName = document.title || document.fileName;
-    const ext = path.extname(document.fileName);
     if (ext && !downloadName.toLowerCase().endsWith(ext.toLowerCase())) {
       downloadName += ext;
     }
     
-    res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+    // Use inline disposition for files that can be rendered in browser (PDF, images, text, html)
+    const inlineExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.txt', '.html'];
+    const disposition = inlineExtensions.includes(ext) ? 'inline' : 'attachment';
+    res.setHeader('Content-Disposition', `${disposition}; filename="${downloadName}"`);
 
 
     // Stream file
@@ -324,6 +366,19 @@ exports.deleteDocument = async (req, res) => {
 
     // Soft delete from database
     await db.query("UPDATE Document SET status = 'deleted' WHERE id = ?", [documentId]);
+
+    // Notify user by email (non-blocking, admin action only)
+    if (req.userRole === 'admin') {
+      const [docUser] = await db.query('SELECT email, name FROM User WHERE id = ?', [document.userId]).catch(() => []);
+      if (docUser && docUser.email) {
+        adminEmail.sendDocumentDeletedEmail(
+          docUser.email, docUser.name,
+          document.title || document.fileName,
+          document.category,
+          document.fiscalYear
+        ).catch(() => {});
+      }
+    }
 
     res.json({
       success: true,

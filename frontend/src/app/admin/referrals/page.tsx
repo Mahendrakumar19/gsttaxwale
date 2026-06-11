@@ -51,7 +51,7 @@ function ReferralVerification() {
 
   return (
     <div>
-      <form onSubmit={handleVerify} className="flex gap-3">
+      <form onSubmit={handleVerify} className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search size={18} className="absolute left-3 top-3 text-gray-400" />
           <input
@@ -59,13 +59,13 @@ function ReferralVerification() {
             value={query}
             onChange={(e) => { setQuery(e.target.value); setResult(null); setNotFound(false); }}
             placeholder="Enter mobile number or email address..."
-            className="w-full pl-10 pr-4 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900"
+            className="w-full pl-10 pr-4 py-2.5 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-gray-900 text-sm"
           />
         </div>
         <button
           type="submit"
           disabled={loading || !query.trim()}
-          className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition font-semibold disabled:opacity-50"
+          className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition font-semibold disabled:opacity-50 text-sm w-full sm:w-auto text-center"
         >
           {loading ? 'Searching...' : 'Verify'}
         </button>
@@ -79,26 +79,26 @@ function ReferralVerification() {
 
       {result && (
         <div className="mt-4 bg-white border border-purple-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <CheckCircle className="text-green-600 mt-0.5" size={20} />
-            <div className="flex-1">
-              <p className="font-bold text-gray-900 text-lg">{result.name}</p>
-              <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
-                <div className="flex items-center gap-1 text-gray-600"><Mail size={14} /> {result.email}</div>
-                <div className="flex items-center gap-1 text-gray-600"><Phone size={14} /> {result.phone || 'N/A'}</div>
+          <div className="flex flex-col sm:flex-row items-start gap-3">
+            <CheckCircle className="text-green-600 mt-0.5 shrink-0" size={20} />
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-gray-900 text-lg truncate">{result.name}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-sm">
+                <div className="flex items-center gap-1 text-gray-650 break-all"><Mail size={14} className="shrink-0" /> {result.email}</div>
+                <div className="flex items-center gap-1 text-gray-655"><Phone size={14} className="shrink-0" /> {result.phone || 'N/A'}</div>
               </div>
-              <div className="mt-3 flex items-center gap-4">
-                <div className="bg-purple-100 rounded-lg px-4 py-2">
-                  <p className="text-xs text-purple-600 font-medium">Referral Code</p>
-                  <p className="font-mono font-bold text-purple-800 text-lg">{result.referral_code || '—'}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <div className="bg-purple-100 rounded-lg px-4 py-2 shrink-0">
+                  <p className="text-[10px] text-purple-600 font-medium">Referral Code</p>
+                  <p className="font-mono font-bold text-purple-800 text-base sm:text-lg">{result.referral_code || '—'}</p>
                 </div>
-                <div className="bg-gray-100 rounded-lg px-4 py-2">
-                  <p className="text-xs text-gray-600 font-medium">Reference Number</p>
-                  <p className="font-mono font-bold text-gray-800">{result.reference_number || '—'}</p>
+                <div className="bg-gray-105 rounded-lg px-4 py-2 shrink-0">
+                  <p className="text-[10px] text-gray-600 font-medium">Reference Number</p>
+                  <p className="font-mono font-bold text-gray-800 text-xs sm:text-sm">{result.reference_number || '—'}</p>
                 </div>
-                <div className="bg-blue-100 rounded-lg px-4 py-2">
-                  <p className="text-xs text-blue-600 font-medium">Points Wallet</p>
-                  <p className="font-bold text-blue-800 text-lg">{result.points_wallet || 0} pts</p>
+                <div className="bg-blue-100 rounded-lg px-4 py-2 shrink-0">
+                  <p className="text-[10px] text-blue-600 font-medium">Points Wallet</p>
+                  <p className="font-bold text-blue-800 text-base sm:text-lg">{result.points_wallet || 0} pts</p>
                 </div>
               </div>
             </div>
@@ -197,21 +197,21 @@ export default function AdminReferrals() {
     : referrals.filter(r => r.referralStatus === filter);
 
   return (
-    <div className="min-h-screen bg-white pt-20 pb-12">
+    <div className="min-h-screen bg-white pt-4 lg:pt-8 pb-12">
       <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
-        <div className="flex items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <TrendingUp className="text-blue-600" size={28} />
-              <h1 className="text-3xl font-bold text-black font-black">Referrals & Leads Dashboard</h1>
+              <TrendingUp className="text-blue-600 shrink-0" size={28} />
+              <h1 className="text-2xl sm:text-3xl font-bold text-black font-black">Referrals & Leads Dashboard</h1>
             </div>
-            <p className="text-gray-600">Track, verify, and convert guest leads, and manage rewards/commissions from one unified system.</p>
+            <p className="text-gray-600 text-sm sm:text-base">Track, verify, and convert guest leads, and manage rewards/commissions from one unified system.</p>
           </div>
           <button 
             onClick={() => { loadReferrals(); loadStats(); }}
             disabled={refreshing}
-            className="flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-700 font-semibold px-4 py-2 border border-gray-200 rounded-xl transition shadow-sm text-sm"
+            className="flex items-center justify-center gap-2 bg-white hover:bg-gray-100 text-gray-700 font-semibold px-4 py-2.5 border border-gray-200 rounded-xl transition shadow-sm text-sm w-full md:w-auto shrink-0"
           >
             <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
             Refresh
@@ -219,9 +219,9 @@ export default function AdminReferrals() {
         </div>
 
         {/* Referral Verification Tool */}
-        <div className="mb-8 bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-1">🔍 Verify Referral by Mobile / Email</h2>
-          <p className="text-sm text-gray-600 mb-4">
+        <div className="mb-8 bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-4 sm:p-6">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-1">🔍 Verify Referral by Mobile / Email</h2>
+          <p className="text-xs sm:text-sm text-gray-600 mb-4">
             Enter customer mobile number or email to look up their referral code and verify referrals
           </p>
           <ReferralVerification />
@@ -229,23 +229,23 @@ export default function AdminReferrals() {
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-blue-50 border border-blue-300 rounded-lg p-4">
-              <div className="text-2xl font-bold text-blue-600 mb-1">{stats.totalReferrals || 0}</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600 mb-1">{stats.totalReferrals || 0}</div>
               <div className="text-gray-600 text-sm">Total Referrals</div>
             </div>
             <div className="bg-green-50 border border-green-300 rounded-lg p-4">
-              <div className="text-2xl font-bold text-green-600 mb-1">₹{Math.round(stats.totalCommission || 0).toLocaleString()}</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600 mb-1">₹{Math.round(stats.totalCommission || 0).toLocaleString()}</div>
               <div className="text-gray-600 text-sm">Total Commission Paid</div>
             </div>
             <div className="bg-purple-50 border border-purple-300 rounded-lg p-4">
-              <div className="text-2xl font-bold text-purple-600 mb-1">
+              <div className="text-xl sm:text-2xl font-bold text-purple-600 mb-1">
                 {stats.stats?.find((s: any) => s.referralStatus === 'completed')?._count?.id || 0}
               </div>
               <div className="text-gray-600 text-sm">Completed</div>
             </div>
             <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
-              <div className="text-2xl font-bold text-amber-600 mb-1">
+              <div className="text-xl sm:text-2xl font-bold text-amber-600 mb-1">
                 {stats.stats?.find((s: any) => s.referralStatus === 'pending')?._count?.id || 0}
               </div>
               <div className="text-gray-600 text-sm">Pending</div>

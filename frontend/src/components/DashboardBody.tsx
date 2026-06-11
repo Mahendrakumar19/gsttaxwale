@@ -74,14 +74,14 @@ export default function DashboardBody() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h2 className="mb-2 text-4xl font-bold text-gray-900">Dashboard</h2>
-        <p className="text-gray-600 mb-8">Manage your income tax filings & earn referral bonuses</p>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      <div className="mb-6 sm:mb-8">
+        <h2 className="mb-1 sm:mb-2 text-2xl sm:text-4xl font-bold text-gray-900">Dashboard</h2>
+        <p className="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-base">Manage your income tax filings &amp; earn referral bonuses</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-6 mb-6 sm:mb-8 md:grid-cols-4">
         <StatCard
           label="Total Income"
           value={`₹${stats.totalIncome.toLocaleString()}`}
@@ -113,7 +113,7 @@ export default function DashboardBody() {
       </div>
 
       {/* Tax Calculator & Upcoming Due Dates */}
-      <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-6 sm:mb-8 md:grid-cols-2">
         {/* Tax Calculator Widget */}
         <div className="bg-gradient-to-br from-amber-900/30 to-amber-800/10 border border-amber-500/30 rounded-lg shadow-lg backdrop-blur">
           <div className="p-6 border-b border-amber-500/20">
@@ -191,12 +191,12 @@ export default function DashboardBody() {
       </div>
 
       {/* CTA Section */}
-      <div className="flex items-center justify-between p-6 mb-8 bg-gradient-to-r from-amber-600 to-yellow-500 rounded-lg shadow-lg">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 mb-6 sm:mb-8 bg-gradient-to-r from-amber-600 to-yellow-500 rounded-lg shadow-lg gap-3">
         <div>
-          <h3 className="mb-2 text-2xl font-bold text-gray-900">Ready to file your ITR?</h3>
-          <p className="text-gray-700">Start a new income tax return filing for the financial year</p>
+          <h3 className="mb-1 sm:mb-2 text-lg sm:text-2xl font-bold text-gray-900">Ready to file your ITR?</h3>
+          <p className="text-gray-700 text-sm">Start a new income tax return filing for the financial year</p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-3 font-semibold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 hover:shadow-lg transition">
+        <button className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 font-semibold text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 hover:shadow-lg transition shrink-0">
           <span>+</span>
           Create New Filing
         </button>
@@ -214,7 +214,8 @@ export default function DashboardBody() {
             No filings yet. Create your first one to get started!
           </div>
         ) : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[480px]">
             <thead className="border-b border-slate-600/30 bg-slate-900/30">
               <tr>
                 <th className="px-6 py-3 text-sm font-semibold text-left text-amber-400">
@@ -263,6 +264,7 @@ export default function DashboardBody() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

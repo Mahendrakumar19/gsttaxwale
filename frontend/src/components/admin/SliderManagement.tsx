@@ -94,14 +94,14 @@ export default function SliderManagement() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Homepage Slider</h2>
-          <p className="text-slate-500 text-sm font-medium">Manage banners that appear on the homepage hero section</p>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">Homepage Slider</h2>
+          <p className="text-slate-500 text-xs sm:text-sm font-medium">Manage banners that appear on the homepage hero section</p>
         </div>
-        <div className="px-4 py-2 bg-blue-50 border border-blue-100 rounded-xl">
-          <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2">
+        <div className="px-4 py-2 bg-blue-50 border border-blue-100 rounded-xl w-full sm:w-auto text-center">
+          <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center justify-center sm:justify-start gap-2">
             <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
             Recommended: Active Banners (3+)
           </p>
@@ -109,10 +109,10 @@ export default function SliderManagement() {
       </div>
 
       {/* Upload Section */}
-      <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2rem] p-10 text-center hover:border-blue-400 transition-colors group">
+      <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2rem] p-4 sm:p-10 text-center hover:border-blue-400 transition-colors group">
         {previewUrl ? (
           <div className="space-y-6">
-            <div className="relative w-full max-w-2xl mx-auto h-[200px] rounded-2xl overflow-hidden border-4 border-white shadow-xl">
+            <div className="relative w-full max-w-2xl mx-auto h-[160px] sm:h-[200px] rounded-2xl overflow-hidden border-4 border-white shadow-xl">
               <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
               <button 
                 onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}
@@ -121,11 +121,11 @@ export default function SliderManagement() {
                 <Trash2 size={18} />
               </button>
             </div>
-            <div className="flex items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button 
                 onClick={handleUpload}
                 disabled={uploading}
-                className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50"
+                className="bg-blue-600 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-xl font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base w-full sm:w-auto"
               >
                 {uploading ? <Loader2 className="animate-spin" size={18} /> : <Plus size={18} />}
                 {uploading ? 'UPLOADING...' : 'CONFIRM & ADD SLIDER'}
@@ -134,13 +134,13 @@ export default function SliderManagement() {
           </div>
         ) : (
           <label className="cursor-pointer block">
-            <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition duration-500">
-              <Upload size={32} />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-50 text-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition duration-500">
+              <Upload size={28} className="sm:size-32" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Upload New Banner</h3>
-            <p className="text-slate-400 text-sm mb-6">Recommended size: 1400x450px (PNG or JPG)</p>
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-2">Upload New Banner</h3>
+            <p className="text-slate-400 text-xs sm:text-sm mb-6">Recommended size: 1400x450px (PNG or JPG)</p>
             <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-            <div className="inline-block px-6 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-blue-600 transition tracking-wide text-xs uppercase">
+            <div className="inline-block px-5 py-2.5 sm:px-6 sm:py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-blue-600 transition tracking-wide text-[10px] sm:text-xs uppercase w-full sm:w-auto text-center">
               SELECT IMAGE FILE
             </div>
           </label>

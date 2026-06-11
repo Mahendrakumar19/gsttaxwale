@@ -202,26 +202,26 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Link href="/admin/dashboard" className="hover:text-purple-400 transition">
-            <ArrowLeft size={24} />
+            <ArrowLeft size={20} />
           </Link>
-          <div className="flex items-center gap-3">
-            <FileText size={32} className="text-purple-400" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <FileText size={24} className="text-purple-400" />
             <div>
-              <h1 className="text-3xl font-bold">Documents</h1>
-              <p className="text-slate-400">Manage user documents</p>
+              <h1 className="text-xl sm:text-3xl font-bold">Documents</h1>
+              <p className="text-slate-400 text-xs sm:text-sm">Manage user documents</p>
             </div>
           </div>
         </div>
 
         <button
           onClick={() => setShowUploadModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-lg hover:from-purple-700 hover:to-purple-600 transition font-semibold"
+          className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-lg hover:from-purple-700 hover:to-purple-600 transition font-semibold text-sm self-start sm:self-auto"
         >
-          <Upload size={20} />
+          <Upload size={16} />
           Upload Document
         </button>
       </div>

@@ -309,27 +309,28 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="w-full min-w-0 p-6 md:p-8">
+    <div className="w-full min-w-0 p-4 sm:p-6 md:p-8">
       {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-2xl px-6 py-5 mb-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white border border-gray-200 rounded-2xl px-4 sm:px-6 py-4 sm:py-5 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
-            <p className="text-gray-700 mt-1">Manage all registered customers</p>
+            <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Customers</h1>
+            <p className="text-gray-700 mt-1 text-sm">Manage all registered customers</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               onClick={exportToExcel}
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+              className="flex items-center gap-2 bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
             >
-              <Download size={20} />
-              Export to Excel
+              <Download size={16} />
+              <span className="hidden sm:inline">Export to Excel</span>
+              <span className="sm:hidden">Export</span>
             </button>
             <button 
               onClick={() => router.push('/admin/customers/create')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
             >
-              <Plus size={18} />
+              <Plus size={16} />
               <span>Add Customer</span>
             </button>
           </div>

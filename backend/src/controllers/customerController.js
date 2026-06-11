@@ -64,7 +64,7 @@ async function getCustomerDetails(req, res) {
     const orders = await db.query('SELECT * FROM `Order` WHERE userId = ? ORDER BY createdAt DESC', [id]);
     
     // Get documents
-    const documents = await db.query('SELECT * FROM Document WHERE userId = ? ORDER BY uploadedAt DESC', [id]);
+    const documents = await db.query('SELECT * FROM Document WHERE userId = ? ORDER BY createdAt DESC', [id]);
 
     // Calculate stats
     const totalPaid = orders.reduce((sum, p) => sum + (p.paymentStatus === 'paid' ? p.finalAmount : 0), 0);

@@ -17,8 +17,11 @@ export async function generateReferralCode(userId: string) {
 
     if (!user) throw new Error('User not found');
 
-    const namePart = (user.name || 'USR').split(' ')[0].toUpperCase();
-    const phonePart = (user.phone || '00000').slice(-5).padStart(5, '0');
+    // GTW + first 3 letters of FIRST NAME + last 4 digits of phone
+    // e.g. 'Mahendra Kumar' + '7894561230' → GTWMAH1230
+    const firstName = (user.name || 'USR').trim().split(/\s+/)[0];
+    const namePart = firstName.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3).padEnd(3, 'X');
+    const phonePart = (user.phone || '0000').replace(/\D/g, '').slice(-4).padStart(4, '0');
     const code = `GTW${namePart}${phonePart}`;
 
     const link = `${process.env.FRONTEND_URL}/?ref=${code}`;

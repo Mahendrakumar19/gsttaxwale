@@ -1,6 +1,7 @@
 const db = require('../utils/db');
 const { successResponse, errorResponse } = require('../utils/helpers');
 const authService = require('../services/authService');
+const adminEmail = require('../services/adminEmailService');
 
 /**
  * Get all users for admin
@@ -134,7 +135,7 @@ async function getReports(req, res) {
       SELECT d.*, u.name as userName
       FROM Document d
       JOIN User u ON d.userId = u.id
-      ORDER BY d.uploadedAt DESC
+      ORDER BY d.createdAt DESC
       LIMIT 100
     `);
 
@@ -158,9 +159,11 @@ async function createUser(req, res) {
   try {
     const hashedPassword = await authService.hashPassword(password);
     
-    // Generate Referral Code: GTW + first name + last 5 of mobile
-    const namePart = (name || 'USR').split(' ')[0].toUpperCase();
-    const phonePart = (phone || '00000').slice(-5).padStart(5, '0');
+    // Generate Referral Code: GTW + first 3 letters of FIRST NAME + last 4 digits of mobile
+    // e.g. 'Mahendra Kumar' + '7894561230' → GTWMAH1230
+    const firstName = (name || 'USR').trim().split(/\s+/)[0];
+    const namePart = firstName.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3).padEnd(3, 'X');
+    const phonePart = (phone || '0000').replace(/\D/g, '').slice(-4).padStart(4, '0');
     const referralCode = `GTW${namePart}${phonePart}`;
     
     const refNum = reference_number || `GTW${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 900 + 100)}`;
@@ -179,14 +182,10 @@ async function createUser(req, res) {
 
     const [user] = await db.query('SELECT id, name, email, phone, pan, referral_code, reference_number, dateOfBirth FROM User WHERE id = ?', [result.insertId]);
 
-    // Send Welcome Email
-    try {
-      await authService.sendUserCreatedEmail(email, password, refNum);
-      console.log(`📧 Welcome email sent to ${email}`);
-    } catch (mailError) {
-      console.error('📧 Failed to send welcome email:', mailError);
-      // Don't fail the whole request if email fails, but log it
-    }
+    // Send account created email with full credentials
+    adminEmail.sendAccountCreatedEmail(email, name, password, refNum, referralCode)
+      .then(ok => console.log(ok ? `📧 Account email sent → ${email}` : `📧 Account email failed → ${email}`))
+      .catch(() => {});
 
     res.status(201).json(successResponse({ 
       user,
@@ -228,15 +227,17 @@ async function updateUser(req, res) {
       referral_code, id
     ]);
     
-    // Send Profile Update Notification
-    try {
-      const [user] = await db.query('SELECT email FROM User WHERE id = ?', [id]);
-      if (user && user.email) {
-        await authService.sendProfileUpdatedEmail(user.email);
-        console.log(`📧 Profile update notification sent to ${user.email}`);
+    // Fetch updated user for email notification
+    const [updatedUser] = await db.query('SELECT email, name, status FROM User WHERE id = ?', [id]);
+    if (updatedUser) {
+      // Profile update email
+      adminEmail.sendProfileUpdatedEmail(updatedUser.email, updatedUser.name)
+        .catch(() => {});
+      // Extra: if status was changed, also send a status change email
+      if (status) {
+        adminEmail.sendStatusChangedEmail(updatedUser.email, updatedUser.name, status)
+          .catch(() => {});
       }
-    } catch (mailError) {
-      console.error('📧 Failed to send profile update notification:', mailError);
     }
 
     res.status(200).json(successResponse(null, 'User details updated successfully'));
@@ -278,15 +279,11 @@ async function resetPassword(req, res) {
       [hashedPassword, id]
     );
 
-    // Send Password Change Notification
-    try {
-      const [user] = await db.query('SELECT email FROM User WHERE id = ?', [id]);
-      if (user && user.email) {
-        await authService.sendPasswordChangedEmail(user.email);
-        console.log(`📧 Password change notification sent to ${user.email}`);
-      }
-    } catch (mailError) {
-      console.error('📧 Failed to send password change notification:', mailError);
+    // Send password reset email with new password
+    const [user] = await db.query('SELECT email, name FROM User WHERE id = ?', [id]);
+    if (user) {
+      adminEmail.sendPasswordResetEmail(user.email, user.name, password)
+        .catch(() => {});
     }
 
     res.status(200).json(successResponse(null, 'Password reset successfully'));

@@ -5,14 +5,14 @@ const db = require('./db');
  * If duplicate exists, falls back to GTW + first 3 of name + 4 random digits.
  */
 async function generateUniqueReferralCode(name, phone) {
-  const cleanName = (name || 'USR').toUpperCase().replace(/[^A-Z]/g, '');
-  let namePart = cleanName.slice(0, 3);
-  if (namePart.length < 3) {
-    namePart = namePart.padEnd(3, 'X');
-  }
+  // Take first name only (before any space), then first 3 letters, uppercase, pad with X
+  const firstName = (name || 'USR').trim().split(/\s+/)[0];
+  const namePart = firstName.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3).padEnd(3, 'X');
+
+  // Last 4 digits of phone, pad with 0 if shorter
   const cleanPhone = (phone || '0000').replace(/\D/g, '');
   const phonePart = cleanPhone.slice(-4).padStart(4, '0');
-  
+
   let code = `GTW${namePart}${phonePart}`;
   
   let isUnique = false;

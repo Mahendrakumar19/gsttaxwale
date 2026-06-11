@@ -204,21 +204,21 @@ export default function AdminDashboard() {
   const totalTasksCount = (stats.pendingTasks?.tickets?.length || 0) + (stats.pendingTasks?.orders?.length || 0);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8 animate-in fade-in duration-300">
       
       {/* Welcome Banner */}
-      <div className="space-y-2">
+      <div className="space-y-1 sm:space-y-2">
         <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{formattedDate}</p>
-        <h1 className="text-4xl font-extrabold text-slate-900 leading-tight">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 leading-tight">
           Welcome back, <span className="text-blue-600">{adminUser?.name || 'Administrator'}</span>
         </h1>
-        <p className="text-slate-500 text-sm max-w-2xl leading-relaxed">
+        <p className="text-slate-500 text-xs sm:text-sm max-w-2xl leading-relaxed">
           Real-time portal activity monitored. The platform currently registers <span className="font-semibold text-slate-800">{stats.totalUsers} customers</span> and <span className="font-semibold text-slate-800">{stats.visitors} total portal visits</span>.
         </p>
       </div>
 
       {/* Modern Metrics Card Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         
         {/* Card 1: Visitors */}
         <div className="bg-white border border-slate-150 rounded-[2rem] p-6 shadow-sm flex flex-col justify-between">
@@ -291,10 +291,10 @@ export default function AdminDashboard() {
       </div>
 
       {/* Real-time Business Health Gauges & Top Services Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         
         {/* Gauges (2/3 width) */}
-        <div className="lg:col-span-2 bg-white border border-slate-150 rounded-[2.5rem] p-8 shadow-sm space-y-6">
+        <div className="lg:col-span-2 bg-white border border-slate-150 rounded-[2rem] sm:rounded-[2.5rem] p-4 sm:p-8 shadow-sm space-y-4 sm:space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-extrabold text-slate-900">Real-Time Platform Rates</h2>
@@ -329,7 +329,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Top Services Popularity */}
-        <div className="bg-white border border-slate-150 rounded-[2.5rem] p-8 shadow-sm space-y-6 flex flex-col justify-between">
+        <div className="bg-white border border-slate-150 rounded-[2rem] sm:rounded-[2.5rem] p-4 sm:p-8 shadow-sm space-y-4 sm:space-y-6 flex flex-col justify-between">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900">Service Popularity</h2>
             <p className="text-xs text-slate-500 mb-6">Popular tax services ordered by customer accounts</p>
@@ -374,12 +374,12 @@ export default function AdminDashboard() {
       </div>
 
       {/* Actionable To-do Checklist & Quick Navigation links */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         
         {/* To-do List (2/3 width) */}
-        <div className="lg:col-span-2 bg-white border border-slate-150 rounded-[2.5rem] p-8 shadow-sm space-y-6">
+        <div className="lg:col-span-2 bg-white border border-slate-150 rounded-[2rem] sm:rounded-[2.5rem] p-4 sm:p-8 shadow-sm space-y-4 sm:space-y-6">
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+            <h2 className="text-base sm:text-xl font-extrabold text-slate-900 flex flex-wrap items-center gap-2">
               Action Tasks Todo List
               {totalTasksCount > 0 && (
                 <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-amber-200">
@@ -401,7 +401,7 @@ export default function AdminDashboard() {
               <div className="divide-y divide-slate-100 border border-slate-150 rounded-2xl overflow-hidden bg-slate-50/20">
                 {/* Orders Todo */}
                 {stats.pendingTasks?.orders?.map((ord: any) => (
-                  <div key={`order-${ord.id}`} className="p-4 flex items-center justify-between text-sm hover:bg-slate-50 transition">
+                  <div key={`order-${ord.id}`} className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm hover:bg-slate-50 transition">
                     <div className="flex items-start gap-3">
                       <input 
                         type="checkbox" 
@@ -417,7 +417,7 @@ export default function AdminDashboard() {
                     </div>
                     <Link 
                       href={`/admin/orders`}
-                      className="text-xs font-bold text-blue-600 hover:text-blue-800 border border-slate-200 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 transition shadow-sm"
+                      className="text-xs font-bold text-blue-600 hover:text-blue-800 border border-slate-200 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 transition shadow-sm self-start sm:self-auto"
                     >
                       Process Order
                     </Link>
@@ -454,7 +454,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* System Info card */}
-        <div className="bg-white border border-slate-150 rounded-[2.5rem] p-8 shadow-sm flex flex-col justify-between space-y-6">
+        <div className="bg-white border border-slate-150 rounded-[2rem] sm:rounded-[2.5rem] p-4 sm:p-8 shadow-sm flex flex-col justify-between space-y-4 sm:space-y-6">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
               <ShieldCheck className="text-blue-600" size={22} />
@@ -491,27 +491,27 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Action Navigation Grid */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-extrabold text-slate-900">Workspace Quick Access</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="space-y-3 sm:space-y-4">
+        <h2 className="text-lg sm:text-2xl font-extrabold text-slate-900">Workspace Quick Access</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {quickActions.map((action) => (
             <Link
               key={action.href}
               href={action.href}
-              className="bg-white border border-slate-150 rounded-2xl p-5 hover:border-blue-400 hover:shadow-md transition duration-200 flex flex-col justify-between min-h-[140px]"
+              className="bg-white border border-slate-150 rounded-xl sm:rounded-2xl p-3 sm:p-5 hover:border-blue-400 hover:shadow-md transition duration-200 flex flex-col justify-between min-h-[110px] sm:min-h-[140px]"
             >
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-2.5 bg-slate-50 border border-slate-150 rounded-xl text-slate-600">
-                    <action.icon size={18} />
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <div className="p-2 sm:p-2.5 bg-slate-50 border border-slate-150 rounded-lg sm:rounded-xl text-slate-600">
+                    <action.icon size={16} />
                   </div>
-                  <span className={`text-[9px] font-black border uppercase tracking-wider px-2 py-0.5 rounded ${action.badgeColor}`}>
+                  <span className={`hidden sm:inline text-[9px] font-black border uppercase tracking-wider px-2 py-0.5 rounded ${action.badgeColor}`}>
                     {action.badge}
                   </span>
                 </div>
-                <h3 className="text-sm font-extrabold text-slate-950 mb-1">{action.label}</h3>
+                <h3 className="text-xs sm:text-sm font-extrabold text-slate-950 mb-1">{action.label}</h3>
               </div>
-              <p className="text-[10px] text-slate-400 leading-normal">{action.desc}</p>
+              <p className="hidden sm:block text-[10px] text-slate-400 leading-normal">{action.desc}</p>
             </Link>
           ))}
         </div>
