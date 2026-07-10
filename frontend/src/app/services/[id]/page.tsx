@@ -176,7 +176,7 @@ function ServiceDetail({ params }: { params: { id: string } }) {
               <div className="mt-8 space-y-3">
                 <div className="flex items-center gap-3 text-gray-700">
                   <Shield className="w-5 h-5 text-green-600" />
-                  <span className="text-sm">100% Secure Payment with Razorpay</span>
+                  <span className="text-sm">100% Secure Payment</span>
                 </div>
                 <div className="flex items-center gap-3 text-gray-700">
                   <Clock className="w-5 h-5 text-green-600" />
@@ -266,7 +266,7 @@ function ServiceDetail({ params }: { params: { id: string } }) {
             <div className="p-6 border border-gray-200 rounded-lg">
               <h3 className="font-bold text-lg text-gray-900 mb-2">What payment methods do you accept?</h3>
               <p className="text-gray-600">
-                We accept all major payment methods via Razorpay: Credit/Debit Cards, UPI, Net Banking, Digital Wallets, and BNPL options.
+                We accept all major payment methods: Credit/Debit Cards, UPI, Net Banking, and Digital Wallets.
               </p>
             </div>
 
@@ -280,7 +280,7 @@ function ServiceDetail({ params }: { params: { id: string } }) {
             <div className="p-6 border border-gray-200 rounded-lg">
               <h3 className="font-bold text-lg text-gray-900 mb-2">Is my payment secure?</h3>
               <p className="text-gray-600">
-                100% secure! We use Razorpay, a PCI-DSS Level 1 certified payment processor. Your card details are never stored on our servers.
+                100% secure! We use a PCI-DSS Level 1 certified payment processor. Your card details are never stored on our servers.
               </p>
             </div>
           </div>

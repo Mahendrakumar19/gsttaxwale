@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Search, Plus, Edit, Trash2, X, User, Phone, Mail, Hash, Tag, Download, Key } from 'lucide-react';
 import { adminAuth } from '@/lib/adminAuth';
 import api from '@/lib/api';
@@ -388,11 +389,7 @@ export default function CustomersPage() {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email / Phone</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ref. Number</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">PAN Number</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">DOB</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Referral Code</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Orders</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
               </tr>
@@ -412,7 +409,9 @@ export default function CustomersPage() {
                         <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                           <User size={14} className="text-blue-600" />
                         </div>
-                        <span className="font-semibold text-gray-900 text-sm">{customer.name}</span>
+                        <Link href={`/admin/customers/${customer.id}`} className="font-semibold text-gray-900 text-sm hover:text-blue-600 hover:underline">
+                          {customer.name}
+                        </Link>
                       </div>
                     </td>
                     <td className="px-4 py-4">
@@ -429,32 +428,8 @@ export default function CustomersPage() {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-1">
-                        <Hash size={12} className="text-gray-400" />
-                        <span className="text-sm font-mono text-gray-700">{customer.referenceNumber}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1">
                         <span className="text-sm font-mono text-gray-700 font-bold">{customer.pan}</span>
                       </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm text-gray-700">
-                          {customer.dateOfBirth ? new Date(customer.dateOfBirth).toLocaleDateString('en-IN') : '—'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-1">
-                        <Tag size={12} className="text-purple-400" />
-                        <span className="text-sm font-mono text-purple-700 font-medium">{customer.referralCode}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold">
-                        {customer.totalOrders}
-                      </span>
                     </td>
                     <td className="px-4 py-4">
                       <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${

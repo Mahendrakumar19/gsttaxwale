@@ -68,8 +68,8 @@ const API_CATEGORIES: Category[] = [
     name: 'Orders & Payments',
     icon: <Shield className="w-5 h-5" />,
     endpoints: [
-      { method: 'POST', path: '/api/orders', description: 'Create a new order (Razorpay)', auth: 'Authenticated', body: ['serviceId', 'amount'] },
-      { method: 'POST', path: '/api/orders/verify', description: 'Verify Razorpay payment signature', auth: 'Public', body: ['orderId', 'paymentId', 'signature'] },
+      { method: 'POST', path: '/api/orders', description: 'Create a new order', auth: 'Authenticated', body: ['serviceId', 'amount'] },
+      { method: 'POST', path: '/api/orders/verify', description: 'Verify payment gateway signature', auth: 'Public', body: ['orderId', 'paymentId', 'signature'] },
       { method: 'GET', path: '/api/orders', description: 'List user orders', auth: 'Authenticated' },
       { method: 'GET', path: '/api/orders/:id', description: 'Get specific order details', auth: 'Authenticated', params: ['id'] },
       { method: 'POST', path: '/api/orders/create-inquiry', description: 'Create a free service inquiry', auth: 'Public', body: ['name', 'email', 'phone', 'serviceId'] },

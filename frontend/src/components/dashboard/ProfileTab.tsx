@@ -14,13 +14,28 @@ export default function ProfileTab() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // Check session first
     const userData = sessionStorage.getItem('user');
     if (userData) {
       try {
         setUser(JSON.parse(userData));
       } catch {}
     }
+    // Pull fresh data from database
+    fetchProfile();
   }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await api.get('/api/auth/me');
+      if (response.data?.data?.user) {
+        setUser(response.data.data.user);
+        sessionStorage.setItem('user', JSON.stringify(response.data.data.user));
+      }
+    } catch (err) {
+      console.error('Failed to load profile data', err);
+    }
+  };
 
   if (!user) return <div className="py-12 text-center text-gray-400 text-sm">Loading profile...</div>;
 
@@ -45,20 +60,20 @@ export default function ProfileTab() {
           </div>
         </div>
         
-        <div className="pt-16 pb-8 px-8">
-          <div className="mb-8">
-            <h3 className="text-2xl font-bold text-gray-900">{user.name}</h3>
-            <p className="text-sm text-gray-500">Member since {new Date().getFullYear()}</p>
+        <div className="pt-16 pb-8 px-4 sm:px-8">
+          <div className="mb-8 text-center sm:text-left">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{user.name}</h3>
+            <p className="text-xs sm:text-sm text-gray-500">Member since {new Date().getFullYear()}</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {data.map((item, idx) => (
               <div key={idx} className="space-y-1.5">
                 <div className="flex items-center gap-2 text-gray-400">
-                  <item.icon size={14} />
-                  <p className="text-[10px] uppercase font-bold tracking-widest">{item.label}</p>
+                  <item.icon size={13} />
+                  <p className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest">{item.label}</p>
                 </div>
-                <p className="text-sm font-semibold text-gray-900 bg-gray-50 px-4 py-2.5 rounded-lg border border-gray-100">
+                <p className="text-xs sm:text-sm font-semibold text-gray-900 bg-gray-50 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border border-gray-100 truncate">
                   {item.value}
                 </p>
               </div>

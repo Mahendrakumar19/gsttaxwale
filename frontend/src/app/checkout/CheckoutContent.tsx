@@ -339,8 +339,9 @@ export default function CheckoutContent() {
               )}
 
               <div className="mt-6 pt-6 border-t border-slate-100 text-center">
-                <img src="https://razorpay.com/assets/razorpay-glyph.svg" alt="Razorpay" className="h-6 mx-auto mb-2 opacity-50 grayscale hover:grayscale-0 transition cursor-help" title="Payments powered by Razorpay" />
-                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Powered by Razorpay Secure</p>
+                <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest flex items-center justify-center gap-1">
+                  🔒 Secured with Industry-Standard SSL Encryption
+                </p>
               </div>
             </div>
           </div>

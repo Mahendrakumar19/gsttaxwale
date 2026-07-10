@@ -245,23 +245,37 @@ export default function CreateCustomerPage() {
                     type="text"
                     name="pan"
                     value={formData.pan}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, pan: e.target.value.toUpperCase() }))
-                    }
+                    onChange={(e) => {
+                      const cleanVal = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+                      setFormData((prev) => ({ ...prev, pan: cleanVal }));
+                    }}
                     placeholder="ABCDE1234F"
                     maxLength={10}
                     autoComplete="off"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all text-sm font-mono text-slate-900 uppercase"
                   />
                 </div>
-                <Field
-                  label="Aadhaar Number"
-                  name="aadhaar"
-                  placeholder="12-digit Aadhaar"
-                  maxLength={12}
-                  value={formData.aadhaar}
-                  onChange={handleChange}
-                />
+                <div className="space-y-1.5">
+                  <label htmlFor="aadhaar" className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    Aadhaar Number
+                  </label>
+                  <input
+                    id="aadhaar"
+                    type="text"
+                    name="aadhaar"
+                    value={formData.aadhaar}
+                    onChange={(e) => {
+                      // format as: XXXX XXXX XXXX
+                      const raw = e.target.value.replace(/\D/g, '');
+                      const formatted = raw.slice(0, 12).replace(/(\d{4})(?=\d)/g, '$1 ');
+                      setFormData((prev) => ({ ...prev, aadhaar: formatted }));
+                    }}
+                    placeholder="1234 5678 9012"
+                    maxLength={14}
+                    autoComplete="off"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all text-sm font-mono text-slate-900"
+                  />
+                </div>
               </div>
             </div>
 

@@ -21,6 +21,7 @@ const adminReferralController = require('../controllers/adminReferralController'
 const newsController = require('../controllers/newsController');
 const statsController = require('../controllers/statsController');
 const referralLeadController = require('../controllers/referralLeadController');
+const blogController = require('../controllers/blogController');
 
 const multer = require('multer');
 const { authenticate, adminOnly, optionalAuthenticate, asyncHandler } = require('../middleware/auth');
@@ -246,6 +247,14 @@ module.exports = function (app) {
   app.post(`${prefix}/admin/sliders`, authenticate, adminOnly, bannerUpload.single('image'), asyncHandler(sliderController.addSlider));
   app.put(`${prefix}/admin/sliders/:id/toggle`, authenticate, adminOnly, asyncHandler(sliderController.toggleSlider));
   app.delete(`${prefix}/admin/sliders/:id`, authenticate, adminOnly, asyncHandler(sliderController.deleteSlider));
+
+  // BLOG ROUTES
+  app.get(`${prefix}/blogs`, blogController.getBlogs);
+  app.get(`${prefix}/blogs/:id`, blogController.getBlogById);
+  app.get(`${prefix}/admin/blogs`, authenticate, adminOnly, blogController.adminGetBlogs);
+  app.post(`${prefix}/admin/blogs`, authenticate, adminOnly, blogController.createBlog);
+  app.put(`${prefix}/admin/blogs/:id`, authenticate, adminOnly, blogController.updateBlog);
+  app.delete(`${prefix}/admin/blogs/:id`, authenticate, adminOnly, blogController.deleteBlog);
 
   app.all(`${prefix}/*`, (req, res) => {
     console.log(`⚠️  404 API Fallback: ${req.method} ${req.originalUrl}`);

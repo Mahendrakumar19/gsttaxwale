@@ -157,10 +157,10 @@ export default function WalletTab() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Main Balance Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-800 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
+      <div className="flex flex-col sm:grid sm:grid-cols-3 gap-4">
+        <div className="sm:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-800 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-2">
               <div className="flex items-center gap-2 opacity-80">
                 <Award size={20} />
                 <p className="text-sm font-bold uppercase tracking-widest">Wallet Balance</p>
@@ -168,16 +168,16 @@ export default function WalletTab() {
               <button 
                 onClick={handleRedeem}
                 disabled={points < 100}
-                className={`px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all ${
+                className={`px-4 py-2 sm:py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all text-center ${
                   points >= 100 
                       ? 'bg-white text-blue-600 hover:bg-blue-50 shadow-lg shadow-black/20' 
-                      : 'bg-white/20 text-white/40 cursor-not-allowed'
+                      : 'bg-white/20 text-white/45 cursor-not-allowed'
                 }`}
               >
                 Redeem Request
               </button>
             </div>
-            <h3 className="text-5xl font-extrabold tracking-tight">{points.toLocaleString()} <span className="text-xl font-normal opacity-60">pts</span></h3>
+            <h3 className="text-4xl sm:text-5xl font-extrabold tracking-tight">{points.toLocaleString()} <span className="text-xl font-normal opacity-60">pts</span></h3>
             <div className="mt-6 flex items-center gap-4">
                <div className="bg-white/10 px-3 py-1 rounded-lg backdrop-blur-md">
                  <p className="text-[10px] uppercase font-bold opacity-60">Total Earned</p>
@@ -194,36 +194,40 @@ export default function WalletTab() {
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-sm">
-           <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-3">
-             <Users size={24} />
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-row sm:flex-col items-center justify-between sm:justify-center text-center shadow-sm">
+           <div className="flex items-center gap-3 sm:flex-col sm:gap-0">
+             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-0 sm:mb-3">
+               <Users size={20} />
+             </div>
+             <div className="text-left sm:text-center">
+               <p className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight">{stats.totalReferrals}</p>
+               <p className="text-[9px] sm:text-[10px] uppercase font-bold text-gray-400 tracking-widest mt-0.5 sm:mt-1">Total Referrals</p>
+             </div>
            </div>
-           <p className="text-3xl font-black text-gray-900">{stats.totalReferrals}</p>
-           <p className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mt-1">Total Referrals</p>
         </div>
       </div>
 
       {/* Referral Program Info */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-pink-50 text-pink-500 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-pink-50 text-pink-500 rounded-lg flex items-center justify-center shrink-0">
             <Gift size={20} />
           </div>
           <div>
-            <h4 className="font-bold text-gray-900">Referral Program</h4>
+            <h4 className="font-bold text-gray-900 text-sm sm:text-base">Referral Program</h4>
             <p className="text-xs text-gray-500">Earn points for every successful referral</p>
           </div>
         </div>
 
-        <div className="bg-gray-50 border border-gray-100 rounded-2xl p-6 space-y-6">
+        <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 sm:p-6 space-y-6">
           <div>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Your Referral Code</p>
-            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-2 pl-6 shadow-sm">
-              <span className="font-mono font-black text-xl text-blue-600 flex-1 tracking-wider">{referralCode || '—'}</span>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-white border border-gray-200 rounded-xl p-2 sm:pl-6 shadow-sm">
+              <span className="font-mono font-black text-xl text-blue-600 flex-1 tracking-wider text-center sm:text-left py-2 sm:py-0">{referralCode || '—'}</span>
               <button 
                 type="button"
                 onClick={handleCopyCode}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition font-bold text-xs ${
+                className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg transition font-bold text-xs ${
                   copiedCode ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-gray-800'
                 }`}
               >
@@ -234,14 +238,14 @@ export default function WalletTab() {
 
           <div>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Your Referral Link</p>
-            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-2 pl-4 shadow-sm">
-              <span className="font-mono text-xs text-gray-600 flex-1 truncate select-all pr-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-white border border-gray-200 rounded-xl p-2 sm:pl-4 shadow-sm">
+              <span className="font-mono text-xs text-gray-600 flex-1 truncate select-all pr-2 text-center sm:text-left py-2 sm:py-0">
                 {typeof window !== 'undefined' ? `${window.location.origin}/ref/${referralCode}` : ''}
               </span>
               <button 
                 type="button"
                 onClick={handleCopyLink}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition font-bold text-xs shrink-0 ${
+                className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg transition font-bold text-xs shrink-0 ${
                   copiedLink ? 'bg-green-600 text-white' : 'bg-gray-900 text-white hover:bg-gray-800'
                 }`}
               >

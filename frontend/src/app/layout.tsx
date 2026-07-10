@@ -12,6 +12,41 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'GST Tax Wale - GST & Income Tax Services',
   description: 'Complete GST filing and income tax services for businesses and individuals',
+  metadataBase: new URL('https://gsttaxwale.com'),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: 'GST Tax Wale - GST & Income Tax Services',
+    description: 'Complete GST filing and income tax services for businesses and individuals',
+    url: 'https://gsttaxwale.com',
+    siteName: 'GST Tax Wale',
+    images: [
+      {
+        url: '/gsttaxwale_logo.svg',
+        width: 800,
+        height: 600,
+        alt: 'GST Tax Wale Logo',
+      },
+    ],
+    locale: 'en_IN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'GST Tax Wale - GST & Income Tax Services',
+    description: 'Complete GST filing and income tax services for businesses and individuals',
+    images: ['/gsttaxwale_logo.svg'],
+  },
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

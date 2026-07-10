@@ -13,7 +13,7 @@ export default function HomePage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative px-4 pt-20 pb-8 bg-white overflow-hidden">
+      <section className="relative px-4 pt-8 pb-8 bg-white overflow-hidden">
         <div className="max-w-[1400px] mx-auto">
           <div className="mb-2 text-center">
             <h1 className="mb-0.5 text-2xl md:text-3xl lg:text-4xl font-black leading-tight text-gray-900 tracking-tighter">
@@ -61,7 +61,7 @@ export default function HomePage() {
       <section className="px-4 py-16 border-t border-blue-100 bg-blue-50/40">
         <div className="max-w-6xl mx-auto">
           <h2 className="mb-12 text-3xl font-bold text-center text-gray-900 md:text-4xl">How It Works</h2>
-          
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {[
               { step: '1', icon: '🔗', title: 'Connect', desc: 'Share your details securely' },
@@ -88,7 +88,7 @@ export default function HomePage() {
       </section>
 
       {/* Trust Indicators */}
-      <section className="px-4 py-12 bg-white border-t border-b border-blue-100">
+      <section className="px-3 py-12 bg-white border-t border-b border-blue-100">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
             <div>
@@ -138,7 +138,7 @@ export default function HomePage() {
       <section className="px-4 py-16 border-t border-blue-100 bg-blue-50/40">
         <div className="max-w-3xl mx-auto">
           <h2 className="mb-12 text-3xl font-bold text-center text-gray-900 md:text-4xl">Frequently Asked Questions</h2>
-          
+
           <div className="space-y-3">
             {[
               { q: 'How long does tax filing take?', a: 'Typically 24-48 hours. Our expert team works fast to ensure quick turnaround without compromising accuracy.' },

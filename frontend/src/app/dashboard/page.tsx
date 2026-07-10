@@ -44,7 +44,6 @@ export default function DashboardPage() {
       <DashboardHeader user={user} />
       <main className="py-6">
         <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-          <h2 className="mb-6 text-2xl font-bold text-gray-900">User Dashboard</h2>
           <DashboardTabs />
         </div>
       </main>

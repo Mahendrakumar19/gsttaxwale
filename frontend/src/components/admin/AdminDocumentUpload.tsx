@@ -333,27 +333,6 @@ export default function AdminDocumentUpload() {
               </div>
             </div>
 
-            {/* Document Month (New Month wise upload feature) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Compliance Month (Optional)
-              </label>
-              <select
-                value={formData.month}
-                onChange={(e) =>
-                  setFormData({ ...formData, month: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 bg-white"
-              >
-                <option value="">-- General / No Month --</option>
-                {['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'].map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Document Category */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -498,7 +477,6 @@ export default function AdminDocumentUpload() {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Customer</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">PAN</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Fiscal Year</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Month</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Category</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">File Name</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Uploaded</th>
@@ -522,9 +500,6 @@ export default function AdminDocumentUpload() {
                     </td>
                     <td className="px-4 py-4">
                       <span className="text-sm text-gray-700">{doc.fiscalYear}</span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="text-sm text-gray-700 font-semibold">{doc.month || 'N/A'}</span>
                     </td>
                     <td className="px-4 py-4">
                       <span className="inline-block px-3 py-1 text-xs font-semibold bg-purple-100 text-purple-700 rounded-full">

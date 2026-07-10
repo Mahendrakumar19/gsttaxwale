@@ -101,6 +101,9 @@ export default function SiteHeader() {
             <Link href="/about-us" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition">
               About Us
             </Link>
+            <Link href="/blog" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition">
+              Blogs
+            </Link>
             <Link href="/contact" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition">
               Contact
             </Link>
@@ -115,8 +118,7 @@ export default function SiteHeader() {
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
-                >
+                  className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium">
                   Logout
                 </button>
               </div>
@@ -162,6 +164,13 @@ export default function SiteHeader() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 About Us
+              </Link>
+              <Link
+                href="/blog"
+                className="text-gray-700 hover:text-blue-600 hover:bg-blue-50 block px-3 py-2 rounded-md text-base font-medium transition"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Blogs
               </Link>
               <Link
                 href="/contact"

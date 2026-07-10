@@ -38,9 +38,9 @@ export default function OverviewTab() {
       }
 
       // Then refresh from API
-      const response = await api.get('/api/auth/profile');
-      if (response.data?.data) {
-        const updatedUser = response.data.data;
+      const response = await api.get('/api/auth/me');
+      if (response.data?.data?.user) {
+        const updatedUser = response.data.data.user;
         setUser({
           name: updatedUser.name || 'N/A',
           email: updatedUser.email || 'N/A',
@@ -86,7 +86,7 @@ export default function OverviewTab() {
               <InfoItem icon={Mail} label="Email Address" value={user.email} />
               <InfoItem icon={Phone} label="Mobile Number" value={user.phone} />
               <InfoItem icon={FileText} label="PAN Number" value={user.pan} />
-              <InfoItem icon={ShieldCheck} label="GSTIN Status" value={user.gstin || 'N/A'} />
+              {/* <InfoItem icon={ShieldCheck} label="GSTIN Status" value={user.gstin || 'N/A'} /> */}
             </div>
           </div>
         </div>

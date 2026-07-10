@@ -120,6 +120,7 @@ export default function RootAdminLayout({
         { icon: MapPin, label: 'Store Locations', href: '/admin/locations' },
         { icon: Layout, label: 'Slider Images', href: '/admin/slider' },
         { icon: Newspaper, label: 'News', href: '/admin/news' },
+        { icon: FileText, label: 'Blogs', href: '/admin/blogs' },
       ]
     },
     {

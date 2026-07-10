@@ -233,6 +233,7 @@ async function getCurrentUser(req, res) {
         email: true,
         name: true,
         pan: true,
+        phone: true,
         role: true,
         createdAt: true,
         updatedAt: true,
