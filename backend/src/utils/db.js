@@ -8,20 +8,29 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 5,        // Keep pool small on shared hosting
   queueLimit: 0,
+  connectTimeout: 10000,     // 10s to establish connection
+  // Idle connections released after 30s so the process doesn't stay alive
+  idleTimeout: 30000,
+  // Keep-alive pings prevent stale connection errors on long idle
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
 });
 
 // Execute query - returns results or throws error
 async function query(sql, values = []) {
+  let connection;
   try {
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
     const [results] = await connection.execute(sql, values);
-    connection.release();
     return results;
   } catch (error) {
     console.error('Database query error:', error.message);
     throw error;
+  } finally {
+    // Always release connection back to pool, even on error
+    if (connection) connection.release();
   }
 }
 

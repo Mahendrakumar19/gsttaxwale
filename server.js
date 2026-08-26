@@ -240,8 +240,10 @@ nextApp.prepare().then(() => {
     }
   }
 
-  // Single server instance - only listen once
-  if (!server.listening) {
+  // Only call listen when this file is run directly (node server.js / npm start).
+  // When Hostinger's Passenger imports server.js as a module it manages the
+  // socket itself, so calling listen() again causes the duplicate-listen warning.
+  if (require.main === module && !server.listening) {
     server.listen(PORT, HOST, () => {
       console.log(`
 ╔════════════════════════════════════════════════════════════╗
