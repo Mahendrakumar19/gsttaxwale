@@ -84,34 +84,50 @@ const ALLOWED_ORIGINS = [
   "https://www.gsttaxwale.com",
   "http://gsttaxwale.com",
   "http://www.gsttaxwale.com",
+  // Hostinger internal preview / staging subdomains
+  "https://*.hostingersite.com",
   process.env.FRONTEND_URL,
+  // Extra origins via env var (comma-separated)
+  ...(process.env.EXTRA_ORIGINS
+    ? process.env.EXTRA_ORIGINS.split(",").map(o => o.trim())
+    : []),
 ].filter(Boolean);
+
+// Build a list of regex patterns once at startup (not per-request)
+const ALLOWED_ORIGIN_PATTERNS = ALLOWED_ORIGINS.map(origin => {
+  if (origin.includes("*")) {
+    // Escape all regex special chars EXCEPT *, then replace * with .*
+    const escaped = origin.replace(/[-[\]{}()+?.,\\^$|#\s]/g, "\\$&").replace(/\*/g, ".*");
+    return new RegExp(`^${escaped}$`);
+  }
+  return null; // exact match — handled by Set lookup below
+});
+const ALLOWED_ORIGIN_SET = new Set(ALLOWED_ORIGINS.filter(o => !o.includes("*")));
+
+function isOriginAllowed(origin) {
+  // 1. Exact match (fastest)
+  if (ALLOWED_ORIGIN_SET.has(origin)) return true;
+  // 2. Wildcard pattern match
+  return ALLOWED_ORIGIN_PATTERNS.some(pattern => pattern && pattern.test(origin));
+}
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl)
+    // Allow requests with no origin (SSR, mobile apps, curl, LiteSpeed crawler)
     if (!origin) return callback(null, true);
-    
-    // Check if origin is allowed
-    const isAllowed = ALLOWED_ORIGINS.some(allowed => {
-      if (allowed.includes('*')) {
-        const regex = new RegExp('^' + allowed.replace(/\*/g, '.*') + '$');
-        return regex.test(origin);
-      }
-      return allowed === origin;
-    });
 
-    if (isAllowed || !IS_PRODUCTION) {
+    if (isOriginAllowed(origin) || !IS_PRODUCTION) {
       callback(null, true);
     } else {
       console.warn(`⚠️  CORS REJECTED: ${origin}`);
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error(`CORS: origin '${origin}' is not allowed`));
     }
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
 };
+
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
@@ -126,6 +142,30 @@ if (IS_PRODUCTION) {
 
   app.use(morgan("combined"));
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// GLOBAL REQUEST TIMEOUT — prevent 504s from Hostinger CDN
+// Hostinger's edge times out after ~30s; we respond with 503 at 25s
+// so the client gets a clean error instead of a CDN gateway page.
+// ─────────────────────────────────────────────────────────────────────────
+const REQUEST_TIMEOUT_MS = 25000;
+app.use((req, res, next) => {
+  // Skip timeout for static assets — they are fast by definition
+  if (req.path.startsWith('/_next/') || req.path.startsWith('/banners/') ||
+      req.path.startsWith('/uploads/')) {
+    return next();
+  }
+  const timer = setTimeout(() => {
+    if (!res.headersSent) {
+      console.error(`⏱️  [TIMEOUT] ${req.method} ${req.originalUrl} exceeded ${REQUEST_TIMEOUT_MS}ms`);
+      res.status(503).json({ error: true, message: 'Server is temporarily busy. Please try again.' });
+    }
+  }, REQUEST_TIMEOUT_MS);
+  // Clear timer once response is sent so it doesn't fire late
+  res.on('finish', () => clearTimeout(timer));
+  res.on('close',  () => clearTimeout(timer));
+  next();
+});
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -142,107 +182,107 @@ app.use((req, res, next) => {
   next();
 });
 
-// Bootstrap queuing state
-let isNextReady = false;
-const pendingRequests = [];
+// ─────────────────────────────────────────────────────────────────────────
+// 1. MOUNT STATIC FILES & API ROUTES IMMEDIATELY (Top-Level)
+// These do NOT depend on Next.js preparation and must serve instantly.
+// ─────────────────────────────────────────────────────────────────────────
 
-// Middleware to queue requests until Next.js and routes are prepared
-app.use((req, res, next) => {
-  if (isNextReady) {
-    return next();
+// Backend uploads
+if (fs.existsSync(path.join(BACKEND_DIR, "uploads"))) {
+  app.use("/uploads", express.static(path.join(BACKEND_DIR, "uploads")));
+}
+
+// Next.js static build directory (production)
+if (IS_PRODUCTION) {
+  const NEXT_STATIC_DIR = path.join(NEXT_BUILD_DIR, "static");
+  if (fs.existsSync(NEXT_STATIC_DIR)) {
+    app.use("/_next/static", express.static(NEXT_STATIC_DIR, {
+      maxAge: "1y",
+      immutable: true,
+    }));
   }
-  console.log(`⏳ [BOOTSTRAP] Queueing request ${req.method} ${req.originalUrl} until Next.js is prepared...`);
-  pendingRequests.push(next);
+}
+
+// Public static assets (logo, banners, favicon, hero images)
+if (fs.existsSync(path.join(FRONTEND_DIR, "public"))) {
+  app.use(express.static(path.join(FRONTEND_DIR, "public")));
+}
+
+// 🚀 Backend API Routes
+try {
+  const mountApi = require(path.join(__dirname, "backend/src/routes/api"));
+  mountApi(app);
+  console.log("✅ Backend API routes mounted synchronously");
+} catch (error) {
+  console.error("❌ Failed to mount API routes:", error.message);
+}
+
+// Health Checks
+app.get("/health", (req, res) => {
+  res.json({ status: "OK", service: "unified-server", environment: NODE_ENV });
+});
+app.get("/api/health", (req, res) => {
+  res.json({ status: "OK", api: "active" });
 });
 
 // Capture referral cookie/attribution
 app.use(attributionMiddleware);
 
 // ─────────────────────────────────────────────────────────────────────────
-// START SERVER AFTER NEXT.JS PREPARE
+// 2. NEXT.JS PAGE ROUTER & BOOTSTRAP QUEUE
+// ─────────────────────────────────────────────────────────────────────────
+let isNextReady = false;
+const pendingRequests = [];
+const BOOTSTRAP_TIMEOUT_MS = 25000;
+
+// Catch-all handler for Next.js frontend pages
+app.all("*", (req, res) => {
+  if (isNextReady) {
+    return nextHandler(req, res);
+  }
+
+  console.log(`⏳ [BOOTSTRAP] Queueing page request ${req.method} ${req.originalUrl}...`);
+
+  const timer = setTimeout(() => {
+    if (!res.headersSent) {
+      console.error(`⏱️  [BOOTSTRAP TIMEOUT] ${req.method} ${req.originalUrl} — Next.js preparing`);
+      res.status(503).json({ error: true, message: "Server starting up. Please refresh." });
+    }
+  }, BOOTSTRAP_TIMEOUT_MS);
+
+  pendingRequests.push({ req, res, timer });
+});
+
+// Global Express Error Handler
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+  console.error(`❌ [ERROR] ${req.method} ${req.path} → ${err.message}`);
+  res.status(status).json({
+    error: true,
+    message: err.message || "Internal Server Error",
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// 3. ASYNC NEXT.JS PREPARE & SERVER LISTEN
 // ─────────────────────────────────────────────────────────────────────────
 nextApp.prepare().then(() => {
   console.log("✅ Next.js frontend prepared");
-
-  // 🚀 Backend API Routes (MOUNT FIRST)
-  try {
-    const mountApi = require(path.join(__dirname, "backend/src/routes/api"));
-    mountApi(app);
-    console.log("✅ Backend API routes mounted via function");
-  } catch (error) {
-    console.error("❌ Failed to mount API routes:", error.message);
-  }
-
-
-  // 1. Static Files
-
-  if (fs.existsSync(path.join(BACKEND_DIR, "uploads"))) {
-    app.use("/uploads", express.static(path.join(BACKEND_DIR, "uploads")));
-  }
-  
-  // Only serve static files from .next in production
-  if (IS_PRODUCTION) {
-    const NEXT_STATIC_DIR = path.join(NEXT_BUILD_DIR, "static");
-    if (fs.existsSync(NEXT_STATIC_DIR)) {
-      app.use("/_next/static", express.static(NEXT_STATIC_DIR, {
-        maxAge: "1y",
-        immutable: true,
-      }));
-    }
-  }
-
-  // 1. Next.js Static & Internal Routes (HIGHEST PRIORITY)
-  app.all('/_next*', (req, res) => {
-    return nextHandler(req, res);
-  });
-
-  // 2. Public Folder
-  if (fs.existsSync(path.join(FRONTEND_DIR, "public"))) {
-    app.use(express.static(path.join(FRONTEND_DIR, "public")));
-  }
-
-
-  // 2. Health Checks
-  app.get("/health", (req, res) => {
-    res.json({ status: "OK", service: "unified-server", environment: NODE_ENV });
-  });
-
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "OK", api: "active" });
-  });
-
-  // 3. API Routes (already mounted via mountApi above)
-
-  // 4. Next.js Handler (Catch everything else)
-  app.all("*", (req, res) => {
-    return nextHandler(req, res);
-  });
-
-
-
-  // Error handler
-  app.use((err, req, res, next) => {
-    const status = err.status || 500;
-    console.error(`❌ [ERROR] ${req.method} ${req.path} → ${err.message}`);
-    res.status(status).json({
-      error: true,
-      message: err.message || "Internal Server Error",
-    });
-  });
-
-  // Mark Next.js as ready and flush any queued requests
   isNextReady = true;
+
+  // Flush any page requests queued during startup
   if (pendingRequests.length > 0) {
-    console.log(`🚀 [BOOTSTRAP] Next.js prepared! Flushing ${pendingRequests.length} queued requests.`);
+    console.log(`🚀 [BOOTSTRAP] Next.js prepared! Flushing ${pendingRequests.length} queued page requests.`);
     while (pendingRequests.length > 0) {
-      const nextReq = pendingRequests.shift();
-      nextReq();
+      const { req: pReq, res: pRes, timer } = pendingRequests.shift();
+      clearTimeout(timer);
+      if (!pRes.headersSent) {
+        nextHandler(pReq, pRes);
+      }
     }
   }
 
-  // Only call listen when this file is run directly (node server.js / npm start).
-  // When Hostinger's Passenger imports server.js as a module it manages the
-  // socket itself, so calling listen() again causes the duplicate-listen warning.
+  // Single server instance guard for Hostinger Passenger vs CLI
   if (require.main === module && !server.listening) {
     server.listen(PORT, HOST, () => {
       console.log(`
@@ -256,6 +296,7 @@ nextApp.prepare().then(() => {
       `);
     });
   }
+
 }).catch((error) => {
   console.error("\n❌ [FATAL] Failed to start Next.js:", error);
   process.exit(1);
