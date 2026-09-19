@@ -21,7 +21,7 @@ export default function AdminTickets() {
       return;
     }
     loadTickets();
-    const interval = setInterval(loadTickets, 5000);
+    const interval = setInterval(loadTickets, 30000);
     return () => clearInterval(interval);
   }, [router]);
 

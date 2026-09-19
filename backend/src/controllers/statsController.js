@@ -5,15 +5,17 @@ const { successResponse, errorResponse } = require('../utils/helpers');
  * Increment the visitor count
  */
 async function incrementVisitorCount(req, res) {
-  try {
-    // Simple atomic increment in MySQL
-    await db.query('UPDATE SiteSettings SET value = value + 1 WHERE `key` = "visitor_count"');
-    
-    res.status(200).json(successResponse(null, 'Visitor count incremented'));
-  } catch (error) {
-    console.error('Increment visitor error:', error);
-    res.status(500).json(errorResponse('Failed to increment visitor count'));
-  }
+  // Respond immediately — never block the caller for analytics writes
+  res.status(200).json({ success: true });
+
+  // Fire-and-forget: write happens after response is sent
+  setImmediate(async () => {
+    try {
+      await db.query('UPDATE SiteSettings SET value = value + 1 WHERE `key` = "visitor_count"');
+    } catch (error) {
+      console.error('Increment visitor error (background):', error.message);
+    }
+  });
 }
 
 /**

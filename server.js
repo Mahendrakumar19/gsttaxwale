@@ -1,4 +1,8 @@
 const path = require("path");
+// Disable Prisma OpenSSL detection process overhead and warnings
+process.env.PRISMA_DISABLE_WARNINGS = "1";
+process.env.PRISMA_HIDE_PREUPDATE_WARNING = "1";
+
 // Load environment variables from root and backend at the very top
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 require("dotenv").config({ path: path.join(__dirname, "backend/.env") });
@@ -14,24 +18,20 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const attributionMiddleware = require("./backend/src/middleware/attribution");
 
-// Fallback values for critical env vars
-if (!process.env.PORT) process.env.PORT = "3000";
+// Auto-detect Hostinger production: if path contains /domains/ or \domains\ it's production
+const isHostingerProd = __dirname.includes('/domains/') || __dirname.includes('\\domains\\') || __dirname.includes('/home/');
 if (!process.env.NODE_ENV) {
-  // For Hostinger: npm run dev should set NODE_ENV to development
-  process.env.NODE_ENV = "development";
+  process.env.NODE_ENV = isHostingerProd ? 'production' : 'development';
 }
+
+if (!process.env.PORT) process.env.PORT = "3000";
 if (!process.env.HOST) process.env.HOST = "0.0.0.0";
 if (!process.env.JWT_SECRET) process.env.JWT_SECRET = "ec434a51ba4be676ac157fa92b92aaf2b32569386b3176b2";
-if (!process.env.DB_HOST) process.env.DB_HOST = "194.59.164.75";
+if (!process.env.DB_HOST) process.env.DB_HOST = "82.25.121.140";
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
-// Auto-detect Hostinger production: if no NODE_ENV set but path contains /domains/ it's production
-const isHostingerProd = __dirname.includes('/domains/') || __dirname.includes('\\domains\\');
-if (!process.env.NODE_ENV && isHostingerProd) {
-  process.env.NODE_ENV = 'production';
-}
-const NODE_ENV = process.env.NODE_ENV || "development";
+const NODE_ENV = process.env.NODE_ENV;
 const IS_PRODUCTION = NODE_ENV === "production";
 const IS_DEVELOPMENT = NODE_ENV === "development";
 
@@ -116,8 +116,9 @@ const corsOptions = {
     // Allow requests with no origin (SSR, mobile apps, curl, LiteSpeed crawler)
     if (!origin) return callback(null, true);
 
-    if (isOriginAllowed(origin) || !IS_PRODUCTION) {
-      callback(null, true);
+    // Allow Google search crawlers, Google Translate, or embed previews
+    if (origin.includes('google.com') || origin.includes('googleusercontent.com') || isOriginAllowed(origin) || !IS_PRODUCTION) {
+      return callback(null, true);
     } else {
       console.warn(`⚠️  CORS REJECTED: ${origin}`);
       callback(new Error(`CORS: origin '${origin}' is not allowed`));
@@ -128,9 +129,16 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
 };
 
-
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
+
+// Handle Chrome/Android traffic advice prefetch probe quietly (prevents 404 error noise in logs)
+app.get("/.well-known/traffic-advice", (req, res) => {
+  res.type("application/trafficadvice+json").json([{
+    user_agent: "no-prefetch",
+    disallow: true
+  }]);
+});
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
@@ -187,12 +195,32 @@ app.use((req, res, next) => {
 // These do NOT depend on Next.js preparation and must serve instantly.
 // ─────────────────────────────────────────────────────────────────────────
 
-// Backend uploads
-if (fs.existsSync(path.join(BACKEND_DIR, "uploads"))) {
-  app.use("/uploads", express.static(path.join(BACKEND_DIR, "uploads")));
-}
+// ── Block WordPress/known-bad probes immediately (before any processing) ──
+const WP_PROBE_PATHS = /^\/(wp-admin|wp-login\.php|wp-content|wp-includes|xmlrpc\.php|\.env|\.git|admin\.php|phpmyadmin|cgi-bin)/i;
+app.use((req, res, next) => {
+  if (WP_PROBE_PATHS.test(req.path)) {
+    return res.status(404).end();
+  }
+  next();
+});
 
-// Next.js static build directory (production)
+// ── Serve robots.txt and sitemap.xml DIRECTLY as static files (no Next.js) ──
+// These were taking 131s and 387s respectively — must be instant.
+const PUBLIC_DIR = path.join(FRONTEND_DIR, "public");
+app.get('/robots.txt', (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.sendFile(path.join(PUBLIC_DIR, 'robots.txt'));
+});
+app.get('/sitemap.xml', (req, res) => {
+  res.setHeader('Content-Type', 'application/xml');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.sendFile(path.join(PUBLIC_DIR, 'sitemap.xml'));
+});
+
+// NOTE: File uploads are stored on MinIO S3 (https://s3.nighwantech.com/gsttaxwale/)
+// and served directly from S3 URLs — no local /uploads static route needed.
+
+// Next.js static build directory (production) — immutable 1-year cache
 if (IS_PRODUCTION) {
   const NEXT_STATIC_DIR = path.join(NEXT_BUILD_DIR, "static");
   if (fs.existsSync(NEXT_STATIC_DIR)) {
@@ -203,9 +231,18 @@ if (IS_PRODUCTION) {
   }
 }
 
-// Public static assets (logo, banners, favicon, hero images)
-if (fs.existsSync(path.join(FRONTEND_DIR, "public"))) {
-  app.use(express.static(path.join(FRONTEND_DIR, "public")));
+// Public static assets (logo, banners, favicon) — 7-day browser cache
+if (fs.existsSync(PUBLIC_DIR)) {
+  app.use(express.static(PUBLIC_DIR, {
+    maxAge: '7d',
+    etag: true,
+    setHeaders(res, filePath) {
+      // SVG and images: aggressive caching
+      if (/\.(svg|png|jpg|jpeg|webp|ico)$/i.test(filePath)) {
+        res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+      }
+    }
+  }));
 }
 
 // 🚀 Backend API Routes

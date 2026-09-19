@@ -211,6 +211,7 @@ async function getDueDates(req, res) {
 
     console.log(`✅ Fetched ${dueDates.length} due dates`);
 
+    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
     return res.status(200).json({
       success: true,
       data: {

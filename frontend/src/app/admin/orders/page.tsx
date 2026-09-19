@@ -19,7 +19,7 @@ export default function AdminOrders() {
       return;
     }
     loadOrders();
-    const interval = setInterval(loadOrders, 10000);
+    const interval = setInterval(loadOrders, 30000);
     return () => clearInterval(interval);
   }, [router]);
 

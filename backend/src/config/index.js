@@ -19,13 +19,13 @@ const config = {
     expiry: process.env.JWT_EXPIRY || '7d'
   },
   
-  // AWS S3
+  // MinIO / AWS S3
   s3: {
-    bucket: process.env.AWS_S3_BUCKET || 'tax-filing-bucket',
-    region: process.env.AWS_S3_REGION || 'us-east-1',
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    endpoint: process.env.AWS_S3_ENDPOINT
+    endpoint: process.env.S3_ENDPOINT || process.env.AWS_S3_ENDPOINT || 'https://s3.nighwantech.com',
+    region: process.env.S3_REGION || process.env.AWS_S3_REGION || 'us-east-1',
+    bucket: process.env.S3_BUCKET || process.env.AWS_S3_BUCKET || 'gsttaxwale',
+    accessKeyId: process.env.S3_ACCESS_KEY || process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.S3_SECRET_KEY || process.env.AWS_SECRET_ACCESS_KEY || ''
   },
   
   // SMTP Email

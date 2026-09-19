@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const adminEmail = require('../services/adminEmailService');
+const storageService = require('../services/storageService');
 
 exports.uploadDocument = async (req, res) => {
   try {
@@ -42,16 +43,6 @@ exports.uploadDocument = async (req, res) => {
       else category = 'Others';
     }
 
-    // Create organized directory structure
-    const rootUploadDir = path.resolve(process.cwd(), 'uploads');
-    const customerDir = path.join(rootUploadDir, parsedCustomerId.toString());
-    const yearDir = path.join(customerDir, fiscalYear || 'general');
-    const categoryDir = path.join(yearDir, category.toLowerCase());
-    
-    if (!fs.existsSync(categoryDir)) {
-      fs.mkdirSync(categoryDir, { recursive: true });
-    }
-
     const uploadedDocuments = [];
     const titles = Array.isArray(displayTitle) ? displayTitle : [displayTitle];
 
@@ -61,24 +52,35 @@ exports.uploadDocument = async (req, res) => {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const uniqueFilename = `${Date.now()}_${Math.floor(Math.random() * 1000)}_${file.originalname}`;
-      const finalPath = path.join(categoryDir, uniqueFilename);
+      const sanitizedName = storageService.sanitizeFileName(file.originalname);
+      const uniqueFilename = `${Date.now()}_${Math.floor(Math.random() * 1000)}_${sanitizedName}`;
+      const objectKey = `documents/${parsedCustomerId}/${fiscalYear || 'general'}/${category.toLowerCase()}/${uniqueFilename}`;
 
-      // Use copy + unlink
-      fs.copyFileSync(file.path, finalPath);
-      fs.unlinkSync(file.path);
+      // Upload file directly to MinIO S3 bucket
+      const s3Result = await storageService.upload({
+        filePath: file.path,
+        objectKey: objectKey,
+        mimeType: file.mimetype
+      });
+
+      // Remove temporary multer upload file
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
 
       // Use specific title if provided, otherwise fallback to original filename
       const finalDisplayName = titles[i] || displayTitle || file.originalname;
+      const downloadUrl = `/api/documents/download/${uniqueFilename}`;
       
       const result = await db.query(`
-        INSERT INTO Document (userId, downloadUrl, fileSize, fileName, uploadedBy, category, fiscalYear, month, title, type, status, fileType, createdAt, description, uploadMetadata)
+        INSERT INTO Document (userId, downloadUrl, fileSize, fileName, filePath, uploadedBy, category, fiscalYear, month, title, type, status, fileType, createdAt, description, uploadMetadata)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, NOW(), ?, ?)
       `, [
         parsedCustomerId,
-        `/api/documents/download/${uniqueFilename}`,
+        downloadUrl,
         file.size,
         uniqueFilename,
+        objectKey,
         parseInt(req.userId) || 1,
         category,
         fiscalYear || '',
@@ -87,12 +89,14 @@ exports.uploadDocument = async (req, res) => {
         req.userRole === 'admin' ? 'admin-upload' : 'user-upload',
         file.mimetype,
         finalBatchName || null,
-        JSON.stringify({ batchId, batchName: finalBatchName })
+        JSON.stringify({ batchId, batchName: finalBatchName, objectKey, s3Url: s3Result.url })
       ]);
 
       uploadedDocuments.push({
         id: result.insertId,
         fileName: uniqueFilename,
+        objectKey: objectKey,
+        s3Url: s3Result.url,
         originalName: finalDisplayName,
         category: category,
         fiscalYear: fiscalYear,
@@ -148,9 +152,8 @@ exports.downloadDocument = async (req, res) => {
       return res.status(400).json({ error: 'Filename is required' });
     }
 
-
     // Find document in database
-    const [document] = await db.query('SELECT * FROM Document WHERE fileName = ?', [filename]);
+    const [document] = await db.query('SELECT * FROM Document WHERE fileName = ? OR filePath = ?', [filename, filename]);
 
     if (!document) {
       return res.status(404).json({ error: 'Document not found in database' });
@@ -161,31 +164,8 @@ exports.downloadDocument = async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Check file exists on filesystem
-    const rootUploadDir = path.resolve(process.cwd(), 'uploads');
-    
-    const findFile = (dir, target) => {
-      const files = fs.readdirSync(dir);
-      for (const file of files) {
-        const fullPath = path.join(dir, file);
-        if (fs.statSync(fullPath).isDirectory()) {
-          const found = findFile(fullPath, target);
-          if (found) return found;
-        } else if (file === target) {
-          return fullPath;
-        }
-      }
-      return null;
-    };
-
-    const filePath = findFile(rootUploadDir, filename);
-
-    if (!filePath || !fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found on server storage' });
-    }
-
     // Set response headers and determine correct mimeType
-    const ext = path.extname(document.fileName).toLowerCase();
+    const ext = path.extname(document.fileName || '').toLowerCase();
     const mimeMap = {
       '.pdf': 'application/pdf',
       '.jpg': 'image/jpeg',
@@ -221,8 +201,54 @@ exports.downloadDocument = async (req, res) => {
     const disposition = inlineExtensions.includes(ext) ? 'inline' : 'attachment';
     res.setHeader('Content-Disposition', `${disposition}; filename="${downloadName}"`);
 
+    // Extract S3 objectKey if available
+    let objectKey = document.filePath;
+    if (!objectKey && document.uploadMetadata) {
+      try {
+        const meta = JSON.parse(document.uploadMetadata);
+        objectKey = meta.objectKey;
+      } catch (_) {}
+    }
 
-    // Stream file
+    // Check if file is stored in MinIO S3
+    if (objectKey && (objectKey.startsWith('documents/') || await storageService.exists(objectKey))) {
+      const s3Stream = storageService.getReadStream(objectKey);
+      s3Stream.pipe(res);
+
+      s3Stream.on('error', (err) => {
+        console.error('Error streaming file from S3:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Failed to download document from storage' });
+        }
+      });
+      return;
+    }
+
+    // Fallback: Check local disk for legacy uploads
+    const rootUploadDir = path.resolve(process.cwd(), 'uploads');
+    
+    const findFile = (dir, target) => {
+      if (!fs.existsSync(dir)) return null;
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        const fullPath = path.join(dir, file);
+        if (fs.statSync(fullPath).isDirectory()) {
+          const found = findFile(fullPath, target);
+          if (found) return found;
+        } else if (file === target) {
+          return fullPath;
+        }
+      }
+      return null;
+    };
+
+    const filePath = findFile(rootUploadDir, filename);
+
+    if (!filePath || !fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found on server storage' });
+    }
+
+    // Stream local file
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
 
@@ -341,10 +367,24 @@ exports.deleteDocument = async (req, res) => {
       return res.status(404).json({ error: 'Document not found' });
     }
 
-    // Delete file from filesystem if possible
-    // (Search for it since we don't store full path in DB)
+    // Extract S3 objectKey if available
+    let objectKey = document.filePath;
+    if (!objectKey && document.uploadMetadata) {
+      try {
+        const meta = JSON.parse(document.uploadMetadata);
+        objectKey = meta.objectKey;
+      } catch (_) {}
+    }
+
+    // Delete file from S3 if present
+    if (objectKey) {
+      await storageService.delete(objectKey).catch(err => console.error('Error deleting S3 object:', err));
+    }
+
+    // Delete file from local filesystem if legacy file
     const rootUploadDir = path.resolve(process.cwd(), 'uploads');
     const findFile = (dir, target) => {
+      if (!fs.existsSync(dir)) return null;
       const files = fs.readdirSync(dir);
       for (const file of files) {
         const fullPath = path.join(dir, file);

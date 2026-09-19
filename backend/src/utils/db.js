@@ -11,11 +11,10 @@ const pool = mysql.createPool({
   connectionLimit: 5,        // Keep pool small on shared hosting
   queueLimit: 0,
   connectTimeout: 10000,     // 10s to establish connection
-  // Idle connections released after 30s so the process doesn't stay alive
-  idleTimeout: 30000,
-  // Keep-alive pings prevent stale connection errors on long idle
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 10000,
+  // Idle connections released quickly (10s) so MySQL child connections don't linger
+  idleTimeout: 10000,
+  // Keep-alive disabled or set high to allow process idle connection cleanup
+  enableKeepAlive: false,
 });
 
 // Execute query - returns results or throws error

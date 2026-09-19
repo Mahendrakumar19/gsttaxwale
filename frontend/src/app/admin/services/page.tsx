@@ -30,7 +30,7 @@ export default function AdminServices() {
       return;
     }
     loadServices();
-    const interval = setInterval(loadServices, 3000);
+    const interval = setInterval(loadServices, 30000);
     return () => clearInterval(interval);
   }, [router]);
 

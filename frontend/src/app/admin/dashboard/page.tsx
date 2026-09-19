@@ -130,7 +130,7 @@ export default function AdminDashboard() {
     }
 
     loadStats();
-    const interval = setInterval(loadStats, 5000);
+    const interval = setInterval(loadStats, 30000);
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 

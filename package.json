@@ -15,8 +15,8 @@
     "start": "NODE_ENV=production node server.js",
     "start:win": "set NODE_ENV=production && node server.js",
     "postinstall": "npx prisma generate",
-    "build": "npm install && npx prisma generate && cd frontend && npm install && npm run build && cd .. && cd backend && npm install && cd ..",
-    "build:frontend": "cd frontend && npm install && npm run build",
+    "build": "npx prisma generate && cd frontend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
     "setup-db": "node backend/scripts/setup_db.js",
     "test-login": "node backend/scripts/test_login.js",
     "lint": "next lint",
@@ -28,6 +28,8 @@
     "format": "prettier --write \"app/**/*.{js,jsx,ts,tsx}\" \"lib/**/*.{js,ts}\" \"prisma/**/*.ts\""
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1133.0",
+    "@aws-sdk/s3-request-presigner": "^3.1133.0",
     "@prisma/client": "^6.19.3",
     "aws-sdk": "^2.1559.0",
     "axios": "^1.7.2",

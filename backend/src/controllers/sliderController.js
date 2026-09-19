@@ -2,6 +2,7 @@ const db = require('../utils/db');
 const { successResponse, errorResponse } = require('../utils/helpers');
 const path = require('path');
 const fs = require('fs');
+const storageService = require('../services/storageService');
 
 /**
  * Get all slider images
@@ -27,6 +28,7 @@ async function getSliders(req, res) {
       };
     });
 
+    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
     res.status(200).json(successResponse({ sliders: formattedSliders }));
   } catch (error) {
     res.status(500).json(errorResponse(error.message));
@@ -41,17 +43,23 @@ async function addSlider(req, res) {
     const file = req.file;
     if (!file) return res.status(400).json(errorResponse('No image provided'));
 
-    // Move from temp to public banners
-    const bannerDir = path.resolve(process.cwd(), 'frontend/public/banners');
-    if (!fs.existsSync(bannerDir)) fs.mkdirSync(bannerDir, { recursive: true });
+    const sanitizedName = storageService.sanitizeFileName(file.originalname);
+    const fileName = `slider_${Date.now()}_${sanitizedName}`;
+    const objectKey = `sliders/${fileName}`;
 
-    const fileName = `slider_${Date.now()}${path.extname(file.originalname)}`;
-    const finalPath = path.join(bannerDir, fileName);
-    
-    fs.copyFileSync(file.path, finalPath);
-    fs.unlinkSync(file.path);
+    // Upload slider image to MinIO S3 bucket
+    const s3Result = await storageService.upload({
+      filePath: file.path,
+      objectKey: objectKey,
+      mimeType: file.mimetype
+    });
 
-    const imageUrl = `/banners/${fileName}`;
+    // Remove temporary multer file
+    if (fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
+
+    const imageUrl = s3Result.url;
     
     // Get current max order
     const [maxOrder] = await db.query(`
@@ -68,11 +76,14 @@ async function addSlider(req, res) {
     `, [
       `slider_${Date.now()}`,
       imageUrl,
-      JSON.stringify({ active: true, order: newOrder, alt: 'Homepage Banner' })
+      JSON.stringify({ active: true, order: newOrder, alt: 'Homepage Banner', objectKey })
     ]);
 
     res.status(201).json(successResponse(null, 'Slider added successfully'));
   } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
     res.status(500).json(errorResponse(error.message));
   }
 }
@@ -107,12 +118,28 @@ async function toggleSlider(req, res) {
 async function deleteSlider(req, res) {
   const { id } = req.params;
   try {
-    const [slider] = await db.query('SELECT content FROM PageContent WHERE id = ?', [id]);
+    const [slider] = await db.query('SELECT content, metadata FROM PageContent WHERE id = ?', [id]);
     if (!slider) return res.status(404).json(errorResponse('Slider not found'));
 
-    // Delete file
-    const filePath = path.join(process.cwd(), 'frontend/public', slider.content);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    let metadata = {};
+    try { metadata = JSON.parse(slider.metadata || '{}'); } catch (_) {}
+
+    // Extract S3 objectKey if available
+    let objectKey = metadata.objectKey;
+    if (!objectKey && slider.content && slider.content.includes('/sliders/')) {
+      objectKey = slider.content.split('/gsttaxwale/')[1] || slider.content.replace(/^\//, '');
+    }
+
+    // Delete from S3
+    if (objectKey) {
+      await storageService.delete(objectKey).catch(err => console.error('Error deleting slider S3 object:', err));
+    }
+
+    // Legacy local file cleanup
+    const localFilePath = path.join(process.cwd(), 'frontend/public', slider.content);
+    if (fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
+    }
 
     await db.query('DELETE FROM PageContent WHERE id = ?', [id]);
     res.status(200).json(successResponse(null, 'Slider deleted'));

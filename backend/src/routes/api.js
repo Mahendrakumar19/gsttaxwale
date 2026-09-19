@@ -22,12 +22,38 @@ const newsController = require('../controllers/newsController');
 const statsController = require('../controllers/statsController');
 const referralLeadController = require('../controllers/referralLeadController');
 const blogController = require('../controllers/blogController');
-
+const path = require('path');
 const multer = require('multer');
 const { authenticate, adminOnly, optionalAuthenticate, asyncHandler } = require('../middleware/auth');
 const db = require('../utils/db');
+const { cacheMiddleware, purge } = require('../utils/cache');
 
-const upload = multer({ dest: 'uploads/temp' });
+// Secure Multer Configuration (50MB max limit, strict extension/MIME whitelist)
+const ALLOWED_EXTENSIONS = new Set(['.pdf', '.doc', '.docx', '.xlsx', '.xls', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.csv', '.txt']);
+const DANGEROUS_EXTENSIONS = new Set(['.exe', '.sh', '.bat', '.cmd', '.php', '.js', '.py', '.dll', '.so', '.msi', '.vbs', '.jar', '.html', '.htm', '.svg']);
+
+const secureFileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname || '').toLowerCase();
+
+  if (DANGEROUS_EXTENSIONS.has(ext)) {
+    return cb(new Error(`Security Restriction: Executable file type '${ext}' is forbidden`), false);
+  }
+
+  if (!ALLOWED_EXTENSIONS.has(ext)) {
+    return cb(new Error(`Unsupported File Format: Extension '${ext}' is not permitted`), false);
+  }
+
+  cb(null, true);
+};
+
+const upload = multer({
+  dest: 'uploads/temp',
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB maximum file size limit
+  },
+  fileFilter: secureFileFilter
+});
+
 
 module.exports = function (app) {
   const prefix = '/api';
@@ -58,9 +84,10 @@ module.exports = function (app) {
   app.put(`${prefix}/auth/profile`, authenticate, asyncHandler(authController.updateProfile));
 
   // SYSTEM CONFIG ROUTES
-  app.get(`${prefix}/config/public`, asyncHandler(configController.getPublicSettings));
+  app.get(`${prefix}/config/public`, cacheMiddleware(300), asyncHandler(configController.getPublicSettings));
   app.get(`${prefix}/admin/config`, authenticate, adminOnly, asyncHandler(configController.getAllSettings));
-  app.post(`${prefix}/admin/config`, authenticate, adminOnly, asyncHandler(configController.updateSettings));
+  app.post(`${prefix}/admin/config`, authenticate, adminOnly, (req, res, next) => { purge('/config'); next(); }, asyncHandler(configController.updateSettings));
+
 
   app.get(`${prefix}/users/me`, authenticate, asyncHandler(authController.getCurrentUser));
 
@@ -190,11 +217,12 @@ module.exports = function (app) {
   app.get(`${prefix}/pricing/active`, asyncHandler(pricingController.getActivePricing));
 
   // SERVICES
-  app.get(`${prefix}/services`, asyncHandler(serviceController.listServices));
-  app.get(`${prefix}/services/:id`, asyncHandler(serviceController.getService));
-  app.post(`${prefix}/admin/services`, authenticate, adminOnly, asyncHandler(serviceController.createService));
-  app.put(`${prefix}/admin/services/:id`, authenticate, adminOnly, asyncHandler(serviceController.updateService));
-  app.delete(`${prefix}/admin/services/:id`, authenticate, adminOnly, asyncHandler(serviceController.deleteService));
+  app.get(`${prefix}/services`, cacheMiddleware(300), asyncHandler(serviceController.listServices));
+  app.get(`${prefix}/services/:id`, cacheMiddleware(300), asyncHandler(serviceController.getService));
+  app.post(`${prefix}/admin/services`, authenticate, adminOnly, (req, res, next) => { purge('/services'); next(); }, asyncHandler(serviceController.createService));
+  app.put(`${prefix}/admin/services/:id`, authenticate, adminOnly, (req, res, next) => { purge('/services'); next(); }, asyncHandler(serviceController.updateService));
+  app.delete(`${prefix}/admin/services/:id`, authenticate, adminOnly, (req, res, next) => { purge('/services'); next(); }, asyncHandler(serviceController.deleteService));
+
 
   // ORDERS
   app.post(`${prefix}/orders`, authenticate, asyncHandler(orderController.createOrder));
@@ -225,9 +253,9 @@ module.exports = function (app) {
   app.get(`${prefix}/admin/referrals-stats`, authenticate, adminOnly, asyncHandler(referralController.getReferralStats));
 
   // NEWS ROUTES
-  app.get(`${prefix}/news`, asyncHandler(newsController.getNews));
-  app.post(`${prefix}/admin/news`, authenticate, adminOnly, asyncHandler(newsController.createNews));
-  app.delete(`${prefix}/admin/news/:id`, authenticate, adminOnly, asyncHandler(newsController.deleteNews));
+  app.get(`${prefix}/news`, cacheMiddleware(300), asyncHandler(newsController.getNews));
+  app.post(`${prefix}/admin/news`, authenticate, adminOnly, (req, res, next) => { purge('/news'); next(); }, asyncHandler(newsController.createNews));
+  app.delete(`${prefix}/admin/news/:id`, authenticate, adminOnly, (req, res, next) => { purge('/news'); next(); }, asyncHandler(newsController.deleteNews));
 
   app.get(`${prefix}/locations`, asyncHandler(locationController.listLocations));
   app.get(`${prefix}/admin/locations`, authenticate, adminOnly, asyncHandler(locationController.adminListLocations));
@@ -235,26 +263,27 @@ module.exports = function (app) {
   app.put(`${prefix}/admin/locations/:id`, authenticate, adminOnly, asyncHandler(locationController.updateLocation));
   app.delete(`${prefix}/admin/locations/:id`, authenticate, adminOnly, asyncHandler(locationController.deleteLocation));
 
-  app.get(`${prefix}/due-dates`, asyncHandler(dueDatesController.getDueDates));
-  app.get(`${prefix}/due-dates/gst`, asyncHandler(dueDatesController.getGSTDueDates));
-  app.get(`${prefix}/due-dates/itr`, asyncHandler(dueDatesController.getITRDueDates));
+  app.get(`${prefix}/due-dates`, cacheMiddleware(300), asyncHandler(dueDatesController.getDueDates));
+  app.get(`${prefix}/due-dates/gst`, cacheMiddleware(300), asyncHandler(dueDatesController.getGSTDueDates));
+  app.get(`${prefix}/due-dates/itr`, cacheMiddleware(300), asyncHandler(dueDatesController.getITRDueDates));
 
   // SLIDER MANAGEMENT
   const sliderController = require('../controllers/sliderController');
-  const bannerUpload = multer({ dest: 'uploads/temp' }); // Reuse temp for multer then move in controller
+  const bannerUpload = upload;
 
-  app.get(`${prefix}/sliders`, asyncHandler(sliderController.getSliders));
-  app.post(`${prefix}/admin/sliders`, authenticate, adminOnly, bannerUpload.single('image'), asyncHandler(sliderController.addSlider));
-  app.put(`${prefix}/admin/sliders/:id/toggle`, authenticate, adminOnly, asyncHandler(sliderController.toggleSlider));
-  app.delete(`${prefix}/admin/sliders/:id`, authenticate, adminOnly, asyncHandler(sliderController.deleteSlider));
+
+  app.get(`${prefix}/sliders`, cacheMiddleware(300), asyncHandler(sliderController.getSliders));
+  app.post(`${prefix}/admin/sliders`, authenticate, adminOnly, bannerUpload.single('image'), (req, res, next) => { purge('/sliders'); next(); }, asyncHandler(sliderController.addSlider));
+  app.put(`${prefix}/admin/sliders/:id/toggle`, authenticate, adminOnly, (req, res, next) => { purge('/sliders'); next(); }, asyncHandler(sliderController.toggleSlider));
+  app.delete(`${prefix}/admin/sliders/:id`, authenticate, adminOnly, (req, res, next) => { purge('/sliders'); next(); }, asyncHandler(sliderController.deleteSlider));
 
   // BLOG ROUTES
-  app.get(`${prefix}/blogs`, blogController.getBlogs);
-  app.get(`${prefix}/blogs/:id`, blogController.getBlogById);
+  app.get(`${prefix}/blogs`, cacheMiddleware(300), blogController.getBlogs);
+  app.get(`${prefix}/blogs/:id`, cacheMiddleware(300), blogController.getBlogById);
   app.get(`${prefix}/admin/blogs`, authenticate, adminOnly, blogController.adminGetBlogs);
-  app.post(`${prefix}/admin/blogs`, authenticate, adminOnly, blogController.createBlog);
-  app.put(`${prefix}/admin/blogs/:id`, authenticate, adminOnly, blogController.updateBlog);
-  app.delete(`${prefix}/admin/blogs/:id`, authenticate, adminOnly, blogController.deleteBlog);
+  app.post(`${prefix}/admin/blogs`, authenticate, adminOnly, (req, res, next) => { purge('/blogs'); next(); }, blogController.createBlog);
+  app.put(`${prefix}/admin/blogs/:id`, authenticate, adminOnly, (req, res, next) => { purge('/blogs'); next(); }, blogController.updateBlog);
+  app.delete(`${prefix}/admin/blogs/:id`, authenticate, adminOnly, (req, res, next) => { purge('/blogs'); next(); }, blogController.deleteBlog);
 
   app.all(`${prefix}/*`, (req, res) => {
     console.log(`⚠️  404 API Fallback: ${req.method} ${req.originalUrl}`);
